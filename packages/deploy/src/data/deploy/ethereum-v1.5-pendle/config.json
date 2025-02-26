@@ -30,6 +30,49 @@
       "address": "0x44a7876ca99460ef3218bf08b5f52e2dbe199566",
       "assertSymbol": "PT-corn-eBTC-27MAR2025",
       "assertDecimals": 8
+    },
+    {
+      "id": "pt-wstusr-27mar2025",
+      "address": "0xa8c8861b5ccf8cce0ade6811cd2a7a7d3222b0b8",
+      "assertSymbol": "PT-wstUSR-27MAR2025",
+      "assertDecimals": 18
+    },
+    {
+      "id": "pt-wstusr-1750896030",
+      "description": "Spectra PT-wstUSR-26jun2025",
+      "address": "0x4a977653c58cfd82d42fd706cf68a0c1b6d0ca56",
+      "assertSymbol": "PT-wstUSR-1750896030",
+      "assertDecimals": 18
+    },
+    {
+      "id": "wstusr",
+      "address": "0x1202f5c7b4b9e47a1a484e8b270be34dbbc75055",
+      "assertSymbol": "wstUSR",
+      "assertDecimals": 18
+    },
+    {
+      "id": "usr",
+      "address": "0x66a1E37c9b0eAddca17d3662D6c05F4DECf3e110",
+      "assertSymbol": "USR",
+      "assertDecimals": 18
+    },
+    {
+      "id": "pt-sw-inwsteths-1752969615",
+      "address": "0x4ae0154f83427a5864e5de6513a47dac9e5d5a69",
+      "assertSymbol": "PT-sw-inwstETHs-1752969615",
+      "assertDecimals": 18
+    },
+    {
+      "id": "sw-inwsteths",
+      "address": "0xd89fc47aacbb31e2bf23ec599f593a4876d8c18c",
+      "assertSymbol": "sw-inwstETHs",
+      "assertDecimals": 18
+    },
+    {
+      "id": "inwsteths",
+      "address": "0x8E0789d39db454DBE9f4a77aCEF6dc7c69f6D552",
+      "assertSymbol": "inwstETHs",
+      "assertDecimals": 18
     }
   ],
   "prices": [],
@@ -42,22 +85,87 @@
           "pool": "0x7704d01908afd31bf647d969c295bb45230cd2d6",
           "quoteTokenId": "wbtc",
           "baseTokenId": "ebtc"
+        },
+        {
+          "pool": "0x16d050778b6599ce94993d2ff83f8da7136421a9",
+          "quoteTokenId": "wstusr",
+          "baseTokenId": "pt-wstusr-1750896030"
+        },
+        {
+          "pool": "0x16d050778b6599ce94993d2ff83f8da7136421a9",
+          "quoteTokenId": "pt-wstusr-1750896030",
+          "baseTokenId": "wstusr"
+        },
+        {
+          "pool": "0xe119bad8a35b999f65b1e5fd48c626c327daa16b",
+          "quoteTokenId": "sw-inwsteths",
+          "baseTokenId": "pt-sw-inwsteths-1752969615"
+        },
+        {
+          "pool": "0xe119bad8a35b999f65b1e5fd48c626c327daa16b",
+          "quoteTokenId": "pt-sw-inwsteths-1752969615",
+          "baseTokenId": "sw-inwsteths"
         }
       ]
     },
     {
-      "id": "pendleOracle",
-      "type": "pendle",
+      "id": "pendleMarketOracle",
+      "type": "pendleMarket",
       "pendlePtLpOracle": "0x66a1096C6366b2529274dF4f5D8247827fe4CEA8",
       "settings": [
         {
-          "quoteTokenId": "wbtc",
-          "baseTokenId": "pt-ebtc-27mar2025",
-          "pendleMarket": "0x2c71ead7ac9ae53d05f8664e77031d4f9eba064b",
-          "secondaryPoolOracleId": "curve-oracle",
-          "ibTokenId": "ebtc",
-          "secondsAgo": "15 min",
+          "quoteTokenId": "wstusr",
+          "baseTokenId": "pt-wstusr-27mar2025",
+          "pendleMarket": "0x353d0b2efb5b3a7987fb06d30ad6160522d08426",
+          "secondsAgo": "30 min",
           "secondsAgoLiquidation": "5 sec"
+        }
+      ]
+    },
+    {
+      "id": "priceOracleProxy",
+      "type": "proxy",
+      "settings": [
+        {
+          "quoteTokenId": "inwsteths",
+          "baseTokenId": "pt-sw-inwsteths-1752969615",
+          "underlyingQuoteTokenId": "sw-inwsteths",
+          "underlyingBaseTokenId": "pt-sw-inwsteths-1752969615",
+          "priceOracleId": "curve-oracle"
+        }
+      ]
+    },
+    {
+      "id": "pythOracle",
+      "type": "pyth",
+      "pyth": "0x4305FB66699C3B2702D4d05CF36551390A4c69C6",
+      "settings": [
+        {
+          "type": "single",
+          "quoteTokenId": "usr",
+          "baseTokenId": "wstusr",
+          "pythPriceId": "0xb74c2bc175c2dab850ce5a5451608501c293fe8410cb4aba7449dd1c355ab706",
+          "maxPriceAge": "1440 min"
+        }
+      ]
+    },
+    {
+      "id": "compositeOracle",
+      "type": "composite",
+      "settings": [
+        {
+          "quoteTokenId": "usr",
+          "intermediateTokenId": "wstusr",
+          "baseTokenId": "pt-wstusr-27mar2025",
+          "quoteIntermediateOracleId": "pythOracle",
+          "intermediateBaseOracleId": "pendleMarketOracle"
+        },
+        {
+          "quoteTokenId": "usr",
+          "intermediateTokenId": "wstusr",
+          "baseTokenId": "pt-wstusr-1750896030",
+          "quoteIntermediateOracleId": "pythOracle",
+          "intermediateBaseOracleId": "curve-oracle"
         }
       ]
     }
@@ -70,19 +178,51 @@
   },
   "marginlyPools": [
     {
-      "id": "pt-ebtc-27mar2025-wbtc",
-      "baseTokenId": "pt-ebtc-27mar2025",
-      "quoteTokenId": "wbtc",
-      "priceOracleId": "pendleOracle",
-      "defaultSwapCallData": "31981569",
+      "id": "pt-sw-inwsteths-1752969615-inwsteths",
+      "baseTokenId": "pt-sw-inwsteths-1752969615",
+      "quoteTokenId": "inwsteths",
+      "priceOracleId": "priceOracleProxy",
+      "defaultSwapCallData": "34078721",
       "params": {
-        "interestRate": "0.3%",
+        "interestRate": "0.5%",
         "maxLeverage": "20",
         "swapFee": "0%",
         "fee": "0%",
-        "mcSlippage": "1%",
-        "positionMinAmount": "0.00015",
-        "quoteLimit": "50"
+        "mcSlippage": "0.5%",
+        "positionMinAmount": "5",
+        "quoteLimit": "1500"
+      }
+    },
+    {
+      "id": "pt-wstusr-27mar2025-usr",
+      "baseTokenId": "pt-wstusr-27mar2025",
+      "quoteTokenId": "usr",
+      "priceOracleId": "compositeOracle",
+      "defaultSwapCallData": "35127297",
+      "params": {
+        "interestRate": "1.2%",
+        "maxLeverage": "20",
+        "swapFee": "0%",
+        "fee": "0%",
+        "mcSlippage": "0.1%",
+        "positionMinAmount": "5",
+        "quoteLimit": "2000000"
+      }
+    },
+    {
+      "id": "pt-wstusr-1750896030-usr",
+      "baseTokenId": "pt-wstusr-1750896030",
+      "quoteTokenId": "usr",
+      "priceOracleId": "compositeOracle",
+      "defaultSwapCallData": "34078721",
+      "params": {
+        "interestRate": "1.4%",
+        "maxLeverage": "20",
+        "swapFee": "0%",
+        "fee": "0%",
+        "mcSlippage": "0.5%",
+        "positionMinAmount": "5",
+        "quoteLimit": "500000"
       }
     }
   ],
@@ -98,6 +238,34 @@
           "curvePool": "0x7704d01908afd31bf647d969c295bb45230cd2d6",
           "ibTokenId": "ebtc",
           "quoteTokenId": "wbtc"
+        }
+      ]
+    },
+    {
+      "dexId": 32,
+      "adapterName": "SpectraAdapter",
+      "pools": [
+        {
+          "ptTokenId": "pt-wstusr-1750896030",
+          "quoteTokenId": "usr",
+          "spectraPool": "0x16d050778b6599ce94993d2ff83f8da7136421a9"
+        },
+        {
+          "ptTokenId": "pt-sw-inwsteths-1752969615",
+          "quoteTokenId": "inwsteths",
+          "spectraPool": "0xe119bad8a35b999f65b1e5fd48c626c327daa16b"
+        }
+      ]
+    },
+    {
+      "dexId": 33,
+      "adapterName": "PendlePtToAssetAdapter",
+      "pools": [
+        {
+          "pendleMarket": "0x353d0b2efb5b3a7987fb06d30ad6160522d08426",
+          "slippage": 35,
+          "tokenAId": "pt-wstusr-27mar2025",
+          "tokenBId": "usr"
         }
       ]
     }

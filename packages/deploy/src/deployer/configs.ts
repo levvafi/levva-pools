@@ -15,6 +15,7 @@ import {
   isMarginlyDeployConfigMintableToken,
   isPendleMarketOracleConfig,
   isPendleOracleConfig,
+  isPriceOracleProxyConfig,
   isPythOracleConfig,
   isSinglePairChainlinkOracleDeployConfig,
   isSinglePairPythOracleDeployConfig,
@@ -26,6 +27,7 @@ import {
   PendleMarketAdapterPair,
   PendlePtToAssetAdapterPair,
   PendleUniswapAdapterPair,
+  SpectraAdapterPair,
 } from '../config';
 import { adapterWriter, Logger } from '../logger';
 import { createRootLogger, textFormatter } from '@marginly/logger';
@@ -177,7 +179,8 @@ export type AdapterParam =
   | PendleMarketAdapterParam
   | PendleCurveAdapterParam
   | PendleCurveRouterAdapterParam
-  | PendlePtToAssetAdapterParam;
+  | PendlePtToAssetAdapterParam
+  | SpectraAdapterParam;
 
 export interface MarginlyAdapterParam {
   type: 'general';
@@ -232,6 +235,13 @@ export interface PendlePtToAssetAdapterParam {
   slippage: number;
 }
 
+export interface SpectraAdapterParam {
+  type: 'spectra';
+  ptToken: MarginlyConfigToken;
+  quoteToken: MarginlyConfigToken;
+  spectraPool: EthAddress;
+}
+
 export function isPendleAdapter(config: AdapterParam): config is PendleAdapterParam {
   return config.type === 'pendle';
 }
@@ -242,6 +252,10 @@ export function isPendleMarketAdapter(config: AdapterParam): config is PendleMar
 
 export function isPendlePtToAssetAdapter(config: AdapterParam): config is PendlePtToAssetAdapterParam {
   return config.type === 'pendlePtToAsset';
+}
+
+export function isSpectraAdapter(config: AdapterParam): config is SpectraAdapterParam {
+  return config.type === 'spectra';
 }
 
 export function isGeneralAdapter(config: AdapterParam): config is MarginlyAdapterParam {
@@ -290,7 +304,8 @@ export type PriceOracleConfig =
   | AlgebraOracleConfig
   | AlgebraDoubleOracleConfig
   | CurveOracleConfig
-  | MarginlyCompositeOracleConfig;
+  | MarginlyCompositeOracleConfig
+  | PriceOracleProxyConfig;
 
 export interface UniswapV3TickOracleConfig {
   id: string;
@@ -392,6 +407,7 @@ export interface SinglePairPythOracleConfig {
   quoteToken: MarginlyConfigToken;
   baseToken: MarginlyConfigToken;
   pythPriceId: `0x${string}`;
+  maxPriceAge: TimeSpan;
 }
 
 export interface DoublePairPythOracleConfig {
@@ -470,6 +486,18 @@ export interface MarginlyCompositeOracleConfig {
   }[];
 }
 
+export interface PriceOracleProxyConfig {
+  id: string;
+  type: 'proxy';
+  settings: {
+    quoteToken: MarginlyConfigToken;
+    baseToken: MarginlyConfigToken;
+    underlyingQuoteToken: MarginlyConfigToken;
+    underlyingBaseToken: MarginlyConfigToken;
+    proxyOracleId: string;
+  }[];
+}
+
 export function isUniswapV3Oracle(config: PriceOracleConfig): config is UniswapV3TickOracleConfig {
   return config.type === 'uniswapV3';
 }
@@ -508,6 +536,10 @@ export function isCurveOracle(config: PriceOracleConfig): config is CurveOracleC
 
 export function isMarginlyCompositeOracle(config: PriceOracleConfig): config is MarginlyCompositeOracleConfig {
   return config.type === 'composite';
+}
+
+export function isPriceOracleProxy(config: PriceOracleConfig): config is PriceOracleProxyConfig {
+  return config.type === 'proxy';
 }
 
 export class StrictMarginlyDeployConfig {
@@ -704,6 +736,8 @@ export class StrictMarginlyDeployConfig {
       return this.createPendleCurveNgAdapterConfig(pair, tokens, dexId);
     } else if (adapterName === 'PendleCurveRouterNg') {
       return this.createPendleCurveRouterAdapterConfig(pair, tokens, dexId);
+    } else if (adapterName === 'SpectraAdapter') {
+      return this.createSpectraAdapterConfig(pair, tokens, dexId);
     } else {
       return this.createSimpleAdapterParam(pair, tokens, dexId);
     }
@@ -871,6 +905,21 @@ export class StrictMarginlyDeployConfig {
     };
   }
 
+  private static createSpectraAdapterConfig(
+    pair: AdapterPair,
+    tokens: Map<string, MarginlyConfigToken>,
+    dexId: number
+  ): SpectraAdapterParam {
+    const pairConfig = pair as SpectraAdapterPair;
+
+    return <SpectraAdapterParam>{
+      type: 'spectra',
+      spectraPool: EthAddress.parse(pairConfig.spectraPool),
+      ptToken: this.getRequiredToken(tokens, pairConfig.ptTokenId),
+      quoteToken: this.getRequiredToken(tokens, pairConfig.quoteTokenId),
+    };
+  }
+
   private static createSimpleAdapterParam(
     pair: AdapterPair,
     tokens: Map<string, MarginlyConfigToken>,
@@ -981,6 +1030,7 @@ export class StrictMarginlyDeployConfig {
                 quoteToken: this.getRequiredToken(tokens, x.quoteTokenId),
                 baseToken: this.getRequiredToken(tokens, x.baseTokenId),
                 pythPriceId: x.pythPriceId as `0x{string}`,
+                maxPriceAge: TimeSpan.parse(x.maxPriceAge),
               } as SinglePairPythOracleConfig;
             } else if (isDoublePairPythOracleDeployConfig(x)) {
               if (!ethers.utils.isHexString(x.basePythPriceId, 32)) {
@@ -1094,7 +1144,23 @@ export class StrictMarginlyDeployConfig {
               intermediateToken: this.getRequiredToken(tokens, x.intermediateTokenId),
               baseToken: this.getRequiredToken(tokens, x.baseTokenId),
               quoteIntermediateOracleId: x.quoteIntermediateOracleId,
-              intermediateBaseOracleId: x.interMediateBaseOracleId,
+              intermediateBaseOracleId: x.intermediateBaseOracleId,
+            };
+          }),
+        };
+
+        priceOracles.set(priceOracleId, strictConfig);
+      } else if (isPriceOracleProxyConfig(priceOracleConfig)) {
+        const strictConfig: PriceOracleProxyConfig = {
+          id: priceOracleId,
+          type: priceOracleConfig.type,
+          settings: priceOracleConfig.settings.map((x) => {
+            return {
+              quoteToken: this.getRequiredToken(tokens, x.quoteTokenId),
+              baseToken: this.getRequiredToken(tokens, x.baseTokenId),
+              underlyingQuoteToken: this.getRequiredToken(tokens, x.underlyingQuoteTokenId),
+              underlyingBaseToken: this.getRequiredToken(tokens, x.underlyingBaseTokenId),
+              proxyOracleId: x.priceOracleId,
             };
           }),
         };

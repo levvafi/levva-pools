@@ -54,7 +54,8 @@ export type PriceOracleDeployConfig =
   | AlgebraTickOracleDeployConfig
   | AlgebraDoubleDeployOracleConfig
   | CurveOracleDeployConfig
-  | MarginlyCompositeOracleDeployConfig;
+  | MarginlyCompositeOracleDeployConfig
+  | PriceOracleProxyDeployConfig;
 
 export interface UniswapV3TickOracleDeployConfig {
   type: 'uniswapV3';
@@ -179,6 +180,7 @@ export interface SinglePairPythOracleDeployConfig {
   quoteTokenId: string;
   baseTokenId: string;
   pythPriceId: string;
+  maxPriceAge: string;
 }
 
 export interface DoublePairPythOracleDeployConfig {
@@ -257,7 +259,19 @@ export interface MarginlyCompositeOracleDeployConfig {
     intermediateTokenId: string;
     baseTokenId: string;
     quoteIntermediateOracleId: string;
-    interMediateBaseOracleId: string;
+    intermediateBaseOracleId: string;
+  }[];
+}
+
+export interface PriceOracleProxyDeployConfig {
+  type: 'proxy';
+  id: string;
+  settings: {
+    quoteTokenId: string;
+    baseTokenId: string;
+    underlyingQuoteTokenId: string;
+    underlyingBaseTokenId: string;
+    priceOracleId: string;
   }[];
 }
 
@@ -305,6 +319,10 @@ export function isMarginlyCompositeOracleConfig(
   config: PriceOracleDeployConfig
 ): config is MarginlyCompositeOracleDeployConfig {
   return config.type === 'composite';
+}
+
+export function isPriceOracleProxyConfig(config: PriceOracleDeployConfig): config is PriceOracleProxyDeployConfig {
+  return config.type === 'proxy';
 }
 
 interface MarginlyDeployConfigUniswapGenuine {
@@ -404,7 +422,8 @@ export type AdapterPair =
   | PendleMarketAdapterPair
   | PendleCurveAdapterPair
   | PendleCurveRouterAdapterPair
-  | PendlePtToAssetAdapterPair;
+  | PendlePtToAssetAdapterPair
+  | SpectraAdapterPair;
 
 export interface GeneralAdapterPair {
   tokenAId: string;
@@ -453,6 +472,12 @@ export interface PendlePtToAssetAdapterPair {
   tokenBId: string;
   pendleMarket: string;
   slippage: number;
+}
+
+export interface SpectraAdapterPair {
+  ptTokenId: string;
+  quoteTokenId: string;
+  spectraPool: string;
 }
 
 export interface MarginlyDeployConfig {
