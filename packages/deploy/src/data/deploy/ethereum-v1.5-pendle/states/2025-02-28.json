@@ -231,6 +231,10 @@
     "marginlyPool_pt-wstusr-27mar2025-wstusr": {
       "address": "0xd1e6E2bfB33De80Aa47458EDd75eeFFdA93510ec",
       "txHash": "0xc8ca2a3af2b2f9198772c13b87fdc992c8736a3bdf0fa16963e693f0026c14de"
+    },
+    "marginlyPool_pt-usr-29may2025-usr": {
+      "address": "0xfab0743428608412C609bed79aCf4878A38C99c4",
+      "txHash": "0xb9d37bd8a16be724c4042f702029db85bf3b5099218e9d9f87ab5720564b03b1"
     }
   }
 }

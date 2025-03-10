@@ -73,6 +73,12 @@
       "address": "0x8E0789d39db454DBE9f4a77aCEF6dc7c69f6D552",
       "assertSymbol": "inwstETHs",
       "assertDecimals": 18
+    },
+    {
+      "id": "pt-usr-29may2025",
+      "address": "0xae4be3acd95b6a4ac5a0524ab95da90c721f6c83",
+      "assertSymbol": "PT-USR-29MAY2025",
+      "assertDecimals": 18
     }
   ],
   "prices": [],
@@ -117,6 +123,13 @@
           "quoteTokenId": "wstusr",
           "baseTokenId": "pt-wstusr-27mar2025",
           "pendleMarket": "0x353d0b2efb5b3a7987fb06d30ad6160522d08426",
+          "secondsAgo": "30 min",
+          "secondsAgoLiquidation": "5 sec"
+        },
+        {
+          "quoteTokenId": "usr",
+          "baseTokenId": "pt-usr-29may2025",
+          "pendleMarket": "0x35a18cd59a214c9e797e14b1191b700eea251f6a",
           "secondsAgo": "30 min",
           "secondsAgoLiquidation": "5 sec"
         }
@@ -256,6 +269,22 @@
         "positionMinAmount": "5",
         "quoteLimit": "2000000"
       }
+    },
+    {
+      "id": "pt-usr-29may2025-usr",
+      "baseTokenId": "pt-usr-29may2025",
+      "quoteTokenId": "usr",
+      "priceOracleId": "pendleMarketOracle",
+      "defaultSwapCallData": "20447233",
+      "params": {
+        "interestRate": "1.0%",
+        "maxLeverage": "20",
+        "swapFee": "0%",
+        "fee": "0%",
+        "mcSlippage": "0.1%",
+        "positionMinAmount": "5",
+        "quoteLimit": "1500000"
+      }
     }
   ],
   "adapters": [
@@ -315,6 +344,12 @@
           "slippage": "45",
           "tokenAId": "pt-wstusr-27mar2025",
           "tokenBId": "wstusr"
+        },
+        {
+          "poolAddress": "0x35a18cd59a214c9e797e14b1191b700eea251f6a",
+          "slippage": "45",
+          "tokenAId": "pt-usr-29may2025",
+          "tokenBId": "usr"
         }
       ]
     }
