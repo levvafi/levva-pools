@@ -38,12 +38,16 @@ const config = {
     mainnet: {
       url: 'https://ethereum-rpc.publicnode.com',
     },
+    sonic: {
+      url: 'https://rpc.soniclabs.com',
+    },
   },
   etherscan: {
     apiKey: {
       arbitrumOne: process.env.API_KEY,
       artioTestnet: 'artio_testnet',
       mainnet: process.env.ETH_API_KEY,
+      sonic: process.env.SONIC_API_KEY,
     },
     customChains: [
       {
@@ -52,6 +56,14 @@ const config = {
         urls: {
           apiURL: 'https://api.routescan.io/v2/network/testnet/evm/80085/etherscan',
           browserURL: 'https://artio.beratrail.io',
+        },
+      },
+      {
+        network: 'sonic',
+        chainId: 146,
+        urls: {
+          apiURL: 'https://api.sonicscan.org/api',
+          browserURL: 'https://sonicscan.org',
         },
       },
     ],

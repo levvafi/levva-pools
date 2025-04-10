@@ -1,0 +1,32 @@
+{
+  "contracts": {
+    "priceOracle_pendleMarketOracle": {
+      "address": "0x30C9A865F86adbA333B2390Ce69167D979f0db6f",
+      "txHash": "0xe0661b35e9e07ed88b2f777bb7501f99c3386d4cd6c1eaf56df2e83dc5cc55b7"
+    },
+    "PendleMarketAdapter_19": {
+      "address": "0x8E650512B532c83262fdE1eda1c5A2A898B4DB00",
+      "txHash": "0xc006bd6803fe0438efc87b1632339dc9e4eb6e334e9562c9320967e50b8469de"
+    },
+    "MarginlyRouter": {
+      "address": "0x1D17f7a1E9A53Cce6C89495AF1E3753c11Bf6DA2",
+      "txHash": "0xd71bde1d91d049a1c5e521d91ea0e5ee5896b7d1fbfc1a7c86f6e0aebe0bdd73"
+    },
+    "marginlyPoolImplementation": {
+      "address": "0x1e36749E00229759dca262cB25Ad8d9B21bEB3F5",
+      "txHash": "0xf09d045f382bb4ff603126a8a77df807dba4271cf94928e934a8f1ed5d250af9"
+    },
+    "marginlyFactory": {
+      "address": "0x1768Faee0A63927FeB81100046f5D63BfE0f08dB",
+      "txHash": "0xd85d208c7c657b83bb1823f55c0cf9deb0bbd727b9b6a64766aeb14ef5189cad"
+    },
+    "marginlyKeeperAave": {
+      "address": "0xb74a2382B5661969f0235b5c7FaCa77aA38e1eDc",
+      "txHash": "0x4c665395ca6baa76b8438bb0c742db21a4e25d2114315efc9490903d1b612638"
+    },
+    "marginlyPool_pt-asonusdc-14aug2025-usdc.e": {
+      "address": "0x1f06e6e226be4f0a66b7f8b1007997dc9de1ebc7",
+      "txHash": "0x8a23bc7c138961d99211adae780b9dc5d1a0e2ce202ef783021c7b93a29e7d7d"
+    }
+  }
+}
