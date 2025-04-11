@@ -24,21 +24,51 @@
       "address": "0x29219dd400f2bf60e5a23d13be72b486d4038894",
       "assertSymbol": "USDC.e",
       "assertDecimals": 6
+    },
+    {
+      "id": "asonusdc",
+      "address": "0x578Ee1ca3a8E1b54554Da1Bf7C583506C4CD11c6",
+      "assertDecimals": 6,
+      "assertSymbol": "aSonUSDC"
     }
   ],
   "prices": [],
   "priceOracles": [
+    {
+      "id": "aaveOracle",
+      "type": "aave",
+      "aavePoolAddressesProvider": "0x5C2e738F6E27bCE0F7558051Bf90605dD6176900",
+      "settings": [
+        {
+          "quoteTokenId": "usdc.e",
+          "baseTokenId": "asonusdc"
+        }
+      ]
+    },
     {
       "id": "pendleMarketOracle",
       "type": "pendleMarket",
       "pendlePtLpOracle": "0x9a9fa8338dd5e5b2188006f1cd2ef26d921650c2",
       "settings": [
         {
-          "quoteTokenId": "usdc.e",
+          "quoteTokenId": "asonusdc",
           "baseTokenId": "pt-asonusdc-14aug2025",
           "pendleMarket": "0x3f5ea53d1160177445b1898afbb16da111182418",
           "secondsAgo": "30 min",
           "secondsAgoLiquidation": "5 sec"
+        }
+      ]
+    },
+    {
+      "id": "compositeOracle",
+      "type": "composite",
+      "settings": [
+        {
+          "quoteTokenId": "usdc.e",
+          "intermediateTokenId": "asonusdc",
+          "baseTokenId": "pt-asonusdc-14aug2025",
+          "quoteIntermediateOracleId": "aaveOracle",
+          "intermediateBaseOracleId": "pendleMarketOracle"
         }
       ]
     }
@@ -53,8 +83,8 @@
       "id": "pt-asonusdc-14aug2025-usdc.e",
       "baseTokenId": "pt-asonusdc-14aug2025",
       "quoteTokenId": "usdc.e",
-      "priceOracleId": "pendleMarketOracle",
-      "defaultSwapCallData": "20447233",
+      "priceOracleId": "compositeOracle",
+      "defaultSwapCallData": "35127297",
       "params": {
         "interestRate": "0.6%",
         "maxLeverage": "20",
@@ -68,11 +98,11 @@
   ],
   "adapters": [
     {
-      "dexId": 19,
-      "adapterName": "PendleMarketAdapter",
+      "dexId": 33,
+      "adapterName": "PendlePtToAssetAdapter",
       "pools": [
         {
-          "poolAddress": "0x3f5ea53d1160177445b1898afbb16da111182418",
+          "pendleMarket": "0x3f5ea53d1160177445b1898afbb16da111182418",
           "slippage": "45",
           "tokenAId": "pt-asonusdc-14aug2025",
           "tokenBId": "usdc.e"

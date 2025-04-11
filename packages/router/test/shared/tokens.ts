@@ -3,7 +3,7 @@
 // internal details: https://docs.soliditylang.org/en/latest/internals/layout_in_storage.html#mappings-and-dynamic-arrays
 import { EthAddress } from '@marginly/common';
 import { keccak256 } from 'ethers/lib/utils';
-import { BigNumber } from 'ethers';
+import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
 
 export enum ArbMainnetERC20BalanceOfSlot {
@@ -32,6 +32,11 @@ export enum EthereumMainnetERC20BalanceOfSlot {
   DOLA = '0000000000000000000000000000000000000000000000000000000000000006',
 }
 
+export enum SonicERC20BalanceOfSlot {
+  PTASONUSDC = '0000000000000000000000000000000000000000000000000000000000000000',
+  USDC = '0000000000000000000000000000000000000000000000000000000000000009',
+}
+
 function getAccountBalanceStorageSlot(account: EthAddress, tokenMappingSlot: string): string {
   return keccak256('0x' + account.toString().slice(2).padStart(64, '0') + tokenMappingSlot);
 }
@@ -47,6 +52,17 @@ export async function setTokenBalance(
   await ethers.provider.send('hardhat_setStorageAt', [
     tokenAddress,
     balanceOfStorageSlot,
+    ethers.utils.hexlify(ethers.utils.zeroPad(newBalance.toHexString(), 32)),
+  ]);
+}
+
+export async function setTokenBalanceSonic(tokenAddress: string, i: number, account: string, newBalance: BigNumber) {
+  const userBalanceSlot = utils.hexStripZeros(
+    utils.keccak256(utils.defaultAbiCoder.encode(['address', 'uint'], [account, i]))
+  );
+  await ethers.provider.send('hardhat_setStorageAt', [
+    tokenAddress.toString(),
+    userBalanceSlot,
     ethers.utils.hexlify(ethers.utils.zeroPad(newBalance.toHexString(), 32)),
   ]);
 }

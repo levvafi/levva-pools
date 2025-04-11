@@ -1,8 +1,10 @@
 import {
+  AavePriceOracleConfig,
   AlgebraDoubleOracleConfig,
   AlgebraOracleConfig,
   ChainlinkOracleConfig,
   CurveOracleConfig,
+  isAavePriceOracle,
   isAlgebraDoubleOracle,
   isAlgebraOracle,
   isChainlinkOracle,
@@ -639,6 +641,40 @@ export class PriceOracleDeployer extends BaseDeployer {
     return deploymentResult;
   }
 
+  private async deployAavePriceOracle(
+    config: AavePriceOracleConfig,
+    tokenRepository: ITokenRepository
+  ): Promise<DeployResult> {
+    const deploymentResult = this.deploy(
+      'AavePriceOracle',
+      [config.aavePoolAddressesProvider.toString()],
+      `priceOracle_${config.id}`,
+      this.readMarginlyPeripheryOracleContract
+    );
+    const priceOracle = (await deploymentResult).contract;
+    var setupOracleScope = this.logger.beginScope(`SetUp ${config.id}`);
+
+    for (const setting of config.settings) {
+      const { address: baseToken } = tokenRepository.getTokenInfo(setting.baseToken.id);
+      const { address: quoteToken } = tokenRepository.getTokenInfo(setting.quoteToken.id);
+
+      this.logger.log(`Add setting ${setting.baseToken.id}/${setting.quoteToken.id}`);
+
+      const currentParams = await priceOracle.getParams(quoteToken.toString(), baseToken.toString());
+
+      if (!currentParams.initialized) {
+        const tx = await priceOracle.setPair(quoteToken.toString(), baseToken.toString());
+        await tx.wait();
+
+        await this.checkOraclePrice(config.id, priceOracle, quoteToken.toString(), baseToken.toString());
+      }
+    }
+
+    setupOracleScope.close();
+
+    return deploymentResult;
+  }
+
   public async deployPriceOracle(
     priceOracle: PriceOracleConfig,
     tokenRepository: ITokenRepository
@@ -666,6 +702,8 @@ export class PriceOracleDeployer extends BaseDeployer {
       deploymentResult = await this.deployCompositeOracle(priceOracle, tokenRepository);
     } else if (isPriceOracleProxy(priceOracle)) {
       deploymentResult = await this.deployPriceOracleProxy(priceOracle, tokenRepository);
+    } else if (isAavePriceOracle(priceOracle)) {
+      deploymentResult = await this.deployAavePriceOracle(priceOracle, tokenRepository);
     } else {
       throw new Error(`Unknown priceOracle type`);
     }

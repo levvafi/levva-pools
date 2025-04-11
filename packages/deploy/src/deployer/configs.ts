@@ -4,6 +4,7 @@ import {
   AdapterPair,
   EthConnectionConfig,
   GeneralAdapterPair,
+  isAavePriceOracleConfig,
   isAlgebraDoubleOracleConfig,
   isAlgebraOracleConfig,
   isChainlinkOracleConfig,
@@ -305,7 +306,8 @@ export type PriceOracleConfig =
   | AlgebraDoubleOracleConfig
   | CurveOracleConfig
   | MarginlyCompositeOracleConfig
-  | PriceOracleProxyConfig;
+  | PriceOracleProxyConfig
+  | AavePriceOracleConfig;
 
 export interface UniswapV3TickOracleConfig {
   id: string;
@@ -498,6 +500,16 @@ export interface PriceOracleProxyConfig {
   }[];
 }
 
+export interface AavePriceOracleConfig {
+  id: string;
+  type: 'aave';
+  aavePoolAddressesProvider: EthAddress;
+  settings: {
+    quoteToken: MarginlyConfigToken;
+    baseToken: MarginlyConfigToken;
+  }[];
+}
+
 export function isUniswapV3Oracle(config: PriceOracleConfig): config is UniswapV3TickOracleConfig {
   return config.type === 'uniswapV3';
 }
@@ -540,6 +552,10 @@ export function isMarginlyCompositeOracle(config: PriceOracleConfig): config is 
 
 export function isPriceOracleProxy(config: PriceOracleConfig): config is PriceOracleProxyConfig {
   return config.type === 'proxy';
+}
+
+export function isAavePriceOracle(config: PriceOracleConfig): config is AavePriceOracleConfig {
+  return config.type === 'aave';
 }
 
 export class StrictMarginlyDeployConfig {
@@ -1161,6 +1177,20 @@ export class StrictMarginlyDeployConfig {
               underlyingQuoteToken: this.getRequiredToken(tokens, x.underlyingQuoteTokenId),
               underlyingBaseToken: this.getRequiredToken(tokens, x.underlyingBaseTokenId),
               proxyOracleId: x.priceOracleId,
+            };
+          }),
+        };
+
+        priceOracles.set(priceOracleId, strictConfig);
+      } else if (isAavePriceOracleConfig(priceOracleConfig)) {
+        const strictConfig: AavePriceOracleConfig = {
+          id: priceOracleId,
+          type: priceOracleConfig.type,
+          aavePoolAddressesProvider: EthAddress.parse(priceOracleConfig.aavePoolAddressesProvider),
+          settings: priceOracleConfig.settings.map((x) => {
+            return {
+              quoteToken: this.getRequiredToken(tokens, x.quoteTokenId),
+              baseToken: this.getRequiredToken(tokens, x.baseTokenId),
             };
           }),
         };

@@ -24,9 +24,21 @@
       "address": "0xb74a2382B5661969f0235b5c7FaCa77aA38e1eDc",
       "txHash": "0x4c665395ca6baa76b8438bb0c742db21a4e25d2114315efc9490903d1b612638"
     },
+    "priceOracle_aaveOracle": {
+      "address": "0x193E76C78e1c02BF35c1F789Ce2a1aE39F865629",
+      "txHash": "0x3f107593e7fa7e097031e9b317eebb61f1e762c24edd0799d20197918ad66f92"
+    },
+    "priceOracle_compositeOracle": {
+      "address": "0xF8D88A292B0afa85E5Cf0d1195d0D3728Cfd7070",
+      "txHash": "0x2b1d494b3fa9d1f3f031072f1108c387b6c921be753d1af985c1e3f19b20001d"
+    },
+    "PendlePtToAssetAdapter_33": {
+      "address": "0x40833F2C8Ebba275B851F93bB69792dc1fF3acA9",
+      "txHash": "0x19c2092f3d3488355ff711fc51f601f1102ccfb7dde62038df2f19605ae3485d"
+    },
     "marginlyPool_pt-asonusdc-14aug2025-usdc.e": {
-      "address": "0x1f06e6e226be4f0a66b7f8b1007997dc9de1ebc7",
-      "txHash": "0x8a23bc7c138961d99211adae780b9dc5d1a0e2ce202ef783021c7b93a29e7d7d"
+      "address": "0xb312d61915c878938fce09d13dd3006c6835b3e5",
+      "txHash": "0x16fbcf1c66ddd6cdb8eceffbc4f826c1acd4ba7759981c9e319a6b8a7bc07e88"
     }
   }
 }
