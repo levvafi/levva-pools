@@ -45,9 +45,9 @@ const config = {
     holesky: {
       url: 'https://ethereum-holesky-rpc.publicnode.com',
     },
-    sonic:{
+    sonic: {
       url: 'https://rpc.soniclabs.com',
-    }
+    },
   },
   etherscan: {
     apiKey: {

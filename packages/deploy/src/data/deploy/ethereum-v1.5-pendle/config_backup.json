@@ -1037,6 +1037,102 @@
         "positionMinAmount": "0.00002",
         "quoteLimit": "50"
       }
+    },
+    {
+      "id": "pt-sw-inwsteths-1752969615-inwsteths",
+      "baseTokenId": "pt-sw-inwsteths-1752969615",
+      "quoteTokenId": "inwsteths",
+      "priceOracleId": "priceOracleProxy",
+      "defaultSwapCallData": "34078721",
+      "params": {
+        "interestRate": "0.5%",
+        "maxLeverage": "20",
+        "swapFee": "0%",
+        "fee": "0%",
+        "mcSlippage": "0.5%",
+        "positionMinAmount": "5",
+        "quoteLimit": "1500"
+      }
+    },
+    {
+      "id": "pt-wstusr-27mar2025-usr",
+      "baseTokenId": "pt-wstusr-27mar2025",
+      "quoteTokenId": "usr",
+      "priceOracleId": "compositeOracle",
+      "defaultSwapCallData": "35127297",
+      "params": {
+        "interestRate": "1.2%",
+        "maxLeverage": "20",
+        "swapFee": "0%",
+        "fee": "0%",
+        "mcSlippage": "0.1%",
+        "positionMinAmount": "5",
+        "quoteLimit": "2000000"
+      }
+    },
+    {
+      "id": "pt-wstusr-1750896030-usr",
+      "baseTokenId": "pt-wstusr-1750896030",
+      "quoteTokenId": "usr",
+      "priceOracleId": "compositeOracle",
+      "defaultSwapCallData": "34078721",
+      "params": {
+        "interestRate": "1.4%",
+        "maxLeverage": "20",
+        "swapFee": "0%",
+        "fee": "0%",
+        "mcSlippage": "0.5%",
+        "positionMinAmount": "5",
+        "quoteLimit": "500000"
+      }
+    },
+    {
+      "id": "pt-wstusr-1750896030-wstusr",
+      "baseTokenId": "pt-wstusr-1750896030",
+      "quoteTokenId": "wstusr",
+      "priceOracleId": "curve-oracle",
+      "defaultSwapCallData": "34078721",
+      "params": {
+        "interestRate": "1.4%",
+        "maxLeverage": "20",
+        "swapFee": "0%",
+        "fee": "0%",
+        "mcSlippage": "0.5%",
+        "positionMinAmount": "5",
+        "quoteLimit": "500000"
+      }
+    },
+    {
+      "id": "pt-wstusr-27mar2025-wstusr",
+      "baseTokenId": "pt-wstusr-27mar2025",
+      "quoteTokenId": "wstusr",
+      "priceOracleId": "pendleMarketOracle",
+      "defaultSwapCallData": "20447233",
+      "params": {
+        "interestRate": "1.2%",
+        "maxLeverage": "20",
+        "swapFee": "0%",
+        "fee": "0%",
+        "mcSlippage": "0.1%",
+        "positionMinAmount": "5",
+        "quoteLimit": "2000000"
+      }
+    },
+    {
+      "id": "pt-usr-29may2025-usr",
+      "baseTokenId": "pt-usr-29may2025",
+      "quoteTokenId": "usr",
+      "priceOracleId": "pendleMarketOracle",
+      "defaultSwapCallData": "20447233",
+      "params": {
+        "interestRate": "1.0%",
+        "maxLeverage": "20",
+        "swapFee": "0%",
+        "fee": "0%",
+        "mcSlippage": "0.1%",
+        "positionMinAmount": "5",
+        "quoteLimit": "1500000"
+      }
     }
   ],
   "adapters": [

@@ -235,6 +235,14 @@
     "marginlyPool_pt-usr-29may2025-usr": {
       "address": "0xfab0743428608412C609bed79aCf4878A38C99c4",
       "txHash": "0xb9d37bd8a16be724c4042f702029db85bf3b5099218e9d9f87ab5720564b03b1"
+    },
+    "priceOracle_chainlinkOracle": {
+      "address": "0x226630d1bD90F242DB4e82B73603E7a7299A18CE",
+      "txHash": "0x262cd206b1ee7a91b8413c5cce5c1d570aaa7b44a816b87a30c09721f531bb94"
+    },
+    "marginlyPool_pt-weeth-26jun2025-weth": {
+      "address": "0xE4f8e21B73d711018139011537197940677Cb820",
+      "txHash": "0xdb7dc7c6e2523e7f72bdbb5936ab2d5570be692b5073fd367aa70de836dc75d8"
     }
   }
 }

@@ -367,6 +367,7 @@ export interface SinglePairChainlinkOracleConfig {
   quoteToken: MarginlyConfigToken;
   baseToken: MarginlyConfigToken;
   aggregatorV3: EthAddress;
+  maxPriceAge: TimeSpan;
 }
 
 export interface DoublePairChainlinkOracleConfig {
@@ -376,6 +377,7 @@ export interface DoublePairChainlinkOracleConfig {
   intermediateToken: MarginlyConfigToken;
   quoteAggregatorV3: EthAddress;
   baseAggregatorV3: EthAddress;
+  maxPriceAge: TimeSpan;
 }
 
 export type PairChainlinkOracleConfig = SinglePairChainlinkOracleConfig | DoublePairChainlinkOracleConfig;
@@ -395,6 +397,7 @@ export function isDoublePairChainlinkOracleConfig(
 export interface ChainlinkOracleConfig {
   id: string;
   type: 'chainlink';
+  sequencerFeed: EthAddress;
   settings: PairChainlinkOracleConfig[];
 }
 
@@ -1007,6 +1010,7 @@ export class StrictMarginlyDeployConfig {
         const strictConfig: ChainlinkOracleConfig = {
           id: priceOracleId,
           type: priceOracleConfig.type,
+          sequencerFeed: EthAddress.parse(priceOracleConfig.sequencerFeed),
           settings: priceOracleConfig.settings.map((x, i) => {
             if (isSinglePairChainlinkOracleDeployConfig(x)) {
               return {
@@ -1014,6 +1018,7 @@ export class StrictMarginlyDeployConfig {
                 quoteToken: this.getRequiredToken(tokens, x.quoteTokenId),
                 baseToken: this.getRequiredToken(tokens, x.baseTokenId),
                 aggregatorV3: EthAddress.parse(x.aggregatorV3),
+                maxPriceAge: TimeSpan.parse(x.maxPriceAge),
               } as SinglePairChainlinkOracleConfig;
             } else if (isDoublePairChainlinkOracleDeployConfig(x)) {
               return {
@@ -1023,6 +1028,7 @@ export class StrictMarginlyDeployConfig {
                 intermediateToken: this.getRequiredToken(tokens, x.intermediateTokenId),
                 baseAggregatorV3: EthAddress.parse(x.baseAggregatorV3),
                 quoteAggregatorV3: EthAddress.parse(x.quoteAggregatorV3),
+                maxPriceAge: TimeSpan.parse(x.maxPriceAge),
               } as DoublePairChainlinkOracleConfig;
             } else {
               throw new Error(`Unknown pair type at index ${i} on ${priceOracleConfig.id}`);
