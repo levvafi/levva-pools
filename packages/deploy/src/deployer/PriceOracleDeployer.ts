@@ -32,10 +32,11 @@ import {
 import { DeployResult, ITokenRepository } from '../common/interfaces';
 import { BigNumber, Signer, ethers } from 'ethers';
 import { EthOptions } from '../config';
-import { DeployState, printDeployState, StateStore } from '../common';
+import { DeployState, MarginlyConfigToken, printDeployState, StateStore } from '../common';
 import { Logger } from '../logger';
 import { createMarginlyPeripheryOracleReader } from './contract-reader';
 import { BaseDeployer } from './BaseDeployer';
+import { EthAddress } from '@marginly/common';
 
 type OracleParams = {
   initialized: boolean;
@@ -216,7 +217,15 @@ export class PriceOracleDeployer extends BaseDeployer {
       } else if (isDoublePairChainlinkOracleConfig(setting)) {
         const { address: baseToken } = tokenRepository.getTokenInfo(setting.baseToken.id);
         const { address: quoteToken } = tokenRepository.getTokenInfo(setting.quoteToken.id);
-        const { address: intermediateToken } = tokenRepository.getTokenInfo(setting.intermediateToken.id);
+
+        let intermediateToken: EthAddress;
+        if (setting.intermediateToken === 'usd') {
+          intermediateToken = EthAddress.parse(ethers.constants.AddressZero);
+        } else {
+          const token = tokenRepository.getTokenInfo((setting.intermediateToken as MarginlyConfigToken).id);
+          intermediateToken = token.address;
+        }
+
         const maxPriceAge = setting.maxPriceAge.toSeconds();
 
         let tx = await priceOracle.setPair(

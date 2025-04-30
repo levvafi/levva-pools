@@ -243,6 +243,14 @@
     "marginlyPool_pt-weeth-26jun2025-weth": {
       "address": "0xE4f8e21B73d711018139011537197940677Cb820",
       "txHash": "0xdb7dc7c6e2523e7f72bdbb5936ab2d5570be692b5073fd367aa70de836dc75d8"
+    },
+    "marginlyPool_pt-susde-31jul2025-susde": {
+      "address": "0x9212F6Bbe36164BfA9E86031e9C9916D4e8edf61",
+      "txHash": "0x05394ca875ac5d1a06c8c0ac26d28be9d1b8ab85657208da269418074cd5cba9"
+    },
+    "marginlyPool_pt-susde-29may2025-susde": {
+      "address": "0x6C651b633470Fe9CDe7C7b71865Cc7790c164c27",
+      "txHash": "0x666cbdad7fbe0db9a03e273f7575ebf92662e68c9c5722d8e734e83033662377"
     }
   }
 }

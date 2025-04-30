@@ -374,7 +374,7 @@ export interface DoublePairChainlinkOracleConfig {
   type: 'double';
   quoteToken: MarginlyConfigToken;
   baseToken: MarginlyConfigToken;
-  intermediateToken: MarginlyConfigToken;
+  intermediateToken: MarginlyConfigToken | string;
   quoteAggregatorV3: EthAddress;
   baseAggregatorV3: EthAddress;
   maxPriceAge: TimeSpan;
@@ -1025,7 +1025,8 @@ export class StrictMarginlyDeployConfig {
                 type: x.type,
                 quoteToken: this.getRequiredToken(tokens, x.quoteTokenId),
                 baseToken: this.getRequiredToken(tokens, x.baseTokenId),
-                intermediateToken: this.getRequiredToken(tokens, x.intermediateTokenId),
+                intermediateToken:
+                  x.intermediateTokenId === 'usd' ? 'usd' : this.getRequiredToken(tokens, x.intermediateTokenId),
                 baseAggregatorV3: EthAddress.parse(x.baseAggregatorV3),
                 quoteAggregatorV3: EthAddress.parse(x.quoteAggregatorV3),
                 maxPriceAge: TimeSpan.parse(x.maxPriceAge),
