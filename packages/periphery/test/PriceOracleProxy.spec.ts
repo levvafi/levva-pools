@@ -39,7 +39,7 @@ describe('PriceOracleProxy', () => {
     expect(price).to.equal(balancePriceX96);
 
     const invPrice = await priceOracle.getBalancePrice(baseToken, quoteToken);
-    expect(invPrice).to.equal(x96One.mul(x96One).div(balancePriceX96));
+    expect(invPrice).to.equal(x96One*(x96One)/(balancePriceX96));
   });
 
   it('should fail to return balance price in quote currency if pair not exists', async () => {
@@ -55,7 +55,7 @@ describe('PriceOracleProxy', () => {
     expect(price).to.equal(mcPriceX96);
 
     const invPrice = await priceOracle.getMargincallPrice(baseToken, quoteToken);
-    expect(invPrice).to.equal(x96One.mul(x96One).div(mcPriceX96));
+    expect(invPrice).to.equal(x96One*(x96One)/(mcPriceX96));
   });
 
   it('should fail to return mc price in quote currency if pair not exists', async () => {

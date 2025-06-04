@@ -15,8 +15,8 @@ describe('PythOracle prices', () => {
       const baseDecimals = await (await ethers.getContractAt('IERC20Metadata', baseToken)).decimals();
 
       const expectedPrice = BigNumber.from(1n << 95n)
-        .mul(BigNumber.from(10).pow(quoteDecimals))
-        .div(BigNumber.from(10).pow(baseDecimals)); // 0.5
+        *(BigNumber.from(10).pow(quoteDecimals))
+        /(BigNumber.from(10).pow(baseDecimals)); // 0.5
 
       const actualPrice = await (oracle as any)[getPrice](quoteToken, baseToken);
       expect(actualPrice).to.be.equal(expectedPrice);
@@ -31,8 +31,8 @@ describe('PythOracle prices', () => {
       const baseDecimals = await (await ethers.getContractAt('IERC20Metadata', baseToken)).decimals();
 
       const expectedPrice = BigNumber.from(1n << 97n)
-        .mul(BigNumber.from(10).pow(baseDecimals))
-        .div(BigNumber.from(10).pow(quoteDecimals)); // 2
+        *(BigNumber.from(10).pow(baseDecimals))
+        /(BigNumber.from(10).pow(quoteDecimals)); // 2
 
       const actualPrice = await (oracle as any)[getPrice](baseToken, quoteToken);
       expect(actualPrice).to.be.equal(expectedPrice);
@@ -47,8 +47,8 @@ describe('PythOracle prices', () => {
       const baseDecimals = await (await ethers.getContractAt('IERC20Metadata', baseToken)).decimals();
 
       const expectedPrice = BigNumber.from(1n << 98n)
-        .mul(BigNumber.from(10).pow(quoteDecimals))
-        .div(BigNumber.from(10).pow(baseDecimals)); // 4
+        *(BigNumber.from(10).pow(quoteDecimals))
+        /(BigNumber.from(10).pow(baseDecimals)); // 4
 
       const actualPrice = await (oracle as any)[getPrice](quoteToken, baseToken);
       expect(actualPrice).to.be.equal(expectedPrice);
@@ -63,8 +63,8 @@ describe('PythOracle prices', () => {
       const baseDecimals = await (await ethers.getContractAt('IERC20Metadata', baseToken)).decimals();
 
       const expectedPrice = BigNumber.from(1n << 94n)
-        .mul(BigNumber.from(10).pow(baseDecimals))
-        .div(BigNumber.from(10).pow(quoteDecimals)); // 0.25
+        *(BigNumber.from(10).pow(baseDecimals))
+        /(BigNumber.from(10).pow(quoteDecimals)); // 0.25
 
       const actualPrice = await (oracle as any)[getPrice](baseToken, quoteToken);
       expect(actualPrice).to.be.equal(expectedPrice);
@@ -82,8 +82,8 @@ describe('PythOracle prices', () => {
       const baseDecimals = await (await ethers.getContractAt('IERC20Metadata', baseToken)).decimals();
 
       const expectedPrice = BigNumber.from(20n << 96n)
-        .mul(BigNumber.from(10).pow(quoteDecimals))
-        .div(BigNumber.from(10).pow(baseDecimals));
+        *(BigNumber.from(10).pow(quoteDecimals))
+        /(BigNumber.from(10).pow(baseDecimals));
 
       const actualPrice = await (oracle as any)[getPrice](quoteToken, baseToken);
       expect(actualPrice).to.be.equal(expectedPrice);

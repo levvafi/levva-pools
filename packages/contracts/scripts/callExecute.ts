@@ -37,12 +37,12 @@ async function main() {
   const marginlyPool = await hre.ethers.getContractAt('MarginlyPool', marginlyPoolAddress, signer);
 
   const call = CallType.Reinit;
-  const amount1 = BigNumber.from(0);
-  const amount2 = BigNumber.from(0);
-  const limitPriceX96: BigNumber = BigNumber.from(0);
+  const amount1 = 0n;
+  const amount2 = 0n;
+  const limitPriceX96: BigNumber = 0n;
   const flag: boolean = false;
   const receivePositionAddress: string = ethers.constants.AddressZero;
-  const swapCalldata: BigNumber = BigNumber.from(0);
+  const swapCalldata: BigNumber = 0n;
 
   const tx = await marginlyPool.execute(
     call,

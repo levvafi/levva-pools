@@ -11,7 +11,6 @@ import {
   uniswapV3Swapdata,
   PositionType,
 } from './shared/utils';
-import { BigNumber } from 'ethers';
 
 describe('Deleverage', () => {
   it('Deleverage long position', async () => {
@@ -56,10 +55,7 @@ describe('Deleverage', () => {
     await marginlyPool.connect(factoryOwner).setParameters(paramsLowLeverageWithoutIr);
     await marginlyPool.connect(lender).execute(CallType.Reinit, 0, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const poolBaseBalance = baseCollCoeff
-      .mul(discountedBaseCollateral)
-      .sub(baseDebtCoeff.mul(discountedBaseDebt))
-      .div(FP96.one);
+    const poolBaseBalance = baseCollCoeff * discountedBaseCollateral - (baseDebtCoeff * discountedBaseDebt) / FP96.one;
 
     const longerPosition = await marginlyPool.positions(longer.address);
 
@@ -70,28 +66,23 @@ describe('Deleverage', () => {
     const quoteDelevCoeffAfter = await marginlyPool.quoteDelevCoeff();
     const baseDebtCoeffAfter = await marginlyPool.baseDebtCoeff();
 
-    const posRealColl = baseCollCoeff.mul(posDisColl).div(FP96.one);
-    const baseDeleverageAmount = posRealColl.sub(poolBaseBalance);
-    const quoteDeleverageAmount = baseDeleverageAmount.mul(price).div(FP96.one);
+    const posRealColl = (baseCollCoeff * posDisColl) / FP96.one;
+    const baseDeleverageAmount = posRealColl - poolBaseBalance;
+    const quoteDeleverageAmount = (baseDeleverageAmount * price) / FP96.one;
 
-    expect(baseDebtCoeffAfter).to.be.equal(
-      baseDebtCoeff.sub(baseDeleverageAmount.mul(FP96.one).div(discountedBaseDebt))
-    );
+    expect(baseDebtCoeffAfter).to.be.equal(baseDebtCoeff - (baseDeleverageAmount * FP96.one) / discountedBaseDebt);
 
-    const posQuoteDebtAfterDelev = quoteDebtCoeff.mul(posDisDebt).div(FP96.one).sub(quoteDeleverageAmount);
-    const posBaseCollBeforeMC = posRealColl.sub(baseDeleverageAmount);
-    const quoteDelta = posBaseCollBeforeMC.mul(price).div(FP96.one).sub(posQuoteDebtAfterDelev);
+    const posQuoteDebtAfterDelev = (quoteDebtCoeff * posDisDebt) / FP96.one - quoteDeleverageAmount;
+    const posBaseCollBeforeMC = posRealColl - baseDeleverageAmount;
+    const quoteDelta = (posBaseCollBeforeMC * price) / FP96.one - posQuoteDebtAfterDelev;
 
-    const poolQuoteCollAfterDelev = quoteCollCoeff
-      .mul(discountedQuoteCollateral)
-      .div(FP96.one)
-      .sub(quoteDeleverageAmount);
+    const poolQuoteCollAfterDelev = (quoteCollCoeff * discountedQuoteCollateral) / FP96.one - quoteDeleverageAmount;
 
-    const quoteDelevCoeffAfterDelev = quoteDeleverageAmount.mul(FP96.one).div(discountedBaseDebt);
+    const quoteDelevCoeffAfterDelev = (quoteDeleverageAmount * FP96.one) / discountedBaseDebt;
 
-    const factor = quoteDelta.mul(FP96.one).div(poolQuoteCollAfterDelev).add(FP96.one);
+    const factor = (quoteDelta * FP96.one) / poolQuoteCollAfterDelev + FP96.one;
 
-    const resQuoteDelevCoeff = quoteDelevCoeffAfterDelev.mul(factor).div(FP96.one);
+    const resQuoteDelevCoeff = (quoteDelevCoeffAfterDelev * factor) / FP96.one;
 
     expect(quoteDelevCoeffAfter).to.be.equal(resQuoteDelevCoeff);
   });
@@ -136,10 +127,8 @@ describe('Deleverage', () => {
     await marginlyPool.connect(factoryOwner).setParameters(paramsLowLeverageWithoutIr);
     await marginlyPool.connect(lender).execute(CallType.Reinit, 0, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const poolQuoteBalance = quoteCollCoeff
-      .mul(discountedQuoteCollateral)
-      .sub(quoteDebtCoeff.mul(discountedQuoteDebt))
-      .div(FP96.one);
+    const poolQuoteBalance =
+      quoteCollCoeff * discountedQuoteCollateral - (quoteDebtCoeff * discountedQuoteDebt) / FP96.one;
 
     const shorterPosition = await marginlyPool.positions(shorter.address);
 
@@ -150,27 +139,25 @@ describe('Deleverage', () => {
     const baseDelevCoeffAfter = await marginlyPool.baseDelevCoeff();
     const quoteDebtCoeffAfter = await marginlyPool.quoteDebtCoeff();
 
-    const posRealColl = quoteCollCoeff.mul(posDisColl).div(FP96.one);
-    const quoteDeleverageAmount = posRealColl.sub(poolQuoteBalance);
-    const baseDeleverageAmount = quoteDeleverageAmount.mul(FP96.one).div(price);
+    const posRealColl = (quoteCollCoeff * posDisColl) / FP96.one;
+    const quoteDeleverageAmount = posRealColl - poolQuoteBalance;
+    const baseDeleverageAmount = (quoteDeleverageAmount * FP96.one) / price;
 
-    expect(quoteDebtCoeffAfter).to.be.equal(
-      quoteDebtCoeff.sub(quoteDeleverageAmount.mul(FP96.one).div(discountedQuoteDebt))
-    );
+    expect(quoteDebtCoeffAfter).to.be.equal(quoteDebtCoeff - (quoteDeleverageAmount * FP96.one) / discountedQuoteDebt);
 
-    const posBaseDebtAfterDelev = baseDebtCoeff.mul(posDisDebt).div(FP96.one).sub(baseDeleverageAmount);
-    const posQuoteCollBeforeMC = posRealColl.sub(quoteDeleverageAmount);
-    const baseDelta = posQuoteCollBeforeMC.mul(FP96.one).div(price).sub(posBaseDebtAfterDelev);
+    const posBaseDebtAfterDelev = (baseDebtCoeff * posDisDebt) / FP96.one - baseDeleverageAmount;
+    const posQuoteCollBeforeMC = posRealColl - quoteDeleverageAmount;
+    const baseDelta = (posQuoteCollBeforeMC * FP96.one) / price - posBaseDebtAfterDelev;
 
-    const poolBaseCollAfterDelev = baseCollCoeff.mul(discountedBaseCollateral).div(FP96.one).sub(baseDeleverageAmount);
+    const poolBaseCollAfterDelev = (baseCollCoeff * discountedBaseCollateral) / FP96.one - baseDeleverageAmount;
 
-    const baseDelevCoeffAfterDelev = baseDeleverageAmount.mul(FP96.one).div(discountedQuoteDebt);
+    const baseDelevCoeffAfterDelev = (baseDeleverageAmount * FP96.one) / discountedQuoteDebt;
 
-    const factor = baseDelta.mul(FP96.one).div(poolBaseCollAfterDelev).add(FP96.one);
+    const factor = (baseDelta * FP96.one) / poolBaseCollAfterDelev + FP96.one;
 
-    const resBaseDelevCoeff = baseDelevCoeffAfterDelev.mul(factor).div(FP96.one);
+    const resBaseDelevCoeff = (baseDelevCoeffAfterDelev * factor) / FP96.one;
 
-    expect(baseDelevCoeffAfter).to.be.closeTo(resBaseDelevCoeff, baseDelevCoeffAfter.div(1000));
+    expect(baseDelevCoeffAfter).to.be.closeTo(resBaseDelevCoeff, baseDelevCoeffAfter / 1000n);
   });
 
   it('short call after deleverage', async () => {
@@ -193,7 +180,7 @@ describe('Deleverage', () => {
     const positionBefore = await marginlyPool.positions(shorter.address);
     const disQuoteCollateralBefore = await marginlyPool.discountedQuoteCollateral();
 
-    const shortAmount = 1000;
+    const shortAmount = 1000n;
     await marginlyPool
       .connect(shorter)
       .execute(CallType.Short, shortAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
@@ -204,15 +191,14 @@ describe('Deleverage', () => {
     const positionAfter = await marginlyPool.positions(shorter.address);
     const disQuoteCollateralAfter = await marginlyPool.discountedQuoteCollateral();
 
-    const quoteCollDelta = price
-      .mul(shortAmount)
-      .div(quoteCollCoeff)
-      .add(quoteDelevCoeff.mul(shortAmount).mul(FP96.one).div(baseDebtCoeff).div(quoteCollCoeff));
+    const quoteCollDelta =
+      (price * shortAmount) /
+      quoteCollCoeff + ((quoteDelevCoeff * shortAmount * FP96.one) / baseDebtCoeff / quoteCollCoeff);
 
-    const posQuoteCollDelta = positionAfter.discountedQuoteAmount.sub(positionBefore.discountedQuoteAmount);
+    const posQuoteCollDelta = positionAfter.discountedQuoteAmount - positionBefore.discountedQuoteAmount;
     expect(posQuoteCollDelta).to.be.equal(quoteCollDelta);
 
-    const totalQuoteCollDelta = disQuoteCollateralAfter.sub(disQuoteCollateralBefore);
+    const totalQuoteCollDelta = disQuoteCollateralAfter - disQuoteCollateralBefore;
     expect(totalQuoteCollDelta).to.be.equal(quoteCollDelta);
   });
 
@@ -236,7 +222,7 @@ describe('Deleverage', () => {
     const positionBefore = await marginlyPool.positions(longer.address);
     const disBaseCollateralBefore = await marginlyPool.discountedBaseCollateral();
 
-    const longAmount = 1000;
+    const longAmount = 1000n;
     await marginlyPool
       .connect(longer)
       .execute(CallType.Long, longAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
@@ -247,18 +233,17 @@ describe('Deleverage', () => {
     const positionAfter = await marginlyPool.positions(longer.address);
     const disBaseCollateralAfter = await marginlyPool.discountedBaseCollateral();
 
-    const baseCollDelta = BigNumber.from(longAmount)
-      .mul(FP96.one)
-      .div(baseCollCoeff)
-      .add(
-        baseDelevCoeff.mul(price).div(FP96.one).mul(longAmount).div(quoteDebtCoeff).mul(FP96.one).div(baseCollCoeff)
+    const baseCollDelta =
+      (longAmount * FP96.one) /
+      baseCollCoeff + (
+        (((((baseDelevCoeff * price) / FP96.one) * longAmount) / quoteDebtCoeff) * FP96.one) / baseCollCoeff
       );
 
-    const posBaseCollDelta = positionAfter.discountedBaseAmount.sub(positionBefore.discountedBaseAmount);
-    expect(posBaseCollDelta).to.be.closeTo(baseCollDelta, 1);
+    const posBaseCollDelta = positionAfter.discountedBaseAmount - positionBefore.discountedBaseAmount;
+    expect(posBaseCollDelta).to.be.closeTo(baseCollDelta, 1n);
 
-    const totalBaseCollDelta = disBaseCollateralAfter.sub(disBaseCollateralBefore);
-    expect(totalBaseCollDelta).to.be.closeTo(baseCollDelta, 1);
+    const totalBaseCollDelta = disBaseCollateralAfter - disBaseCollateralBefore;
+    expect(totalBaseCollDelta).to.be.closeTo(baseCollDelta, 1n);
   });
 
   it('depositQuote call after deleverage', async () => {
@@ -278,7 +263,7 @@ describe('Deleverage', () => {
       .connect(shorter)
       .execute(CallType.DepositQuote, 1000, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const shortAmount = 1000;
+    const shortAmount = 1000n;
     await marginlyPool
       .connect(shorter)
       .execute(CallType.Short, shortAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
@@ -286,7 +271,7 @@ describe('Deleverage', () => {
     const positionBefore = await marginlyPool.positions(shorter.address);
     const disQuoteCollateralBefore = await marginlyPool.discountedQuoteCollateral();
 
-    const quoteDepositAmount = 500;
+    const quoteDepositAmount = 500n;
     await marginlyPool
       .connect(shorter)
       .execute(CallType.DepositQuote, quoteDepositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
@@ -294,12 +279,12 @@ describe('Deleverage', () => {
     const positionAfter = await marginlyPool.positions(shorter.address);
     const disQuoteCollateralAfter = await marginlyPool.discountedQuoteCollateral();
     const quoteCollCoeff = await marginlyPool.quoteCollateralCoeff();
-    const quoteCollDelta = BigNumber.from(quoteDepositAmount).mul(FP96.one).div(quoteCollCoeff);
+    const quoteCollDelta = (quoteDepositAmount * FP96.one) / quoteCollCoeff;
 
-    const posQuoteCollDelta = positionAfter.discountedQuoteAmount.sub(positionBefore.discountedQuoteAmount);
+    const posQuoteCollDelta = positionAfter.discountedQuoteAmount - positionBefore.discountedQuoteAmount;
     expect(posQuoteCollDelta).to.be.equal(quoteCollDelta);
 
-    const totalQuoteCollDelta = disQuoteCollateralAfter.sub(disQuoteCollateralBefore);
+    const totalQuoteCollDelta = disQuoteCollateralAfter - disQuoteCollateralBefore;
     expect(totalQuoteCollDelta).to.be.equal(quoteCollDelta);
   });
 
@@ -320,7 +305,7 @@ describe('Deleverage', () => {
       .connect(longer)
       .execute(CallType.DepositBase, 1000, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const longAmount = 1000;
+    const longAmount = 1000n;
     await marginlyPool
       .connect(longer)
       .execute(CallType.Long, longAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
@@ -328,7 +313,7 @@ describe('Deleverage', () => {
     const positionBefore = await marginlyPool.positions(longer.address);
     const disBaseCollateralBefore = await marginlyPool.discountedBaseCollateral();
 
-    const baseDepositAmount = 500;
+    const baseDepositAmount = 500n;
     await marginlyPool
       .connect(longer)
       .execute(CallType.DepositBase, baseDepositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
@@ -336,12 +321,12 @@ describe('Deleverage', () => {
     const positionAfter = await marginlyPool.positions(longer.address);
     const disBaseCollateralAfter = await marginlyPool.discountedBaseCollateral();
     const baseCollCoeff = await marginlyPool.baseCollateralCoeff();
-    const baseCollDelta = BigNumber.from(baseDepositAmount).mul(FP96.one).div(baseCollCoeff);
+    const baseCollDelta = (baseDepositAmount * FP96.one) / baseCollCoeff;
 
-    const posBaseCollDelta = positionAfter.discountedBaseAmount.sub(positionBefore.discountedBaseAmount);
+    const posBaseCollDelta = positionAfter.discountedBaseAmount - positionBefore.discountedBaseAmount;
     expect(posBaseCollDelta).to.be.equal(baseCollDelta);
 
-    const totalBaseCollDelta = disBaseCollateralAfter.sub(disBaseCollateralBefore);
+    const totalBaseCollDelta = disBaseCollateralAfter - disBaseCollateralBefore;
     expect(totalBaseCollDelta).to.be.equal(baseCollDelta);
   });
 
@@ -362,7 +347,7 @@ describe('Deleverage', () => {
       .connect(shorter)
       .execute(CallType.DepositQuote, 1000, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const shortAmount = 1000;
+    const shortAmount = 1000n;
     await marginlyPool
       .connect(shorter)
       .execute(CallType.Short, shortAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
@@ -370,7 +355,7 @@ describe('Deleverage', () => {
     const positionBefore = await marginlyPool.positions(shorter.address);
     const disQuoteCollateralBefore = await marginlyPool.discountedQuoteCollateral();
 
-    const quoteAmountWithdrawn = 500;
+    const quoteAmountWithdrawn = 500n;
     await marginlyPool
       .connect(shorter)
       .execute(CallType.WithdrawQuote, quoteAmountWithdrawn, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
@@ -378,12 +363,12 @@ describe('Deleverage', () => {
     const positionAfter = await marginlyPool.positions(shorter.address);
     const disQuoteCollateralAfter = await marginlyPool.discountedQuoteCollateral();
     const quoteCollCoeff = await marginlyPool.quoteCollateralCoeff();
-    const quoteCollDelta = BigNumber.from(quoteAmountWithdrawn).mul(FP96.one).div(quoteCollCoeff);
+    const quoteCollDelta = (quoteAmountWithdrawn * FP96.one) / quoteCollCoeff;
 
-    const posQuoteCollDelta = positionBefore.discountedQuoteAmount.sub(positionAfter.discountedQuoteAmount);
+    const posQuoteCollDelta = positionBefore.discountedQuoteAmount - positionAfter.discountedQuoteAmount;
     expect(posQuoteCollDelta).to.be.equal(quoteCollDelta);
 
-    const totalQuoteCollDelta = disQuoteCollateralBefore.sub(disQuoteCollateralAfter);
+    const totalQuoteCollDelta = disQuoteCollateralBefore - disQuoteCollateralAfter;
     expect(totalQuoteCollDelta).to.be.equal(quoteCollDelta);
   });
 
@@ -404,7 +389,7 @@ describe('Deleverage', () => {
       .connect(longer)
       .execute(CallType.DepositBase, 1000, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const longAmount = 1000;
+    const longAmount = 1000n;
     await marginlyPool
       .connect(longer)
       .execute(CallType.Long, longAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
@@ -412,7 +397,7 @@ describe('Deleverage', () => {
     const positionBefore = await marginlyPool.positions(longer.address);
     const disBaseCollateralBefore = await marginlyPool.discountedBaseCollateral();
 
-    const baseAmountWithdrawn = 500;
+    const baseAmountWithdrawn = 500n;
     await marginlyPool
       .connect(longer)
       .execute(CallType.WithdrawBase, baseAmountWithdrawn, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
@@ -420,12 +405,12 @@ describe('Deleverage', () => {
     const positionAfter = await marginlyPool.positions(longer.address);
     const disBaseCollateralAfter = await marginlyPool.discountedBaseCollateral();
     const baseCollCoeff = await marginlyPool.baseCollateralCoeff();
-    const baseCollDelta = BigNumber.from(baseAmountWithdrawn).mul(FP96.one).div(baseCollCoeff);
+    const baseCollDelta = (baseAmountWithdrawn * FP96.one) / baseCollCoeff;
 
-    const posBaseCollDelta = positionBefore.discountedBaseAmount.sub(positionAfter.discountedBaseAmount);
+    const posBaseCollDelta = positionBefore.discountedBaseAmount - positionAfter.discountedBaseAmount;
     expect(posBaseCollDelta).to.be.equal(baseCollDelta);
 
-    const totalBaseCollDelta = disBaseCollateralBefore.sub(disBaseCollateralAfter);
+    const totalBaseCollDelta = disBaseCollateralBefore - disBaseCollateralAfter;
     expect(totalBaseCollDelta).to.be.equal(baseCollDelta);
   });
 
@@ -460,13 +445,13 @@ describe('Deleverage', () => {
     // 99% of a price as limit is used to avoid precision issues in calculations
     await marginlyPool
       .connect(longer)
-      .execute(CallType.ClosePosition, 0, 0, price.mul(99).div(100), false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.ClosePosition, 0, 0, (price * 99n) / 100n, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
     const positionAfter = await marginlyPool.positions(longer.address);
 
     expect(positionAfter.discountedQuoteAmount).to.be.equal(0);
     const disQuoteDebtAfter = await marginlyPool.discountedQuoteDebt();
-    const totalQuoteDebtDelta = disQuoteDebtBefore.sub(disQuoteDebtAfter);
+    const totalQuoteDebtDelta = disQuoteDebtBefore - disQuoteDebtAfter;
     expect(totalQuoteDebtDelta).to.be.equal(positionBefore.discountedQuoteAmount);
 
     const baseCollCoeff = await marginlyPool.baseCollateralCoeff();
@@ -474,20 +459,19 @@ describe('Deleverage', () => {
     const quoteDebtCoeff = await marginlyPool.quoteDebtCoeff();
 
     // posBefore.discountedQuoteAmount * quoteDebtCoeff / price
-    const realCollDelta = positionBefore.discountedQuoteAmount.mul(quoteDebtCoeff).div(price);
+    const realCollDelta = (positionBefore.discountedQuoteAmount * quoteDebtCoeff) / price;
     // (realCollDelta + pos.discountedQuoteAmount * baseDelevCoeff) / baseCollCoeff
-    const disBaseCollDelta = realCollDelta
-      .add(positionBefore.discountedQuoteAmount.mul(baseDelevCoeff).div(FP96.one))
-      .mul(FP96.one)
-      .div(baseCollCoeff);
+    const disBaseCollDelta =
+      (realCollDelta + ((positionBefore.discountedQuoteAmount * baseDelevCoeff) / FP96.one) * FP96.one) /
+      baseCollCoeff;
 
     const disBaseCollateralAfter = await marginlyPool.discountedBaseCollateral();
 
-    const posBaseCollDelta = positionBefore.discountedBaseAmount.sub(positionAfter.discountedBaseAmount);
-    expect(posBaseCollDelta).to.be.closeTo(disBaseCollDelta, 2);
+    const posBaseCollDelta = positionBefore.discountedBaseAmount - positionAfter.discountedBaseAmount;
+    expect(posBaseCollDelta).to.be.closeTo(disBaseCollDelta, 2n);
 
-    const totalBaseCollDelta = disBaseCollateralBefore.sub(disBaseCollateralAfter);
-    expect(totalBaseCollDelta).to.be.closeTo(disBaseCollDelta, 2);
+    const totalBaseCollDelta = disBaseCollateralBefore - disBaseCollateralAfter;
+    expect(totalBaseCollDelta).to.be.closeTo(disBaseCollDelta, 2n);
   });
 
   it('close short position after deleverage', async () => {
@@ -525,26 +509,25 @@ describe('Deleverage', () => {
 
     expect(positionAfter.discountedBaseAmount).to.be.equal(0);
     const disBaseDebtAfter = await marginlyPool.discountedBaseDebt();
-    const totalBaseDebtDelta = disBaseDebtBefore.sub(disBaseDebtAfter);
+    const totalBaseDebtDelta = disBaseDebtBefore - disBaseDebtAfter;
     expect(totalBaseDebtDelta).to.be.equal(positionBefore.discountedBaseAmount);
 
     const quoteCollCoeff = await marginlyPool.quoteCollateralCoeff();
     const quoteDelevCoeff = await marginlyPool.quoteDelevCoeff();
     const baseDebtCoeff = await marginlyPool.baseDebtCoeff();
 
-    const realCollDelta = positionBefore.discountedBaseAmount.mul(baseDebtCoeff).div(FP96.one).mul(price).div(FP96.one);
+    const realCollDelta = (((positionBefore.discountedBaseAmount * baseDebtCoeff) / FP96.one) * price) / FP96.one;
     // (realCollDelta + pos.discountedBaseAmount * quoteDelevCoeff) / quoteCollCoeff
-    const disQuoteCollDelta = realCollDelta
-      .add(positionBefore.discountedBaseAmount.mul(quoteDelevCoeff).div(FP96.one))
-      .mul(FP96.one)
-      .div(quoteCollCoeff);
+    const disQuoteCollDelta =
+      (realCollDelta + ((positionBefore.discountedBaseAmount * quoteDelevCoeff) / FP96.one) * FP96.one) /
+      quoteCollCoeff;
 
     const disQuoteCollateralAfter = await marginlyPool.discountedQuoteCollateral();
 
-    const posQuoteCollDelta = positionBefore.discountedQuoteAmount.sub(positionAfter.discountedQuoteAmount);
+    const posQuoteCollDelta = positionBefore.discountedQuoteAmount - positionAfter.discountedQuoteAmount;
     expect(posQuoteCollDelta).to.be.equal(disQuoteCollDelta);
 
-    const totalQuoteCollDelta = disQuoteCollateralBefore.sub(disQuoteCollateralAfter);
+    const totalQuoteCollDelta = disQuoteCollateralBefore - disQuoteCollateralAfter;
     expect(totalQuoteCollDelta).to.be.equal(disQuoteCollDelta);
   });
 
@@ -553,7 +536,7 @@ describe('Deleverage', () => {
 
     const [_, lender, shorter, liquidator] = await ethers.getSigners();
     const price = (await marginlyPool.getBasePrice()).inner;
-    const params = (await marginlyPool.params());
+    const params = await marginlyPool.params();
 
     await marginlyPool
       .connect(lender)
@@ -562,16 +545,16 @@ describe('Deleverage', () => {
       .connect(lender)
       .execute(CallType.DepositBase, 100000, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const depositQuoteAmount = 1000;
+    const depositQuoteAmount = 1000n;
     // (quoteDeposit + price * shortAmount) / quoteDeposit = (maxLev - 1)
     // shortAmount = (maxLev - 2) * quoteDeposit / price
-    const shortAmount = BigNumber.from(params.maxLeverage - 2).mul(depositQuoteAmount).mul(FP96.one).div(price);
+    const shortAmount = ((params.maxLeverage - 2n) * depositQuoteAmount * FP96.one) / price;
     await marginlyPool
       .connect(shorter)
       .execute(CallType.DepositQuote, depositQuoteAmount, shortAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    let newParams = {...params};
-    newParams.maxLeverage /= 2;
+    let newParams = { ...params };
+    newParams.maxLeverage /= 2n;
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     const positionBefore = await marginlyPool.positions(shorter.address);
@@ -580,7 +563,7 @@ describe('Deleverage', () => {
     const quoteCollBefore = await marginlyPool.discountedQuoteCollateral();
     const baseCollBefore = await marginlyPool.discountedBaseCollateral();
 
-    const receiveBaseAmount = BigNumber.from(shortAmount).mul(3).div(4);
+    const receiveBaseAmount = (shortAmount * 3n) / 4n;
     await marginlyPool
       .connect(liquidator)
       .execute(CallType.ReceivePosition, 0, receiveBaseAmount, price, false, shorter.address, uniswapV3Swapdata());
@@ -600,33 +583,27 @@ describe('Deleverage', () => {
     expect(quoteDebtBefore).to.be.eq(quoteDebtAfter);
     expect(baseCollBefore).to.be.eq(baseCollAfter);
 
-    const realBaseDebtBefore = baseDebtCoeff.mul(baseDebtBefore).div(FP96.one);
-    const realBaseDebtAfter = baseDebtCoeff.mul(baseDebtAfter).div(FP96.one);
-    expect(
-      realBaseDebtBefore.sub(realBaseDebtAfter)
-    ).to.be.closeTo(receiveBaseAmount, receiveBaseAmount.div(1000));
+    const realBaseDebtBefore = (baseDebtCoeff * baseDebtBefore) / FP96.one;
+    const realBaseDebtAfter = (baseDebtCoeff * baseDebtAfter) / FP96.one;
+    expect(realBaseDebtBefore - realBaseDebtAfter).to.be.closeTo(receiveBaseAmount, receiveBaseAmount / 1000n);
 
-    const posRealBaseDebtBefore = baseDebtCoeff.mul(positionBefore.discountedBaseAmount).div(FP96.one);
-    const posRealBaseDebtAfter = baseDebtCoeff.mul(positionAfter.discountedBaseAmount).div(FP96.one);
-    expect(
-      posRealBaseDebtBefore.sub(posRealBaseDebtAfter)
-    ).to.be.closeTo(receiveBaseAmount, receiveBaseAmount.div(1000));
+    const posRealBaseDebtBefore = (baseDebtCoeff * positionBefore.discountedBaseAmount) / FP96.one;
+    const posRealBaseDebtAfter = (baseDebtCoeff * positionAfter.discountedBaseAmount) / FP96.one;
+    expect(posRealBaseDebtBefore - posRealBaseDebtAfter).to.be.closeTo(receiveBaseAmount, receiveBaseAmount / 1000n);
 
-    const realQuoteCollBefore = quoteCollateralCoeff.mul(quoteCollBefore).div(FP96.one).sub(
-      quoteDelevCoeff.mul(baseDebtBefore).div(FP96.one)
-    );
-    const realQuoteCollAfter = quoteCollateralCoeff.mul(quoteCollAfter).div(FP96.one).sub(
-      quoteDelevCoeff.mul(baseDebtAfter).div(FP96.one)
-    );
-    expect(realQuoteCollBefore).to.be.closeTo(realQuoteCollAfter, realQuoteCollAfter.div(1000));
+    const realQuoteCollBefore =
+      (quoteCollateralCoeff * quoteCollBefore) / FP96.one - (quoteDelevCoeff * baseDebtBefore) / FP96.one;
+    const realQuoteCollAfter =
+      (quoteCollateralCoeff * quoteCollAfter) / FP96.one - (quoteDelevCoeff * baseDebtAfter) / FP96.one;
+    expect(realQuoteCollBefore).to.be.closeTo(realQuoteCollAfter, realQuoteCollAfter / 1000n);
 
-    const posRealQuoteCollBefore = quoteCollateralCoeff.mul(positionBefore.discountedQuoteAmount).div(FP96.one).sub(
-      quoteDelevCoeff.mul(positionBefore.discountedBaseAmount).div(FP96.one)
-    );
-    const posRealQuoteCollAfter = quoteCollateralCoeff.mul(positionAfter.discountedQuoteAmount).div(FP96.one).sub(
-      quoteDelevCoeff.mul(positionAfter.discountedBaseAmount).div(FP96.one)
-    );
-    expect(posRealQuoteCollBefore).to.be.closeTo(posRealQuoteCollAfter, posRealQuoteCollAfter.div(1000));
+    const posRealQuoteCollBefore =
+      (quoteCollateralCoeff * positionBefore.discountedQuoteAmount) / FP96.one -
+      (quoteDelevCoeff * positionBefore.discountedBaseAmount) / FP96.one;
+    const posRealQuoteCollAfter =
+      (quoteCollateralCoeff * positionAfter.discountedQuoteAmount) / FP96.one -
+      (quoteDelevCoeff * positionAfter.discountedBaseAmount) / FP96.one;
+    expect(posRealQuoteCollBefore).to.be.closeTo(posRealQuoteCollAfter, posRealQuoteCollAfter / 1000n);
   });
 
   it('receive long position after deleverage, decreasing debt', async () => {
@@ -634,7 +611,7 @@ describe('Deleverage', () => {
 
     const [_, lender, longer, liquidator] = await ethers.getSigners();
     const price = (await marginlyPool.getBasePrice()).inner;
-    const params = (await marginlyPool.params());
+    const params = await marginlyPool.params();
 
     await marginlyPool
       .connect(lender)
@@ -643,16 +620,16 @@ describe('Deleverage', () => {
       .connect(lender)
       .execute(CallType.DepositBase, 100000, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const depositBaseAmount = 1000;
+    const depositBaseAmount = 1000n;
     // (baseDeposit + longAmount) / baseDeposit = (maxLev - 1)
     // shortAmount = (maxLev - 2) * quoteDeposit
-    const longAmount = BigNumber.from(params.maxLeverage - 2).mul(depositBaseAmount);
+    const longAmount = (params.maxLeverage - 2n) * depositBaseAmount;
     await marginlyPool
       .connect(longer)
       .execute(CallType.DepositBase, depositBaseAmount, longAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    let newParams = {...params};
-    newParams.maxLeverage /= 2;
+    let newParams = { ...params };
+    newParams.maxLeverage /= 2n;
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     const positionBefore = await marginlyPool.positions(longer.address);
@@ -661,7 +638,7 @@ describe('Deleverage', () => {
     const quoteCollBefore = await marginlyPool.discountedQuoteCollateral();
     const baseCollBefore = await marginlyPool.discountedBaseCollateral();
 
-    const receiveQuoteAmount = price.mul(longAmount).mul(3).div(4).div(FP96.one);
+    const receiveQuoteAmount = (price * longAmount * 3n) / 4n / FP96.one;
     await marginlyPool
       .connect(liquidator)
       .execute(CallType.ReceivePosition, receiveQuoteAmount, 0, price, false, longer.address, uniswapV3Swapdata());
@@ -681,33 +658,27 @@ describe('Deleverage', () => {
     expect(baseDebtBefore).to.be.eq(baseDebtAfter);
     expect(quoteCollBefore).to.be.eq(quoteCollAfter);
 
-    const realQuoteDebtBefore = quoteDebtCoeff.mul(quoteDebtBefore).div(FP96.one);
-    const realQuoteDebtAfter = quoteDebtCoeff.mul(quoteDebtAfter).div(FP96.one);
-    expect(
-      realQuoteDebtBefore.sub(realQuoteDebtAfter)
-    ).to.be.closeTo(receiveQuoteAmount, receiveQuoteAmount.div(1000));
+    const realQuoteDebtBefore = (quoteDebtCoeff * quoteDebtBefore) / FP96.one;
+    const realQuoteDebtAfter = (quoteDebtCoeff * quoteDebtAfter) / FP96.one;
+    expect(realQuoteDebtBefore - realQuoteDebtAfter).to.be.closeTo(receiveQuoteAmount, receiveQuoteAmount / 1000n);
 
-    const posRealQuoteDebtBefore = quoteDebtCoeff.mul(positionBefore.discountedQuoteAmount).div(FP96.one);
-    const posRealQuoteDebtAfter = quoteDebtCoeff.mul(positionAfter.discountedQuoteAmount).div(FP96.one);
-    expect(
-      posRealQuoteDebtBefore.sub(posRealQuoteDebtAfter)
-    ).to.be.closeTo(receiveQuoteAmount, receiveQuoteAmount.div(1000));
+    const posRealQuoteDebtBefore = (quoteDebtCoeff * positionBefore.discountedQuoteAmount) / FP96.one;
+    const posRealQuoteDebtAfter = (quoteDebtCoeff * positionAfter.discountedQuoteAmount) / FP96.one;
+    expect(posRealQuoteDebtBefore - posRealQuoteDebtAfter).to.be.closeTo(receiveQuoteAmount, receiveQuoteAmount / 1000n);
 
-    const realBaseCollBefore = baseCollateralCoeff.mul(baseCollBefore).div(FP96.one).sub(
-      baseDelevCoeff.mul(quoteDebtBefore).div(FP96.one)
-    );
-    const realBaseCollAfter = baseCollateralCoeff.mul(baseCollAfter).div(FP96.one).sub(
-      baseDelevCoeff.mul(quoteDebtAfter).div(FP96.one)
-    );
-    expect(realBaseCollBefore).to.be.closeTo(realBaseCollAfter, realBaseCollAfter.div(1000));
+    const realBaseCollBefore =
+      (baseCollateralCoeff * baseCollBefore) / FP96.one - (baseDelevCoeff * quoteDebtBefore) / FP96.one;
+    const realBaseCollAfter =
+      (baseCollateralCoeff * baseCollAfter) / FP96.one - (baseDelevCoeff * quoteDebtAfter) / FP96.one;
+    expect(realBaseCollBefore).to.be.closeTo(realBaseCollAfter, realBaseCollAfter / 1000n);
 
-    const posRealBaseCollBefore = baseCollateralCoeff.mul(positionBefore.discountedBaseAmount).div(FP96.one).sub(
-      baseDelevCoeff.mul(positionBefore.discountedQuoteAmount).div(FP96.one)
-    );
-    const posRealBaseCollAfter = baseCollateralCoeff.mul(positionAfter.discountedBaseAmount).div(FP96.one).sub(
-      baseDelevCoeff.mul(positionAfter.discountedQuoteAmount).div(FP96.one)
-    );
-    expect(posRealBaseCollBefore).to.be.closeTo(posRealBaseCollAfter, posRealBaseCollAfter.div(1000));
+    const posRealBaseCollBefore =
+      (baseCollateralCoeff * positionBefore.discountedBaseAmount) / FP96.one -
+      (baseDelevCoeff * positionBefore.discountedQuoteAmount) / FP96.one;
+    const posRealBaseCollAfter =
+      (baseCollateralCoeff * positionAfter.discountedBaseAmount) / FP96.one -
+      (baseDelevCoeff * positionAfter.discountedQuoteAmount) / FP96.one;
+    expect(posRealBaseCollBefore).to.be.closeTo(posRealBaseCollAfter, posRealBaseCollAfter / 1000n);
   });
 
   it('receive short position after deleverage, debt fully covered', async () => {
@@ -716,11 +687,11 @@ describe('Deleverage', () => {
     const [_, lender, shorter, liquidator] = await ethers.getSigners();
     const price = (await marginlyPool.getBasePrice()).inner;
 
-    const params = (await marginlyPool.params());
-    let newParams = {...params};
-    newParams.interestRate = 0;
-    newParams.fee = 0;
-    newParams.swapFee = 0;
+    const params = await marginlyPool.params();
+    let newParams = { ...params };
+    newParams.interestRate = 0n;
+    newParams.fee = 0n;
+    newParams.swapFee = 0n;
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     await marginlyPool
@@ -730,15 +701,15 @@ describe('Deleverage', () => {
       .connect(lender)
       .execute(CallType.DepositBase, 100000, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const depositQuoteAmount = 1000;
+    const depositQuoteAmount = 1000n;
     // (quoteDeposit + price * shortAmount) / quoteDeposit = (maxLev - 1)
     // shortAmount = (maxLev - 2) * quoteDeposit / price
-    const shortAmount = BigNumber.from(params.maxLeverage - 2).mul(depositQuoteAmount).mul(FP96.one).div(price);
+    const shortAmount = ((params.maxLeverage - 2n) * depositQuoteAmount * FP96.one) / price;
     await marginlyPool
       .connect(shorter)
       .execute(CallType.DepositQuote, depositQuoteAmount, shortAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    newParams.maxLeverage /= 2;
+    newParams.maxLeverage /= 2n;
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     const positionBefore = await marginlyPool.positions(shorter.address);
@@ -747,8 +718,8 @@ describe('Deleverage', () => {
     const quoteCollBefore = await marginlyPool.discountedQuoteCollateral();
     const baseCollBefore = await marginlyPool.discountedBaseCollateral();
 
-    const receiveBaseAmount = BigNumber.from(shortAmount).mul(5).div(4);
-    const baseOverflow = receiveBaseAmount.sub(shortAmount);
+    const receiveBaseAmount = ((shortAmount) * 5n) / 4n;
+    const baseOverflow = receiveBaseAmount - shortAmount;
     expect(baseOverflow).to.be.greaterThan(0);
     await marginlyPool
       .connect(liquidator)
@@ -769,32 +740,28 @@ describe('Deleverage', () => {
 
     expect(quoteDebtBefore).to.be.eq(quoteDebtAfter);
 
-    const realBaseDebtBefore = baseDebtCoeff.mul(baseDebtBefore).div(FP96.one);
-    const realBaseDebtAfter = baseDebtCoeff.mul(baseDebtAfter).div(FP96.one);
-    expect(realBaseDebtBefore.sub(realBaseDebtAfter)).to.be.closeTo(shortAmount, shortAmount.div(1000));
-    
-    const posRealBaseCollateralAfter = baseCollateralCoeff.mul(positionAfter.discountedBaseAmount).div(FP96.one);
-    expect(posRealBaseCollateralAfter).to.be.closeTo(baseOverflow, baseOverflow.div(1000));
+    const realBaseDebtBefore = (baseDebtCoeff * baseDebtBefore) / FP96.one;
+    const realBaseDebtAfter = (baseDebtCoeff * baseDebtAfter) / FP96.one;
+    expect(realBaseDebtBefore - realBaseDebtAfter).to.be.closeTo(shortAmount, shortAmount / 1000n);
 
-    const realBaseCollateralBefore = baseCollateralCoeff.mul(baseCollBefore).div(FP96.one);
-    const realBaseCollateralAfter = baseCollateralCoeff.mul(baseCollAfter).div(FP96.one);
-    expect(
-      realBaseCollateralAfter.sub(realBaseCollateralBefore)
-    ).to.be.closeTo(baseOverflow, baseOverflow.div(1000));
+    const posRealBaseCollateralAfter = (baseCollateralCoeff * positionAfter.discountedBaseAmount) / FP96.one;
+    expect(posRealBaseCollateralAfter).to.be.closeTo(baseOverflow, baseOverflow / 1000n);
 
-    const realQuoteCollBefore = quoteCollateralCoeff.mul(quoteCollBefore).div(FP96.one).sub(
-      quoteDelevCoeff.mul(baseDebtBefore).div(FP96.one)
-    );
-    const realQuoteCollAfter = quoteCollateralCoeff.mul(quoteCollAfter).div(FP96.one).sub(
-      quoteDelevCoeff.mul(baseDebtAfter).div(FP96.one)
-    );
-    expect(realQuoteCollBefore).to.be.closeTo(realQuoteCollAfter, realQuoteCollAfter.div(1000));
+    const realBaseCollateralBefore = (baseCollateralCoeff * baseCollBefore) / FP96.one;
+    const realBaseCollateralAfter = (baseCollateralCoeff * baseCollAfter) / FP96.one;
+    expect(realBaseCollateralAfter - realBaseCollateralBefore).to.be.closeTo(baseOverflow, baseOverflow / 1000n);
 
-    const posRealQuoteCollBefore = quoteCollateralCoeff.mul(positionBefore.discountedQuoteAmount).div(FP96.one).sub(
-      quoteDelevCoeff.mul(positionBefore.discountedBaseAmount).div(FP96.one)
-    );
-    const posRealQuoteCollAfter = quoteCollateralCoeff.mul(positionAfter.discountedQuoteAmount).div(FP96.one);
-    expect(posRealQuoteCollBefore).to.be.closeTo(posRealQuoteCollAfter, posRealQuoteCollAfter.div(1000));
+    const realQuoteCollBefore =
+      (quoteCollateralCoeff * quoteCollBefore) / FP96.one - (quoteDelevCoeff * baseDebtBefore) / FP96.one;
+    const realQuoteCollAfter =
+      (quoteCollateralCoeff * quoteCollAfter) / FP96.one - (quoteDelevCoeff * baseDebtAfter) / FP96.one;
+    expect(realQuoteCollBefore).to.be.closeTo(realQuoteCollAfter, realQuoteCollAfter / 1000n);
+
+    const posRealQuoteCollBefore =
+      (quoteCollateralCoeff * positionBefore.discountedQuoteAmount) / FP96.one -
+      (quoteDelevCoeff * positionBefore.discountedBaseAmount) / FP96.one;
+    const posRealQuoteCollAfter = (quoteCollateralCoeff * positionAfter.discountedQuoteAmount) / FP96.one;
+    expect(posRealQuoteCollBefore).to.be.closeTo(posRealQuoteCollAfter, posRealQuoteCollAfter / 1000n);
   });
 
   it('receive long position after deleverage, debt fully covered', async () => {
@@ -803,11 +770,11 @@ describe('Deleverage', () => {
     const [_, lender, longer, liquidator] = await ethers.getSigners();
     const price = (await marginlyPool.getBasePrice()).inner;
 
-    const params = (await marginlyPool.params());
-    let newParams = {...params};
-    newParams.interestRate = 0;
-    newParams.fee = 0;
-    newParams.swapFee = 0;
+    const params = await marginlyPool.params();
+    let newParams = { ...params };
+    newParams.interestRate = 0n;
+    newParams.fee = 0n;
+    newParams.swapFee = 0n;
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     await marginlyPool
@@ -817,15 +784,15 @@ describe('Deleverage', () => {
       .connect(lender)
       .execute(CallType.DepositBase, 100000, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const depositBaseAmount = 1000;
+    const depositBaseAmount = 1000n;
     // (baseDeposit + longAmount) / baseDeposit = (maxLev - 1)
     // shortAmount = (maxLev - 2) * quoteDeposit
-    const longAmount = BigNumber.from(params.maxLeverage - 2).mul(depositBaseAmount);
+    const longAmount = (params.maxLeverage - 2n) * depositBaseAmount;
     await marginlyPool
       .connect(longer)
       .execute(CallType.DepositBase, depositBaseAmount, longAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    newParams.maxLeverage /= 2;
+    newParams.maxLeverage /= 2n;
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     const positionBefore = await marginlyPool.positions(longer.address);
@@ -834,9 +801,9 @@ describe('Deleverage', () => {
     const baseCollBefore = await marginlyPool.discountedBaseCollateral();
     const quoteCollBefore = await marginlyPool.discountedQuoteCollateral();
 
-    const receiveQuoteAmount = price.mul(longAmount).mul(5).div(4).div(FP96.one);
-    const longAmountInQuote = price.mul(longAmount).div(FP96.one);
-    const quoteOverflow = receiveQuoteAmount.sub(longAmountInQuote);
+    const receiveQuoteAmount = (price * longAmount * 5n) / 4n / FP96.one;
+    const longAmountInQuote = (price * longAmount) / FP96.one;
+    const quoteOverflow = receiveQuoteAmount - longAmountInQuote;
     expect(quoteOverflow).to.be.greaterThan(0);
     await marginlyPool
       .connect(liquidator)
@@ -857,34 +824,28 @@ describe('Deleverage', () => {
 
     expect(baseDebtBefore).to.be.eq(baseDebtAfter);
 
-    const realQuoteDebtBefore = quoteDebtCoeff.mul(quoteDebtBefore).div(FP96.one);
-    const realQuoteDebtAfter = quoteDebtCoeff.mul(quoteDebtAfter).div(FP96.one);
-    expect(
-      realQuoteDebtBefore.sub(realQuoteDebtAfter)
-    ).to.be.closeTo(longAmountInQuote, longAmountInQuote.div(1000));
+    const realQuoteDebtBefore = (quoteDebtCoeff * quoteDebtBefore) / FP96.one;
+    const realQuoteDebtAfter = (quoteDebtCoeff * quoteDebtAfter) / FP96.one;
+    expect(realQuoteDebtBefore - realQuoteDebtAfter).to.be.closeTo(longAmountInQuote, longAmountInQuote / 1000n);
 
-    const posRealQuoteCollateralAfter = quoteCollateralCoeff.mul(positionAfter.discountedQuoteAmount).div(FP96.one);
-    expect(posRealQuoteCollateralAfter).to.be.closeTo(quoteOverflow, quoteOverflow.div(1000));
+    const posRealQuoteCollateralAfter = (quoteCollateralCoeff * positionAfter.discountedQuoteAmount) / FP96.one;
+    expect(posRealQuoteCollateralAfter).to.be.closeTo(quoteOverflow, quoteOverflow / 1000n);
 
-    const realQuoteCollateralBefore = quoteCollateralCoeff.mul(quoteCollBefore).div(FP96.one);
-    const realQuoteCollateralAfter = quoteCollateralCoeff.mul(quoteCollAfter).div(FP96.one);
-    expect(
-      realQuoteCollateralAfter.sub(realQuoteCollateralBefore)
-    ).to.be.closeTo(quoteOverflow, quoteOverflow.div(1000));
+    const realQuoteCollateralBefore = (quoteCollateralCoeff * quoteCollBefore) / FP96.one;
+    const realQuoteCollateralAfter = (quoteCollateralCoeff * quoteCollAfter) / FP96.one;
+    expect(realQuoteCollateralAfter - realQuoteCollateralBefore).to.be.closeTo(quoteOverflow, quoteOverflow / 1000n);
 
-    const realBaseCollBefore = baseCollateralCoeff.mul(baseCollBefore).div(FP96.one).sub(
-      baseDelevCoeff.mul(quoteDebtBefore).div(FP96.one)
-    );
-    const realBaseCollAfter = baseCollateralCoeff.mul(baseCollAfter).div(FP96.one).sub(
-      baseDelevCoeff.mul(quoteDebtAfter).div(FP96.one)
-    );
-    expect(realBaseCollBefore).to.be.closeTo(realBaseCollAfter, realBaseCollAfter.div(1000));
+    const realBaseCollBefore =
+      (baseCollateralCoeff * baseCollBefore) / FP96.one - (baseDelevCoeff * quoteDebtBefore) / FP96.one;
+    const realBaseCollAfter =
+      (baseCollateralCoeff * baseCollAfter) / FP96.one - (baseDelevCoeff * quoteDebtAfter) / FP96.one;
+    expect(realBaseCollBefore).to.be.closeTo(realBaseCollAfter, realBaseCollAfter / 1000n);
 
-    const posRealBaseCollBefore = baseCollateralCoeff.mul(positionBefore.discountedBaseAmount).div(FP96.one).sub(
-      baseDelevCoeff.mul(positionBefore.discountedQuoteAmount).div(FP96.one)
-    );
-    const posRealBaseCollAfter = baseCollateralCoeff.mul(positionAfter.discountedBaseAmount).div(FP96.one);
-    expect(posRealBaseCollBefore).to.be.closeTo(posRealBaseCollAfter, posRealBaseCollAfter.div(1000));
+    const posRealBaseCollBefore =
+      (baseCollateralCoeff * positionBefore.discountedBaseAmount) / FP96.one -
+      (baseDelevCoeff * positionBefore.discountedQuoteAmount) / FP96.one;
+    const posRealBaseCollAfter = (baseCollateralCoeff * positionAfter.discountedBaseAmount) / FP96.one;
+    expect(posRealBaseCollBefore).to.be.closeTo(posRealBaseCollAfter, posRealBaseCollAfter / 1000n);
   });
 
   it('receive short position after deleverage, increasing collateral', async () => {
@@ -893,11 +854,11 @@ describe('Deleverage', () => {
     const [_, lender, shorter, liquidator] = await ethers.getSigners();
     const price = (await marginlyPool.getBasePrice()).inner;
 
-    const params = (await marginlyPool.params());
-    let newParams = {...params};
-    newParams.interestRate = 0;
-    newParams.fee = 0;
-    newParams.swapFee = 0;
+    const params = await marginlyPool.params();
+    let newParams = { ...params };
+    newParams.interestRate = 0n;
+    newParams.fee = 0n;
+    newParams.swapFee = 0n;
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     await marginlyPool
@@ -907,15 +868,15 @@ describe('Deleverage', () => {
       .connect(lender)
       .execute(CallType.DepositBase, 100000, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const depositQuoteAmount = 1000;
+    const depositQuoteAmount = 1000n;
     // (quoteDeposit + price * shortAmount) / quoteDeposit = (maxLev - 1)
     // shortAmount = (maxLev - 2) * quoteDeposit / price
-    const shortAmount = BigNumber.from(params.maxLeverage - 2).mul(depositQuoteAmount).mul(FP96.one).div(price);
+    const shortAmount = ((params.maxLeverage - 2n) * depositQuoteAmount * FP96.one) / price;
     await marginlyPool
       .connect(shorter)
       .execute(CallType.DepositQuote, depositQuoteAmount, shortAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    newParams.maxLeverage /= 2;
+    newParams.maxLeverage /= 2n;
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     const positionBefore = await marginlyPool.positions(shorter.address);
@@ -923,7 +884,7 @@ describe('Deleverage', () => {
     const quoteCollBefore = await marginlyPool.discountedQuoteCollateral();
     const baseCollBefore = await marginlyPool.discountedBaseCollateral();
 
-    const receiveQuoteAmount = price.mul(shortAmount).div(FP96.one);
+    const receiveQuoteAmount = (price * shortAmount) / FP96.one;
     await marginlyPool
       .connect(liquidator)
       .execute(CallType.ReceivePosition, receiveQuoteAmount, 0, price, false, shorter.address, uniswapV3Swapdata());
@@ -942,25 +903,19 @@ describe('Deleverage', () => {
     expect(baseDebtBefore).to.be.eq(baseDebtAfter);
     expect(positionBefore.discountedBaseAmount).to.be.eq(positionBefore.discountedBaseAmount);
 
-    const realQuoteCollBefore = quoteCollateralCoeff.mul(quoteCollBefore).div(FP96.one).sub(
-      quoteDelevCoeff.mul(baseDebtBefore).div(FP96.one)
-    );
-    const realQuoteCollAfter = quoteCollateralCoeff.mul(quoteCollAfter).div(FP96.one).sub(
-      quoteDelevCoeff.mul(baseDebtAfter).div(FP96.one)
-    );
-    expect(
-      realQuoteCollAfter.sub(realQuoteCollBefore)
-    ).to.be.closeTo(receiveQuoteAmount, receiveQuoteAmount.div(1000));
+    const realQuoteCollBefore =
+      (quoteCollateralCoeff * quoteCollBefore) / FP96.one - (quoteDelevCoeff * baseDebtBefore) / FP96.one;
+    const realQuoteCollAfter =
+      (quoteCollateralCoeff * quoteCollAfter) / FP96.one - (quoteDelevCoeff * baseDebtAfter) / FP96.one;
+    expect(realQuoteCollAfter - realQuoteCollBefore).to.be.closeTo(receiveQuoteAmount, receiveQuoteAmount / 1000n);
 
-    const posRealQuoteCollBefore = quoteCollateralCoeff.mul(positionBefore.discountedQuoteAmount).div(FP96.one).sub(
-      quoteDelevCoeff.mul(positionBefore.discountedBaseAmount).div(FP96.one)
-    );
-    const posRealQuoteCollAfter = quoteCollateralCoeff.mul(positionAfter.discountedQuoteAmount).div(FP96.one).sub(
-      quoteDelevCoeff.mul(positionBefore.discountedBaseAmount).div(FP96.one)
-    );;
-    expect(
-      posRealQuoteCollAfter.sub(posRealQuoteCollBefore)
-    ).to.be.closeTo(receiveQuoteAmount, receiveQuoteAmount.div(1000));
+    const posRealQuoteCollBefore =
+      (quoteCollateralCoeff * positionBefore.discountedQuoteAmount) / FP96.one -
+      (quoteDelevCoeff * positionBefore.discountedBaseAmount) / FP96.one;
+    const posRealQuoteCollAfter =
+      (quoteCollateralCoeff * positionAfter.discountedQuoteAmount) / FP96.one -
+      (quoteDelevCoeff * positionBefore.discountedBaseAmount) / FP96.one;
+    expect(posRealQuoteCollAfter - posRealQuoteCollBefore).to.be.closeTo(receiveQuoteAmount, receiveQuoteAmount / 1000n);
   });
 
   it('receive long position after deleverage, increasing collateral', async () => {
@@ -969,11 +924,11 @@ describe('Deleverage', () => {
     const [_, lender, longer, liquidator] = await ethers.getSigners();
     const price = (await marginlyPool.getBasePrice()).inner;
 
-    const params = (await marginlyPool.params());
-    let newParams = {...params};
-    newParams.interestRate = 0;
-    newParams.fee = 0;
-    newParams.swapFee = 0;
+    const params = await marginlyPool.params();
+    let newParams = { ...params };
+    newParams.interestRate = 0n;
+    newParams.fee = 0n;
+    newParams.swapFee = 0n;
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     await marginlyPool
@@ -983,15 +938,15 @@ describe('Deleverage', () => {
       .connect(lender)
       .execute(CallType.DepositBase, 100000, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const depositBaseAmount = 1000;
+    const depositBaseAmount = 1000n;
     // (baseDeposit + longAmount) / baseDeposit = (maxLev - 1)
     // shortAmount = (maxLev - 2) * quoteDeposit
-    const longAmount = BigNumber.from(params.maxLeverage - 2).mul(depositBaseAmount);
+    const longAmount = (params.maxLeverage - 2n) * depositBaseAmount;
     await marginlyPool
       .connect(longer)
       .execute(CallType.DepositBase, depositBaseAmount, longAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    newParams.maxLeverage /= 2;
+    newParams.maxLeverage /= 2n;
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     const positionBefore = await marginlyPool.positions(longer.address);
@@ -1016,24 +971,20 @@ describe('Deleverage', () => {
 
     expect(quoteCollAfter).to.be.eq(quoteCollBefore);
     expect(quoteDebtAfter).to.be.eq(quoteDebtBefore);
-    expect(positionAfter.discountedQuoteAmount).to.be.eq(positionBefore.discountedQuoteAmount)
+    expect(positionAfter.discountedQuoteAmount).to.be.eq(positionBefore.discountedQuoteAmount);
 
-    const realBaseCollBefore = baseCollateralCoeff.mul(baseCollBefore).div(FP96.one).sub(
-      baseDelevCoeff.mul(quoteDebtBefore).div(FP96.one)
-    );
-    const realBaseCollAfter = baseCollateralCoeff.mul(baseCollAfter).div(FP96.one).sub(
-      baseDelevCoeff.mul(quoteDebtAfter).div(FP96.one)
-    );
-    expect(realBaseCollAfter.sub(realBaseCollBefore)).to.be.closeTo(receiveBaseAmount, receiveBaseAmount.div(1000));
+    const realBaseCollBefore =
+      (baseCollateralCoeff * baseCollBefore) / FP96.one - (baseDelevCoeff * quoteDebtBefore) / FP96.one;
+    const realBaseCollAfter =
+      (baseCollateralCoeff * baseCollAfter) / FP96.one - (baseDelevCoeff * quoteDebtAfter) / FP96.one;
+    expect(realBaseCollAfter - realBaseCollBefore).to.be.closeTo(receiveBaseAmount, receiveBaseAmount / 1000n);
 
-    const posRealBaseCollBefore = baseCollateralCoeff.mul(positionBefore.discountedBaseAmount).div(FP96.one).sub(
-      baseDelevCoeff.mul(positionBefore.discountedQuoteAmount).div(FP96.one)
-    );
-    const posRealBaseCollAfter = baseCollateralCoeff.mul(positionAfter.discountedBaseAmount).div(FP96.one).sub(
-      baseDelevCoeff.mul(positionAfter.discountedQuoteAmount).div(FP96.one)
-    );
-    expect(
-      posRealBaseCollAfter.sub(posRealBaseCollBefore)
-    ).to.be.closeTo(receiveBaseAmount, receiveBaseAmount.div(1000));
+    const posRealBaseCollBefore =
+      (baseCollateralCoeff * positionBefore.discountedBaseAmount) / FP96.one -
+      (baseDelevCoeff * positionBefore.discountedQuoteAmount) / FP96.one;
+    const posRealBaseCollAfter =
+      (baseCollateralCoeff * positionAfter.discountedBaseAmount) / FP96.one -
+      (baseDelevCoeff * positionAfter.discountedQuoteAmount) / FP96.one;
+    expect(posRealBaseCollAfter - posRealBaseCollBefore).to.be.closeTo(receiveBaseAmount, receiveBaseAmount / 1000n);
   });
 });

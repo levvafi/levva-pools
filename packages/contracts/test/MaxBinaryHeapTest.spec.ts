@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { generateWallets } from './shared/utils';
-import snapshotGasCost from '@uniswap/snapshot-gas-cost';
+import snapshotGasCost from 'optifat-snapshot-gas-cost';
 
 describe('MaxBinaryHeapTest', () => {
   async function deployMaxBinaryHeapTestFixture() {

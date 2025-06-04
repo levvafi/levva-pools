@@ -6,7 +6,7 @@ import { ethers } from 'hardhat';
 import { MarginlyRouter__factory } from '../../../typechain-types';
 import { PendleAdapter__factory } from '@marginly/router/typechain-types';
 import { EthAddress, PositionType } from '@marginly/common';
-import { formatUnits, keccak256, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, keccak256, parseUnits } from 'ethers'
 import { MarginlyFactory__factory, MarginlyPool__factory } from '@marginly/contracts/typechain-types';
 import { MarginlyParamsStruct } from '@marginly/contracts/typechain-types/contracts/MarginlyPool';
 
@@ -134,7 +134,7 @@ describe('Pendle farming marginly pool', () => {
         CallType.DepositBase,
         longerDepositAmount,
         longAmount,
-        price.mul(11).div(10),
+        price*(11)/(10),
         false,
         ethers.constants.AddressZero,
         0
@@ -154,7 +154,7 @@ describe('Pendle farming marginly pool', () => {
         CallType.DepositBase,
         longerDepositAmount,
         longAmount,
-        price.mul(11).div(10),
+        price*(11)/(10),
         false,
         ethers.constants.AddressZero,
         0
@@ -173,8 +173,8 @@ describe('Pendle farming marginly pool', () => {
       .execute(
         CallType.DepositQuote,
         longerDepositAmount,
-        longAmount.mul(-1),
-        price.mul(11).div(10),
+        longAmount*(-1),
+        price*(11)/(10),
         false,
         ethers.constants.AddressZero,
         0
@@ -195,7 +195,7 @@ describe('Pendle farming marginly pool', () => {
           CallType.DepositQuote,
           longerDepositAmount,
           longAmount,
-          price.mul(2),
+          price*(2),
           false,
           ethers.constants.AddressZero,
           0
@@ -210,7 +210,7 @@ describe('Pendle farming marginly pool', () => {
     price = (await marginly.connect(owner).getBasePrice()).inner;
     await marginly
       .connect(longer1)
-      .execute(CallType.ClosePosition, 0, 0, price.mul(90).div(100), false, ethers.constants.AddressZero, 0);
+      .execute(CallType.ClosePosition, 0, 0, price*(90)/(100), false, ethers.constants.AddressZero, 0);
     await marginly
       .connect(longer1)
       .execute(CallType.WithdrawBase, parseUnits('100', 18), 0, 0, false, ethers.constants.AddressZero, 0);
@@ -327,7 +327,7 @@ describe('Pendle farming marginly pool', () => {
         CallType.DepositBase,
         longerDepositAmount,
         longAmount,
-        price.mul(11).div(10),
+        price*(11)/(10),
         false,
         ethers.constants.AddressZero,
         0
@@ -349,7 +349,7 @@ describe('Pendle farming marginly pool', () => {
         CallType.DepositBase,
         longerDepositAmount,
         longAmount,
-        price.mul(11).div(10),
+        price*(11)/(10),
         false,
         ethers.constants.AddressZero,
         0
@@ -371,8 +371,8 @@ describe('Pendle farming marginly pool', () => {
       .execute(
         CallType.DepositQuote,
         longer3DepositAmount,
-        longAmount.mul(-1),
-        price.mul(12).div(10),
+        longAmount*(-1),
+        price*(12)/(10),
         false,
         ethers.constants.AddressZero,
         0
@@ -396,7 +396,7 @@ describe('Pendle farming marginly pool', () => {
           CallType.DepositQuote,
           shortDepositAmount,
           longAmount,
-          price.mul(2),
+          price*(2),
           false,
           ethers.constants.AddressZero,
           0
@@ -411,7 +411,7 @@ describe('Pendle farming marginly pool', () => {
     price = (await marginly.connect(owner).getBasePrice()).inner;
     await marginly
       .connect(longer1)
-      .execute(CallType.ClosePosition, 0, 0, price.mul(90).div(100), false, ethers.constants.AddressZero, 0);
+      .execute(CallType.ClosePosition, 0, 0, price*(90)/(100), false, ethers.constants.AddressZero, 0);
     await marginly
       .connect(longer1)
       .execute(CallType.WithdrawBase, parseUnits('100', 18), 0, 0, false, ethers.constants.AddressZero, 0);

@@ -131,11 +131,11 @@ describe.skip('MarginlyPoolAdmin', () => {
     const amount = await marginlyPoolAdmin.connect(signer1).callStatic.sweepETH(marginlyPoolAddress);
     const tx = await marginlyPoolAdmin.connect(signer1).sweepETH(marginlyPoolAddress);
     const txReceipt = await tx.wait();
-    const txFee = txReceipt.gasUsed.mul(txReceipt.effectiveGasPrice);
+    const txFee = txReceipt.gasUsed*(txReceipt.effectiveGasPrice);
     expect(amount).to.be.equal(transferAmount);
 
     const signerBalanceAfter = await signer1.getBalance();
-    expect(signerBalanceAfter).to.be.equal(signerBalanceBefore.add(transferAmount).sub(txFee));
+    expect(signerBalanceAfter).to.be.equal(signerBalanceBefore.add(transferAmount)-(txFee));
   });
 
   it('changeSwapRouter', async () => {

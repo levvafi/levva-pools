@@ -6,9 +6,9 @@ export function calcAccruedRateContext(args: { interestRate: BigNumber; fee: Big
   interestRateX96: BigNumber;
   feeDt: BigNumber;
 } {
-  const interestRateX96 = BigNumber.from(args.interestRate).mul(Fp96One).div(WHOLE_ONE);
-  const feeX96 = BigNumber.from(args.fee).mul(Fp96One).div(WHOLE_ONE);
-  const onePlusFee = feeX96.mul(Fp96One).div(SECONDS_IN_YEAR_X96).add(Fp96One);
+  const interestRateX96 = BigNumber.from(args.interestRate)*(Fp96One)/(WHOLE_ONE);
+  const feeX96 = BigNumber.from(args.fee)*(Fp96One)/(WHOLE_ONE);
+  const onePlusFee = feeX96*(Fp96One)/(SECONDS_IN_YEAR_X96).add(Fp96One);
   const feeDt = powTaylor(onePlusFee, args.secondsPassed);
 
   return {
@@ -33,24 +33,24 @@ export function calcBaseCoeffs(args: {
   baseDelevCoeffX96: BigNumber;
   baseDebtCoeffX96: BigNumber;
 } {
-  const realBaseDebtPrev = args.baseDebtCoeffX96.mul(args.discountedBaseDebt).div(Fp96One);
-  const onePlusIRshort = args.interestRateX96.mul(args.systemLeverageShortX96).div(SECONDS_IN_YEAR_X96).add(Fp96One);
+  const realBaseDebtPrev = args.baseDebtCoeffX96*(args.discountedBaseDebt)/(Fp96One);
+  const onePlusIRshort = args.interestRateX96*(args.systemLeverageShortX96)/(SECONDS_IN_YEAR_X96).add(Fp96One);
   const accruedRateDt = powTaylor(onePlusIRshort, args.secondsPassed);
-  const baseDebtCoeffMul = accruedRateDt.mul(args.feeDt).div(Fp96One);
+  const baseDebtCoeffMul = accruedRateDt*(args.feeDt)/(Fp96One);
 
   const realBaseCollateral = args.baseCollateralCoeffX96
-    .mul(args.discountedBaseCollateral)
-    .div(Fp96One)
-    .sub(args.baseDelevCoeffX96.mul(args.discountedQuoteDebt).div(Fp96One));
+    *(args.discountedBaseCollateral)
+    /(Fp96One)
+    -(args.baseDelevCoeffX96*(args.discountedQuoteDebt)/(Fp96One));
 
   const factor = Fp96One.add(
-    fp96FromRatio(accruedRateDt.sub(Fp96One).mul(realBaseDebtPrev).div(Fp96One), realBaseCollateral)
+    fp96FromRatio(accruedRateDt-(Fp96One)*(realBaseDebtPrev)/(Fp96One), realBaseCollateral)
   );
 
   return {
-    baseCollateralCoeffX96: args.baseCollateralCoeffX96.mul(factor).div(Fp96One),
-    baseDelevCoeffX96: args.baseDelevCoeffX96.mul(factor).div(Fp96One),
-    baseDebtCoeffX96: args.baseDebtCoeffX96.mul(baseDebtCoeffMul).div(Fp96One),
+    baseCollateralCoeffX96: args.baseCollateralCoeffX96*(factor)/(Fp96One),
+    baseDelevCoeffX96: args.baseDelevCoeffX96*(factor)/(Fp96One),
+    baseDebtCoeffX96: args.baseDebtCoeffX96*(baseDebtCoeffMul)/(Fp96One),
   };
 }
 
@@ -70,23 +70,23 @@ export function calcQuoteCoeffs(args: {
   quoteDelevCoeffX96: BigNumber;
   quoteDebtCoeffX96: BigNumber;
 } {
-  const realQuoteDebtPrev = args.quoteDebtCoeffX96.mul(args.discountedQuoteDebt).div(Fp96One);
-  const onePlusIRLong = args.interestRateX96.mul(args.systemLevarageLongX96).div(SECONDS_IN_YEAR_X96).add(Fp96One);
+  const realQuoteDebtPrev = args.quoteDebtCoeffX96*(args.discountedQuoteDebt)/(Fp96One);
+  const onePlusIRLong = args.interestRateX96*(args.systemLevarageLongX96)/(SECONDS_IN_YEAR_X96).add(Fp96One);
   const accruedRateDt = powTaylor(onePlusIRLong, args.secondsPassed);
-  const quoteDebtCoeffMul = accruedRateDt.mul(args.feeDt).div(Fp96One);
+  const quoteDebtCoeffMul = accruedRateDt*(args.feeDt)/(Fp96One);
 
   const realQuoteCollateral = args.quoteCollateralCoeffX96
-    .mul(args.discountedQuoteCollateral)
-    .div(Fp96One)
-    .sub(args.quoteDelevCoeffX96.mul(args.discountedBaseDebt).div(Fp96One));
+    *(args.discountedQuoteCollateral)
+    /(Fp96One)
+    -(args.quoteDelevCoeffX96*(args.discountedBaseDebt)/(Fp96One));
 
   const factor = Fp96One.add(
-    fp96FromRatio(accruedRateDt.sub(Fp96One).mul(realQuoteDebtPrev).div(Fp96One), realQuoteCollateral)
+    fp96FromRatio(accruedRateDt-(Fp96One)*(realQuoteDebtPrev)/(Fp96One), realQuoteCollateral)
   );
 
   return {
-    quoteCollateralCoeffX96: args.quoteCollateralCoeffX96.mul(factor).div(Fp96One),
-    quoteDelevCoeffX96: args.quoteDelevCoeffX96.mul(factor).div(Fp96One),
-    quoteDebtCoeffX96: args.quoteDebtCoeffX96.mul(quoteDebtCoeffMul).div(Fp96One),
+    quoteCollateralCoeffX96: args.quoteCollateralCoeffX96*(factor)/(Fp96One),
+    quoteDelevCoeffX96: args.quoteDelevCoeffX96*(factor)/(Fp96One),
+    quoteDebtCoeffX96: args.quoteDebtCoeffX96*(quoteDebtCoeffMul)/(Fp96One),
   };
 }

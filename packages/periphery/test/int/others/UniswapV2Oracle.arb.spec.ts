@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
 import { time, setBalance } from '@nomicfoundation/hardhat-network-helpers';
 import { UniswapV2Oracle } from '../../../typechain-types/contracts/oracles';
-import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { parseEther, parseUnits } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { printPrices } from '../../shared/common';
 

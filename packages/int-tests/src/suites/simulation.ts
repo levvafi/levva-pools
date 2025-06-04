@@ -1,5 +1,5 @@
 import { BigNumber } from 'ethers';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseUnits } from 'ethers'
 import { SystemUnderTest } from '.';
 import bn from 'bignumber.js';
 import { FP96, toHumanString } from '../utils/fixed-point';
@@ -67,7 +67,7 @@ export async function simulation1(sut: SystemUnderTest) {
 
   //shorter make short on 2.0 ETH
   const shortAmount = parseUnits('2', 18);
-  const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+  const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
   await (
     await marginlyPool
       .connect(shorter)
@@ -93,7 +93,7 @@ export async function simulation1(sut: SystemUnderTest) {
   // longer make long on 1.8 ETH
   const longAmount = parseUnits('0.5', 18);
   logger.info(`Long to ${formatUnits(longAmount, 18)} WETH`);
-  const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+  const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
   await (
     await marginlyPool
       .connect(longer)
@@ -189,7 +189,7 @@ export async function simulation2(sut: SystemUnderTest) {
   // longer make long on 2.0 ETH
   const longAmount = parseUnits('1.8', 18);
   logger.info(`Long to ${formatUnits(longAmount, 18)} WETH`);
-  const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+  const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
   await (
     await marginlyPool
       .connect(longer)
@@ -211,7 +211,7 @@ export async function simulation2(sut: SystemUnderTest) {
 
   //shorter make short on 2.0 ETH
   const shortAmount = parseUnits('2', 18);
-  const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+  const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
   await (
     await marginlyPool
       .connect(shorter)
@@ -317,7 +317,7 @@ export async function simulation3(sut: SystemUnderTest) {
   // longer make long on 2.0 ETH
   const longAmount = parseUnits('1.8', 18);
   logger.info(`Long to ${formatUnits(longAmount, 18)} WETH`);
-  const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+  const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
   await (
     await marginlyPool
       .connect(longer)
@@ -339,7 +339,7 @@ export async function simulation3(sut: SystemUnderTest) {
 
   //shorter make short on 2.0 ETH
   const shortAmount = parseUnits('2', 18);
-  const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+  const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
   await (
     await marginlyPool
       .connect(shorter)

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
 import '@openzeppelin/contracts/proxy/Clones.sol';
@@ -7,7 +7,7 @@ import '@openzeppelin/contracts/access/Ownable2Step.sol';
 
 import './interfaces/IMarginlyFactory.sol';
 import './dataTypes/MarginlyParams.sol';
-import './libraries/Errors.sol';
+import './libraries/MarginlyErrors.sol';
 
 import './MarginlyPool.sol';
 
@@ -30,14 +30,14 @@ contract MarginlyFactory is IMarginlyFactory, Ownable2Step {
     address _feeHolder,
     address _WETH9,
     address _techPositionOwner
-  ) {
+  ) Ownable(msg.sender) {
     if (
       _marginlyPoolImplementation == address(0) ||
       _swapRouter == address(0) ||
       _feeHolder == address(0) ||
       _WETH9 == address(0) ||
       _techPositionOwner == address(0)
-    ) revert Errors.WrongValue();
+    ) revert MarginlyErrors.WrongValue();
 
     marginlyPoolImplementation = _marginlyPoolImplementation;
     swapRouter = _swapRouter;
@@ -54,8 +54,8 @@ contract MarginlyFactory is IMarginlyFactory, Ownable2Step {
     uint32 defaultSwapCallData,
     MarginlyParams calldata params
   ) external override onlyOwner returns (address pool) {
-    if (quoteToken == baseToken) revert Errors.Forbidden();
-    if (priceOracle == address(0)) revert Errors.WrongValue();
+    if (quoteToken == baseToken) revert MarginlyErrors.Forbidden();
+    if (priceOracle == address(0)) revert MarginlyErrors.WrongValue();
 
     pool = Clones.clone(marginlyPoolImplementation);
     IMarginlyPool(pool).initialize(quoteToken, baseToken, priceOracle, defaultSwapCallData, params);
@@ -65,12 +65,12 @@ contract MarginlyFactory is IMarginlyFactory, Ownable2Step {
 
   /// @inheritdoc IMarginlyFactory
   function changeSwapRouter(address newSwapRouter) external onlyOwner {
-    if (newSwapRouter == address(0)) revert Errors.WrongValue();
+    if (newSwapRouter == address(0)) revert MarginlyErrors.WrongValue();
     swapRouter = newSwapRouter;
     emit SwapRouterChanged(newSwapRouter);
   }
 
   function renounceOwnership() public view override onlyOwner {
-    revert Errors.Forbidden();
+    revert MarginlyErrors.Forbidden();
   }
 }

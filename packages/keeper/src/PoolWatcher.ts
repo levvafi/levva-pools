@@ -68,7 +68,7 @@ export class PoolWatcher {
       params
     );
 
-    const maxLeverageX96 = BigNumber.from(params.maxLeverage).mul(Fp96One);
+    const maxLeverageX96 = BigNumber.from(params.maxLeverage)*(Fp96One);
     const riskiestPositions = await Promise.all([this.getRiskiestShortPosition(), this.getRiskiestLongPosition()]);
     const result: LiquidationParams[] = [];
 
@@ -108,14 +108,14 @@ export class PoolWatcher {
     const position: Position = await this.pool.positions(positionAddress);
 
     if (position._type == PositionType.Short) {
-      const debt = BigNumber.from(position.discountedBaseAmount).mul(poolCoeffs.baseDebtCoeffX96).div(Fp96One);
-      const debtInQuote = debt.mul(basePriceX96).div(Fp96One);
+      const debt = BigNumber.from(position.discountedBaseAmount)*(poolCoeffs.baseDebtCoeffX96)/(Fp96One);
+      const debtInQuote = debt*(basePriceX96)/(Fp96One);
       const collateral = BigNumber.from(position.discountedQuoteAmount)
-        .mul(poolCoeffs.quoteCollateralCoeffX96)
-        .div(Fp96One)
-        .sub(poolCoeffs.quoteDelevCoeffX96.mul(position.discountedBaseAmount).div(Fp96One));
+        *(poolCoeffs.quoteCollateralCoeffX96)
+        /(Fp96One)
+        -(poolCoeffs.quoteDelevCoeffX96*(position.discountedBaseAmount)/(Fp96One));
 
-      const leverageX96 = collateral.mul(Fp96One).div(collateral.sub(debtInQuote));
+      const leverageX96 = collateral*(Fp96One)/(collateral-(debtInQuote));
 
       let liquidationParams: LiquidationParams | null = null;
       if (leverageX96.gt(maxLeverageX96)) {
@@ -123,19 +123,19 @@ export class PoolWatcher {
           position: positionAddress,
           isQuoteAsset: false,
           asset: await this.pool.baseToken(),
-          amount: debt.mul(1010).div(1000), //  get 1% more
+          amount: debt*(1010)/(1000), //  get 1% more
           pool: this.pool.address,
           config: this.config,
         };
 
         this.logger.info(
-          `Bad short position ${positionAddress} found: leverage:${leverageX96.div(Fp96One)} (max:${maxLeverageX96.div(
+          `Bad short position ${positionAddress} found: leverage:${leverageX96/(Fp96One)} (max:${maxLeverageX96/(
             Fp96One
           )}) amount:${debt}`
         );
       } else {
         this.logger.debug(
-          `Short position ${positionAddress} checked: leverage:${leverageX96.div(Fp96One)} (max:${maxLeverageX96.div(
+          `Short position ${positionAddress} checked: leverage:${leverageX96/(Fp96One)} (max:${maxLeverageX96/(
             Fp96One
           )})`
         );
@@ -143,14 +143,14 @@ export class PoolWatcher {
 
       return liquidationParams;
     } else if (position._type == PositionType.Long) {
-      const debt = BigNumber.from(position.discountedQuoteAmount).mul(poolCoeffs.quoteDebtCoeffX96).div(Fp96One);
+      const debt = BigNumber.from(position.discountedQuoteAmount)*(poolCoeffs.quoteDebtCoeffX96)/(Fp96One);
       const collateral = BigNumber.from(position.discountedBaseAmount)
-        .mul(poolCoeffs.baseCollateralCoeffX96)
-        .div(Fp96One)
-        .sub(poolCoeffs.baseDelevCoeffX96.mul(position.discountedQuoteAmount).div(Fp96One));
-      const collateralInQuote = collateral.mul(basePriceX96).div(Fp96One);
+        *(poolCoeffs.baseCollateralCoeffX96)
+        /(Fp96One)
+        -(poolCoeffs.baseDelevCoeffX96*(position.discountedQuoteAmount)/(Fp96One));
+      const collateralInQuote = collateral*(basePriceX96)/(Fp96One);
 
-      const leverageX96 = collateralInQuote.mul(Fp96One).div(collateralInQuote.sub(debt));
+      const leverageX96 = collateralInQuote*(Fp96One)/(collateralInQuote-(debt));
 
       let liquidationParams: LiquidationParams | null = null;
       if (leverageX96.gt(maxLeverageX96)) {
@@ -158,18 +158,18 @@ export class PoolWatcher {
           position: positionAddress,
           isQuoteAsset: true,
           asset: await this.pool.quoteToken(),
-          amount: debt.mul(1010).div(1000), //  get 1% more
+          amount: debt*(1010)/(1000), //  get 1% more
           config: this.config,
           pool: this.pool.address,
         };
         this.logger.info(
-          `Bad long position ${positionAddress} found: leverage:${leverageX96.div(Fp96One)} (max:${maxLeverageX96.div(
+          `Bad long position ${positionAddress} found: leverage:${leverageX96/(Fp96One)} (max:${maxLeverageX96/(
             Fp96One
           )}) amount:${debt}`
         );
       } else {
         this.logger.debug(
-          `Long position ${positionAddress} checked: leverage:${leverageX96.div(Fp96One)} (max:${maxLeverageX96.div(
+          `Long position ${positionAddress} checked: leverage:${leverageX96/(Fp96One)} (max:${maxLeverageX96/(
             Fp96One
           )})`
         );
@@ -289,7 +289,7 @@ export async function createPoolWatchers(
 
       // const baseDecimals: number = await getERC20Decimals(await marginlyPoolContract.baseToken());
       // const baseOne = BigNumber.from(10).pow(baseDecimals);
-      // const minProfitBase = RationalNumber.parse(config.minProfitBase).mul(baseOne).toInteger();
+      // const minProfitBase = RationalNumber.parse(config.minProfitBase)*(baseOne).toInteger();
 
       return new PoolWatcher(marginlyPoolContract, config, logger);
     })

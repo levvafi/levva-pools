@@ -63,7 +63,7 @@ describe('CurveEMAPriceOracle', () => {
     const margincallPriceX96 = await oracle.getMargincallPrice(quoteToken.address, baseToken.address);
 
     const decimalsMultiplier = BigNumber.from(10).pow(18 + baseDecimals - quoteDecimals);
-    const expectedBalancePriceX96 = priceFromPool.mul(X96One).div(decimalsMultiplier);
+    const expectedBalancePriceX96 = priceFromPool*(X96One)/(decimalsMultiplier);
     const expectedMargincallPriceX96 = expectedBalancePriceX96;
 
     expect(balancePriceX96).to.be.equal(expectedBalancePriceX96);
@@ -85,7 +85,7 @@ describe('CurveEMAPriceOracle', () => {
     const margincallPriceX96 = await oracle.getMargincallPrice(quoteToken.address, baseToken.address);
 
     const decimalsMultiplier = BigNumber.from(10).pow(18 + quoteDecimals - baseDecimals);
-    const expectedBalancePriceX96 = BigNumber.from(X96One).mul(decimalsMultiplier).div(priceFromPool);
+    const expectedBalancePriceX96 = BigNumber.from(X96One)*(decimalsMultiplier)/(priceFromPool);
     const expectedMargincallPriceX96 = expectedBalancePriceX96;
 
     expect(balancePriceX96).to.be.equal(expectedBalancePriceX96);
@@ -182,7 +182,7 @@ describe('CurveOracle for CurveStableSwapNG', () => {
     const margincallPriceX96 = await oracle.getMargincallPrice(quoteToken.address, baseToken.address);
 
     const decimalsMultiplier = BigNumber.from(10).pow(18 + baseDecimals - quoteDecimals);
-    const expectedBalancePriceX96 = priceFromPool.mul(X96One).div(decimalsMultiplier);
+    const expectedBalancePriceX96 = priceFromPool*(X96One)/(decimalsMultiplier);
     const expectedMargincallPriceX96 = expectedBalancePriceX96;
 
     expect(balancePriceX96).to.be.equal(expectedBalancePriceX96);
@@ -204,7 +204,7 @@ describe('CurveOracle for CurveStableSwapNG', () => {
     const margincallPriceX96 = await oracle.getMargincallPrice(quoteToken.address, baseToken.address);
 
     const decimalsMultiplier = BigNumber.from(10).pow(18 + quoteDecimals - baseDecimals);
-    const expectedBalancePriceX96 = BigNumber.from(X96One).mul(decimalsMultiplier).div(priceFromPool);
+    const expectedBalancePriceX96 = BigNumber.from(X96One)*(decimalsMultiplier)/(priceFromPool);
     const expectedMargincallPriceX96 = expectedBalancePriceX96;
 
     expect(balancePriceX96).to.be.equal(expectedBalancePriceX96);

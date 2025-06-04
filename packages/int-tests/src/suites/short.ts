@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseUnits } from 'ethers'
 import { fp48ToHumanString, FP96, toHumanString } from '../utils/fixed-point';
 import {
   CallType,
@@ -68,26 +68,26 @@ export async function short(sut: SystemUnderTest) {
     logger.info(`lender depositQuote call success`);
   }
 
-  const maxLeverageX96 = BigNumber.from((await marginlyPool.params()).maxLeverage).mul(FP96.one);
+  const maxLeverageX96 = BigNumber.from((await marginlyPool.params()).maxLeverage)*(FP96.one);
   logger.info(`maxLeverage: ${maxLeverageX96}`);
   const basePrice = BigNumber.from((await marginlyPool.getBasePrice()).inner);
-  logger.info(`basePrice: ${toHumanString(basePrice.mul(10 ** 12))} * 10 ** (-12) USDC/WETH`);
+  logger.info(`basePrice: ${toHumanString(basePrice*(10 ** 12))} * 10 ** (-12) USDC/WETH`);
 
   const swapFeeX96 = BigNumber.from((await marginlyPool.params()).swapFee)
-    .mul(FP96.one)
-    .div(1e6);
+    *(FP96.one)
+    /(1e6);
   logger.info(`swapFee: ${toHumanString(swapFeeX96)}`);
   const feeHolder = await marginlyFactory.feeHolder();
 
   const interestRateX96 = BigNumber.from((await marginlyPool.params()).interestRate)
-    .mul(FP96.one)
-    .div(1e6);
+    *(FP96.one)
+    /(1e6);
   logger.info(`interestRate: ${toHumanString(interestRateX96)}`);
 
   // 30 WETH equivalent in usdc
   const initCollateral = BigNumber.from(30n * 10n ** 18n)
-    .mul(basePrice)
-    .div(FP96.one);
+    *(basePrice)
+    /(FP96.one);
   logger.info(`initCollateral: ${formatUnits(initCollateral, 6)} USDC`);
 
   for (let i = 0; i < shortersNumber; ++i) {
@@ -119,12 +119,12 @@ export async function short(sut: SystemUnderTest) {
     const quoteDebtBefore = BigNumber.from(await marginlyPool.discountedQuoteDebt());
     const quoteColCoeff = BigNumber.from(await marginlyPool.quoteCollateralCoeff());
 
-    const shortAmount = BigNumber.from(5n * 10n ** 18n).mul(BigNumber.from(i + 1));
+    const shortAmount = BigNumber.from(5n * 10n ** 18n)*(BigNumber.from(i + 1));
     logger.info(`shortAmount: ${formatUnits(shortAmount, 18)} WETH`);
 
     const prevBlockNumber = await marginlyPool.provider.getBlockNumber();
     logger.info(`short call`);
-    const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+    const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
     const txReceipt = await gasReporter.saveGasUsage(
       'short',
       marginlyPool
@@ -157,7 +157,7 @@ export async function short(sut: SystemUnderTest) {
       throw new Error(error);
     }
 
-    const expectedBaseChange = shortAmount.mul(FP96.one).div(baseDebtCoeff);
+    const expectedBaseChange = shortAmount*(FP96.one)/(baseDebtCoeff);
     const expectedBaseDebtAfterShort = baseDebtBefore.add(expectedBaseChange);
     if (!baseDebtAfter.eq(expectedBaseDebtAfterShort)) {
       const error = `wrong baseDebt: expected ${expectedBaseDebtAfterShort}, actual ${baseDebtAfter}`;
@@ -167,10 +167,10 @@ export async function short(sut: SystemUnderTest) {
 
     const realQuoteAmount = swapEvent.amount0.abs();
     logger.info(`realQuoteAmount: ${formatUnits(realQuoteAmount, 6)}`);
-    const fee = swapFeeX96.mul(realQuoteAmount).div(FP96.one);
-    const expectedQuoteChange = realQuoteAmount.sub(fee);
+    const fee = swapFeeX96*(realQuoteAmount)/(FP96.one);
+    const expectedQuoteChange = realQuoteAmount-(fee);
     logger.info(`expectedQuoteChange: ${formatUnits(expectedQuoteChange, 6)}`);
-    const expectedQuoteColAfterShort = quoteCollateralBefore.add(expectedQuoteChange.mul(quoteColCoeff).div(FP96.one));
+    const expectedQuoteColAfterShort = quoteCollateralBefore.add(expectedQuoteChange*(quoteColCoeff)/(FP96.one));
 
     if (!quoteCollateralAfter.eq(expectedQuoteColAfterShort)) {
       const error = `wrong quoteCollateral: expected ${expectedQuoteColAfterShort}, actual ${quoteCollateralAfter}`;
@@ -244,18 +244,18 @@ export async function short(sut: SystemUnderTest) {
 
     if (!marginCallEvent) {
       // baseCollateralCoeff
-      const baseDebtDelta = baseDebtCoeff.sub(baseDebtCoeffBefore).mul(discountedBaseDebt).div(FP96.one);
+      const baseDebtDelta = baseDebtCoeff-(baseDebtCoeffBefore)*(discountedBaseDebt)/(FP96.one);
 
       const baseCollatDelta = baseCollateralCoeff
-        .sub(baseCollateralCoeffBefore)
-        .mul(discountedBaseCollateral)
-        .div(FP96.one);
+        -(baseCollateralCoeffBefore)
+        *(discountedBaseCollateral)
+        /(FP96.one);
 
-      const realDebtFee = expectedCoeffs.discountedBaseDebtFee.mul(baseCollateralCoeff).div(FP96.one);
+      const realDebtFee = expectedCoeffs.discountedBaseDebtFee*(baseCollateralCoeff)/(FP96.one);
 
       // base collateral change == base debt change
       const epsilon = BigNumber.from(1);
-      const delta = baseDebtDelta.sub(baseCollateralCoeff).sub(realDebtFee).abs();
+      const delta = baseDebtDelta-(baseCollateralCoeff)-(realDebtFee).abs();
       if (!delta.gt(epsilon)) {
         logger.warn(`quoteDebtDelta: ${formatUnits(baseDebtDelta, 18)} WETH`);
         logger.warn(`quoteCollatDelta: ${formatUnits(baseCollatDelta, 18)} WETH`);
@@ -263,13 +263,13 @@ export async function short(sut: SystemUnderTest) {
         logger.error(`delta ${delta} they must be equal`);
       }
 
-      let lendersTotalBaseDelta = BigNumber.from(0);
-      let shortersTotalBaseDelta = BigNumber.from(0);
+      let lendersTotalBaseDelta = 0n;
+      let shortersTotalBaseDelta = 0n;
 
       for (let i = 0; i < lendersNumber; ++i) {
         const position = await marginlyPool.positions(lenders[i].address);
-        const realBaseAmount = baseCollateralCoeff.mul(position.discountedBaseAmount).div(FP96.one);
-        lendersTotalBaseDelta = lendersTotalBaseDelta.add(realBaseAmount).sub(baseAmountsLenders[i]);
+        const realBaseAmount = baseCollateralCoeff*(position.discountedBaseAmount)/(FP96.one);
+        lendersTotalBaseDelta = lendersTotalBaseDelta.add(realBaseAmount)-(baseAmountsLenders[i]);
         baseAmountsLenders[i] = realBaseAmount;
       }
 
@@ -280,13 +280,13 @@ export async function short(sut: SystemUnderTest) {
         }
 
         const baseDebtCoeff = await marginlyPool.baseDebtCoeff();
-        const realBaseAmount = baseDebtCoeff.mul(position.discountedBaseAmount).div(FP96.one);
-        shortersTotalBaseDelta = shortersTotalBaseDelta.add(realBaseAmount).sub(baseDebtsShorters[i]);
+        const realBaseAmount = baseDebtCoeff*(position.discountedBaseAmount)/(FP96.one);
+        shortersTotalBaseDelta = shortersTotalBaseDelta.add(realBaseAmount)-(baseDebtsShorters[i]);
         baseDebtsShorters[i] = realBaseAmount;
       }
 
-      const lenderShortersDelta = lendersTotalBaseDelta.add(realDebtFee).sub(shortersTotalBaseDelta).abs();
-      if (lenderShortersDelta.gt(epsilon.mul(BigNumber.from(shortersNumber)))) {
+      const lenderShortersDelta = lendersTotalBaseDelta.add(realDebtFee)-(shortersTotalBaseDelta).abs();
+      if (lenderShortersDelta.gt(epsilon*(BigNumber.from(shortersNumber)))) {
         const lendersDelta = formatUnits(lendersTotalBaseDelta, 18);
         const debtFee = formatUnits(realDebtFee, 18);
         const shortersDelta = formatUnits(shortersTotalBaseDelta, 18);
@@ -305,7 +305,7 @@ export async function short(sut: SystemUnderTest) {
   for (let i = 0; i < lendersNumber; ++i) {
     logger.info(`${i + 1}) lender ${lenders[i].address}`);
     const position = await marginlyPool.positions(lenders[i].address);
-    const realBaseAmount = baseCollateralCoeff.mul(position.discountedBaseAmount).div(FP96.one);
+    const realBaseAmount = baseCollateralCoeff*(position.discountedBaseAmount)/(FP96.one);
     logger.info(` Deposit ${formatUnits(baseAmount, 18)} WETH, current ${formatUnits(realBaseAmount, 18)} WETH`);
   }
 
@@ -322,8 +322,8 @@ export async function short(sut: SystemUnderTest) {
 
     const sortKeyX48 = await getShortSortKeyX48(marginlyPool, shorter.address);
     const debtCoeff = await marginlyPool.baseDebtCoeff();
-    const realBaseAmount = debtCoeff.mul(position.discountedBaseAmount).div(FP96.one);
-    const realQuoteAmount = quoteCollateralCoeff.mul(position.discountedQuoteAmount).div(FP96.one);
+    const realBaseAmount = debtCoeff*(position.discountedBaseAmount)/(FP96.one);
+    const realQuoteAmount = quoteCollateralCoeff*(position.discountedQuoteAmount)/(FP96.one);
     logger.info(` position type ${position._type}`);
     logger.info(` sortKey ${fp48ToHumanString(sortKeyX48)}`);
     logger.info(` collateral ${formatUnits(realQuoteAmount, 6)} USDC, debt ${formatUnits(realBaseAmount, 18)} WETH`);

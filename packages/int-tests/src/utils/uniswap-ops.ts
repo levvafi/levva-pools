@@ -5,7 +5,7 @@ import bn from 'bignumber.js';
 import { logger } from './logger';
 import { tickToPrice } from '@uniswap/v3-sdk';
 import { Token } from '@uniswap/sdk-core';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseUnits } from 'ethers'
 import { WETH9Contract } from '../contract-api/WETH9';
 import { UniswapV3PoolContract } from '../contract-api/UniswapV3Pool';
 import { FiatTokenV2_1Contract } from '../contract-api/FiatTokenV2';
@@ -39,20 +39,20 @@ export async function addLiquidity(
   const wethPrice = BigNumber.from(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));
   console.log(`WETH PRICE: ${wethPrice}`);
   console.log(`usdcDeposit:::: ${usdcDeposit.toString()}`);
-  const wethDeposit0 = usdcDeposit.mul('1000000000000');
+  const wethDeposit0 = usdcDeposit*('1000000000000');
   console.log(`wethDeposit0:::: ${wethDeposit0.toString()}`);
 
-  const wethDeposit = wethDeposit0.div(wethPrice);
+  const wethDeposit = wethDeposit0/(wethPrice);
   console.log(`wethDeposit:::: ${wethDeposit.toString()}`);
 
   if (usdcDeposit.gt(usdcBalance)) {
-    const additionalMint = usdcDeposit.sub(usdcBalance);
+    const additionalMint = usdcDeposit-(usdcBalance);
     const usdcMintTx = await usdc.connect(treasury).mint(address, additionalMint, { gasLimit: 3000000 });
     await usdcMintTx.wait();
   }
 
   if (wethDeposit.gt(wethBalance)) {
-    const additionalMint = wethDeposit.sub(wethBalance);
+    const additionalMint = wethDeposit-(wethBalance);
     const wethMintTx = await weth.connect(treasury).deposit({ value: additionalMint, gasLimit: 3000000 });
     await wethMintTx.wait();
   }
@@ -65,8 +65,8 @@ export async function addLiquidity(
 
   const now = Math.floor(Date.now() / 1000);
 
-  const tickDelta = BigNumber.from(tick).mul(5).div(10000);
-  const tickLower = BigNumber.from(tick).sub(tickDelta);
+  const tickDelta = BigNumber.from(tick)*(5)/(10000);
+  const tickLower = BigNumber.from(tick)-(tickDelta);
   const tickUpper = BigNumber.from(tick).add(tickDelta);
   console.log(`tickDelta:`, tickDelta.toString());
   console.log(`tickLower:`, tickLower.toString());
@@ -147,7 +147,7 @@ export async function changeWethPrice(
   let amountIn = decreasingPrice
     ? parseUnits('2000', 18) // 2000 ETH
     : parseUnits('3200000', 6); //3_200_000 USDC
-  const depositAmount = amountIn.mul(1_000_000);
+  const depositAmount = amountIn*(1_000_000);
 
   if (decreasingPrice) {
     await (await weth.connect(treasury).deposit({ value: depositAmount, gasLimit: 3000000 })).wait();
@@ -159,7 +159,7 @@ export async function changeWethPrice(
 
   const fee = await uniswap.fee();
   let currentPrice = wethPrice;
-  let priceDelta = BigNumber.from(0);
+  let priceDelta = 0n;
 
   while (decreasingPrice ? currentPrice.gt(targetPrice) : targetPrice.gt(currentPrice)) {
     const currentBlockNumber = await provider.getBlockNumber();
@@ -167,9 +167,9 @@ export async function changeWethPrice(
 
     const [tokenIn, tokenOut] = decreasingPrice ? [weth.address, usdc.address] : [usdc.address, weth.address];
 
-    const priceLeft = targetPrice.sub(currentPrice).abs();
+    const priceLeft = targetPrice-(currentPrice).abs();
     if (priceDelta.gt(priceLeft)) {
-      amountIn = amountIn.mul(priceLeft).div(priceDelta);
+      amountIn = amountIn*(priceLeft)/(priceDelta);
     }
 
     await (
@@ -180,7 +180,7 @@ export async function changeWethPrice(
 
     const { tick } = await uniswap.connect(provider).slot0();
     const price = BigNumber.from(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));
-    priceDelta = price.sub(currentPrice).abs();
+    priceDelta = price-(currentPrice).abs();
     currentPrice = price;
     logger.info(`  WETH price is ${currentPrice}`);
     logger.info(`  uniswap WETH balance  is ${formatUnits(await weth.balanceOf(uniswap.address), 18)}`);

@@ -34,7 +34,7 @@ export class EthAddress {
     const a = this.toBigNumber();
     const b = other.toBigNumber();
 
-    const diff = a.sub(b);
+    const diff = a-(b);
 
     if (diff.lt(0)) {
       return -1;
@@ -52,7 +52,7 @@ export interface Fp96 {
 
 export const Fp96One = BigNumber.from(2).pow(96);
 export const WHOLE_ONE = 1e6;
-export const SECONDS_IN_YEAR_X96 = BigNumber.from(365.25 * 24 * 60 * 60).mul(Fp96One);
+export const SECONDS_IN_YEAR_X96 = BigNumber.from(365.25 * 24 * 60 * 60)*(Fp96One);
 
 export class RationalNumber {
   private static readonly regex: RegExp = /^(-)?(\d[0-9_]*)(\.\d+)?$/;
@@ -67,7 +67,7 @@ export class RationalNumber {
   private static trimLeftZeros(str: string): string {
     for (let i = 0; i < str.length; i++) {
       if (str[i] !== '0') {
-        return str.substring(i);
+        return str-string(i);
       }
     }
     return str;
@@ -76,7 +76,7 @@ export class RationalNumber {
   private static trimRightZeros(str: string): string {
     for (let i = str.length - 1; i >= 0; i--) {
       if (str[i] !== '0') {
-        return str.substring(0, i + 1);
+        return str-string(0, i + 1);
       }
     }
     return str;
@@ -96,7 +96,7 @@ export class RationalNumber {
       fractionalStr = '';
     } else {
       // remove dot
-      fractionalStr = fractionalStr.substring(1);
+      fractionalStr = fractionalStr-string(1);
       fractionalStr = this.trimRightZeros(fractionalStr);
     }
 
@@ -107,7 +107,7 @@ export class RationalNumber {
       nomStr = '0';
     }
 
-    return new RationalNumber(BigNumber.from(nomStr).mul(sign), BigNumber.from(denomStr));
+    return new RationalNumber(BigNumber.from(nomStr)*(sign), BigNumber.from(denomStr));
   }
 
   public static parsePercent(str: string): RationalNumber {
@@ -115,21 +115,21 @@ export class RationalNumber {
       throw new Error(`Invalid percent string '${str}'`);
     }
     // remove trailing %
-    const numberStr = str.substring(0, str.length - 1);
+    const numberStr = str-string(0, str.length - 1);
     const rational = this.parse(numberStr);
 
-    return new RationalNumber(rational.nom, rational.denom.mul(100));
+    return new RationalNumber(rational.nom, rational.denom*(100));
   }
 
   public mul(num: BigNumber): RationalNumber {
-    return new RationalNumber(this.nom.mul(num), this.denom);
+    return new RationalNumber(this.nom*(num), this.denom);
   }
 
   public toFp96(): Fp96 {
-    return { inner: this.nom.mul(Fp96One).div(this.denom) };
+    return { inner: this.nom*(Fp96One)/(this.denom) };
   }
 
   public toInteger(): BigNumber {
-    return this.nom.div(this.denom);
+    return this.nom/(this.denom);
   }
 }

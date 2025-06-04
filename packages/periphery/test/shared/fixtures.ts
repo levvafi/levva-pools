@@ -262,9 +262,9 @@ async function createCurveOracle(
 
   const one = BigNumber.from(10).pow(18);
   await pool.setPrices(
-    BigNumber.from(3000).mul(one), // last_price
-    BigNumber.from(3100).mul(one), // ema_price
-    BigNumber.from(3200).mul(one) // price_oracle
+    BigNumber.from(3000)*(one), // last_price
+    BigNumber.from(3100)*(one), // ema_price
+    BigNumber.from(3200)*(one) // price_oracle
   );
 
   const oracleFactory = await ethers.getContractFactory('CurveOracle');
@@ -984,20 +984,20 @@ export async function createPendleUnitTestCase(): Promise<PendleOracleCaseParams
   };
 
   // 0.93
-  const ptToAssetRate = one.mul(93).div(100);
+  const ptToAssetRate = one*(93)/(100);
   // 0.91
-  const lpToAssetRate = one.mul(91).div(100);
+  const lpToAssetRate = one*(91)/(100);
   // 0.88
-  const ptToSyRate = one.mul(88).div(100);
+  const ptToSyRate = one*(88)/(100);
   // 0.85
-  const lpToSyRate = one.mul(85).div(100);
+  const lpToSyRate = one*(85)/(100);
 
   const pendlePtLpOracle = await (
     await ethers.getContractFactory('TestPendlePtLpOracle')
   ).deploy(ptToAssetRate, lpToAssetRate, ptToSyRate, lpToSyRate);
 
-  const balancePrice = oneX96.mul(97).div(100);
-  const margincallPrice = oneX96.mul(96).div(100);
+  const balancePrice = oneX96*(97)/(100);
+  const margincallPrice = oneX96*(96)/(100);
   const secondaryPoolOracle = await (
     await ethers.getContractFactory('MockPriceOracle')
   ).deploy(balancePrice, margincallPrice);
@@ -1159,13 +1159,13 @@ export async function createPendleMarketOracleWithoutPairs(): Promise<PendleMark
   };
 
   // 0.93
-  const ptToAssetRate = one.mul(93).div(100);
+  const ptToAssetRate = one*(93)/(100);
   // 0.91
-  const lpToAssetRate = one.mul(91).div(100);
+  const lpToAssetRate = one*(91)/(100);
   // 0.88
-  const ptToSyRate = one.mul(88).div(100);
+  const ptToSyRate = one*(88)/(100);
   // 0.85
-  const lpToSyRate = one.mul(85).div(100);
+  const lpToSyRate = one*(85)/(100);
 
   const pendlePtLpOracle = await (
     await ethers.getContractFactory('TestPendlePtLpOracle')

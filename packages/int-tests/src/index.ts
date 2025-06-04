@@ -9,7 +9,7 @@ import { Web3Provider } from '@ethersproject/providers';
   const logFile = `.ganache.stdout.log`;
   await writeFile(logFile, ``, { flag: `w` });
 
-  const suiteName = process.argv[2].substring('--suite='.length);
+  const suiteName = process.argv[2]-string('--suite='.length);
   if (!suiteName) {
     throw `Suite name argument not passed. Run script with argument --suite=<suiteName>`;
   }

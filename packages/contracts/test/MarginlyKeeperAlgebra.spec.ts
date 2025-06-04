@@ -1,19 +1,19 @@
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { BigNumber } from 'ethers';
 import { createMarginlyKeeperAlgebra } from './shared/fixtures';
 import { PositionType } from './shared/utils';
+import { AbiCoder, Addressable } from 'ethers';
 
 const keeperSwapCallData = 0n; // it's ok for unit tests, but it wont work in production
 
 function encodeLiquidationParams(
-  asset: string,
+  asset: string | Addressable,
   amount: bigint,
-  marginlyPool: string,
+  marginlyPool: string | Addressable,
   positionToLiquidate: string,
   liquidator: string,
-  algebraPool: string,
+  algebraPool: string | Addressable,
   minProfit: bigint,
   swapCallData: bigint
 ): string {
@@ -28,9 +28,9 @@ function encodeLiquidationParams(
     uint256 swapCallData;
    */
 
-  return ethers.utils.defaultAbiCoder.encode(
+  return AbiCoder.defaultAbiCoder().encode(
     ['address', 'uint256', 'address', 'address', 'address', 'address', 'uint256', 'uint256'],
-    [asset, amount, marginlyPool, positionToLiquidate, liquidator, algebraPool, minProfit, swapCallData]
+    [asset.toString(), amount, marginlyPool.toString(), positionToLiquidate, liquidator, algebraPool.toString(), minProfit, swapCallData]
   );
 }
 
@@ -61,29 +61,28 @@ describe('MarginlyKeeperAlgebra', () => {
 
     const balanceBefore = await baseToken.balanceOf(liquidator.address);
 
-    const [amount0, amount1] = (await algebraPool.token0()) == baseToken.address ? [baseAmount, 0] : [0, baseAmount];
+    const [amount0, amount1] = (await algebraPool.token0()) == await baseToken.getAddress() ? [baseAmount, 0] : [0, baseAmount];
     const flashCalldata = encodeLiquidationParams(
-      baseToken.address,
+      baseToken,
       baseAmount,
-      marginlyPool.address,
+      marginlyPool,
       badPosition.address,
       liquidator.address,
-      algebraPool.address,
+      algebraPool,
       minProfitETH,
       keeperSwapCallData
     );
 
-    await keeper.connect(liquidator).liquidatePosition(algebraPool.address, amount0, amount1, flashCalldata);
+    await keeper.connect(liquidator).liquidatePosition(algebraPool, amount0, amount1, flashCalldata);
 
-    const balanceAfter = await baseToken.balanceOf(liquidator.address);
+    const balanceAfter = await baseToken.balanceOf(liquidator);
 
-    expect(balanceAfter).greaterThanOrEqual(balanceBefore.add(BigNumber.from(minProfitETH)));
+    expect(balanceAfter).greaterThanOrEqual(balanceBefore + minProfitETH);
   });
 
   it('Should liquidate long position', async () => {
-    const { keeper, swapRouter, baseToken, quoteToken, marginlyPool, algebraPool } = await loadFixture(
-      createMarginlyKeeperAlgebra
-    );
+    const { keeper, swapRouter, baseToken, quoteToken, marginlyPool, algebraPool } =
+      await loadFixture(createMarginlyKeeperAlgebra);
     const [, badPosition, liquidator] = await ethers.getSigners();
     const decimals = BigInt(await baseToken.decimals());
     const price = 1500; // 1 ETH = 1500 USDC
@@ -108,29 +107,28 @@ describe('MarginlyKeeperAlgebra', () => {
 
     const balanceBefore = await quoteToken.balanceOf(liquidator.address);
 
-    const [amount0, amount1] = (await algebraPool.token0()) == quoteToken.address ? [quoteAmount, 0] : [0, quoteAmount];
+    const [amount0, amount1] = (await algebraPool.token0()) == await quoteToken.getAddress() ? [quoteAmount, 0] : [0, quoteAmount];
     const liquidationParams = encodeLiquidationParams(
-      quoteToken.address,
+      quoteToken,
       quoteAmount,
-      marginlyPool.address,
+      marginlyPool,
       badPosition.address,
       liquidator.address,
-      algebraPool.address,
+      algebraPool,
       minProfitETH,
       keeperSwapCallData
     );
 
-    await keeper.connect(liquidator).liquidatePosition(algebraPool.address, amount0, amount1, liquidationParams);
+    await keeper.connect(liquidator).liquidatePosition(algebraPool, amount0, amount1, liquidationParams);
 
-    const balanceAfter = await quoteToken.balanceOf(liquidator.address);
+    const balanceAfter = await quoteToken.balanceOf(liquidator);
 
-    expect(balanceAfter).greaterThanOrEqual(balanceBefore.add(BigNumber.from(minProfitETH)));
+    expect(balanceAfter).greaterThanOrEqual(balanceBefore + minProfitETH);
   });
 
   it('Should fail when profit after liquidation less than minimum', async () => {
-    const { keeper, swapRouter, baseToken, quoteToken, marginlyPool, algebraPool } = await loadFixture(
-      createMarginlyKeeperAlgebra
-    );
+    const { keeper, swapRouter, baseToken, quoteToken, marginlyPool, algebraPool } =
+      await loadFixture(createMarginlyKeeperAlgebra);
     const [, badPosition, liquidator] = await ethers.getSigners();
     const decimals = BigInt(await baseToken.decimals());
     const price = 1500; // 1 ETH = 1500 USDC
@@ -153,20 +151,20 @@ describe('MarginlyKeeperAlgebra', () => {
 
     const minProfitETH = 500n * 10n ** decimals; // 500 USDC
 
-    const [amount0, amount1] = (await algebraPool.token0()) == quoteToken.address ? [quoteAmount, 0] : [0, quoteAmount];
+    const [amount0, amount1] = (await algebraPool.token0()) == await quoteToken.getAddress() ? [quoteAmount, 0] : [0, quoteAmount];
     const liquidationParams = encodeLiquidationParams(
-      quoteToken.address,
+      quoteToken,
       quoteAmount,
-      marginlyPool.address,
+      marginlyPool,
       badPosition.address,
       liquidator.address,
-      algebraPool.address,
+      algebraPool,
       minProfitETH,
       keeperSwapCallData
     );
 
     await expect(
-      keeper.connect(liquidator).liquidatePosition(algebraPool.address, amount0, amount1, liquidationParams)
+      keeper.connect(liquidator).liquidatePosition(algebraPool, amount0, amount1, liquidationParams)
     ).to.be.revertedWith('Less than minimum profit');
   });
 });

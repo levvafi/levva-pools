@@ -1,5 +1,5 @@
 import { BigNumber } from 'ethers';
-import { formatUnits } from 'ethers/lib/utils';
+import { formatUnits } from 'ethers'
 import bn from 'bignumber.js';
 import { FP96, toHumanString } from '../utils/fixed-point';
 import { logger } from '../utils/logger';
@@ -25,27 +25,27 @@ export async function showSystemAggregates(sut: SystemUnderTest) {
   const systemLeverage = await marginlyPool.systemLeverage();
   const shortX96 = BigNumber.from(systemLeverage.shortX96);
   const longX96 = BigNumber.from(systemLeverage.longX96);
-  const basePriceX96 = BigNumber.from((await marginlyPool.getBasePrice()).inner).mul(10 ** 12);
+  const basePriceX96 = BigNumber.from((await marginlyPool.getBasePrice()).inner)*(10 ** 12);
 
   // calc aggregates
-  const realQuoteCollateral = quoteCollateralCoeff.mul(discountedQuoteCollateral).div(FP96.one);
-  const realQuoteDebt = quoteDebtCoeff.mul(discountedQuoteDebt).div(FP96.one);
-  const realBaseCollateral = baseCollateralCoeff.mul(discountedBaseCollateral).div(FP96.one);
-  const realBaseDebt = baseDebtCoeff.mul(discountedBaseDebt).div(FP96.one);
+  const realQuoteCollateral = quoteCollateralCoeff*(discountedQuoteCollateral)/(FP96.one);
+  const realQuoteDebt = quoteDebtCoeff*(discountedQuoteDebt)/(FP96.one);
+  const realBaseCollateral = baseCollateralCoeff*(discountedBaseCollateral)/(FP96.one);
+  const realBaseDebt = baseDebtCoeff*(discountedBaseDebt)/(FP96.one);
 
   const feeBalance = await usdc.balanceOf(await marginlyFactory.feeHolder());
 
   const techPosition = await marginlyPool.positions(TechnicalPositionOwner);
-  const techRealBaseAmount = baseCollateralCoeff.mul(techPosition.discountedBaseAmount).div(FP96.one);
-  const techRealQuoteAmount = quoteCollateralCoeff.mul(techPosition.discountedQuoteAmount).div(FP96.one);
+  const techRealBaseAmount = baseCollateralCoeff*(techPosition.discountedBaseAmount)/(FP96.one);
+  const techRealQuoteAmount = quoteCollateralCoeff*(techPosition.discountedQuoteAmount)/(FP96.one);
 
   //totalCollateral - totalDebt
   const systemBalance = realBaseCollateral
-    .sub(realBaseDebt)
-    .mul(basePriceX96.div(10 ** 12))
-    .div(FP96.one)
+    -(realBaseDebt)
+    *(basePriceX96/(10 ** 12))
+    /(FP96.one)
     .add(realQuoteCollateral)
-    .sub(realQuoteDebt);
+    -(realQuoteDebt);
 
   logger.info(`📜 Marginly state: `);
   logger.info(`     discountedBaseCollateral = ${formatUnits(discountedBaseCollateral, 18)}  WETH`);
@@ -97,27 +97,27 @@ export async function showSystemAggregates(sut: SystemUnderTest) {
 
     const discountedBaseAmount = BigNumber.from(position.discountedBaseAmount);
     const discountedQuoteAmount = BigNumber.from(position.discountedQuoteAmount);
-    let realBaseAmount = discountedBaseAmount.mul(baseCollateralCoeff).div(FP96.one);
-    let realQuoteAmount = discountedQuoteAmount.mul(quoteCollateralCoeff).div(FP96.one);
+    let realBaseAmount = discountedBaseAmount*(baseCollateralCoeff)/(FP96.one);
+    let realQuoteAmount = discountedQuoteAmount*(quoteCollateralCoeff)/(FP96.one);
     let leverage = bn(1);
     if (type === 2) {
       // Short
-      realBaseAmount = discountedBaseAmount.mul(baseDebtCoeff).div(FP96.one);
+      realBaseAmount = discountedBaseAmount*(baseDebtCoeff)/(FP96.one);
       const collateral = realQuoteAmount;
       const debt = basePriceX96
-        .div(10 ** 12)
-        .mul(realBaseAmount)
-        .div(FP96.one);
-      leverage = bn(collateral.toString()).div(collateral.sub(debt).toString());
+        /(10 ** 12)
+        *(realBaseAmount)
+        /(FP96.one);
+      leverage = bn(collateral.toString())/(collateral-(debt).toString());
     } else if (type === 3) {
       //Long
-      realQuoteAmount = discountedQuoteAmount.mul(quoteDebtCoeff).div(FP96.one);
+      realQuoteAmount = discountedQuoteAmount*(quoteDebtCoeff)/(FP96.one);
       const collateral = basePriceX96
-        .div(10 ** 12)
-        .mul(realBaseAmount)
-        .div(FP96.one);
+        /(10 ** 12)
+        *(realBaseAmount)
+        /(FP96.one);
       const debt = realQuoteAmount;
-      leverage = bn(collateral.toString()).div(collateral.sub(debt).toString());
+      leverage = bn(collateral.toString())/(collateral-(debt).toString());
     }
 
     logger.info(` `);

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolImmutables.sol';
 import '@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolState.sol';
@@ -273,8 +273,8 @@ contract TestUniswapPool is IUniswapV3PoolImmutables, IUniswapV3PoolState {
   }
 
   function flash(address recipient, uint256 amount0, uint256 amount1, bytes calldata data) external {
-    uint256 fee0 = Math.mulDiv(amount0, this.fee(), 1e6, Math.Rounding.Up);
-    uint256 fee1 = Math.mulDiv(amount1, this.fee(), 1e6, Math.Rounding.Up);
+    uint256 fee0 = Math.mulDiv(amount0, this.fee(), 1e6, Math.Rounding.Ceil);
+    uint256 fee1 = Math.mulDiv(amount1, this.fee(), 1e6, Math.Rounding.Ceil);
 
     uint256 balance0Before = IERC20(token0).balanceOf(address(this));
     uint256 balance1Before = IERC20(token1).balanceOf(address(this));

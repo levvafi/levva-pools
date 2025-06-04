@@ -41,7 +41,7 @@ import { balanceSync, balanceSyncWithdrawBase, balanceSyncWithdrawQuote } from '
 import { routerSwaps, routerMultipleSwaps } from './router';
 import DodoV1MarginlyAdapter from '../contract-api/DodoV1MarginlyAdapter';
 import DodoV2MarginlyAdapter from '../contract-api/DodoV2MarginlyAdapter';
-import { parseUnits } from 'ethers/lib/utils';
+import { parseUnits } from 'ethers'
 import MarginlyKeeperUniswapV3, { MarginlyKeeperUniswapV3Contract } from '../contract-api/MarginlyKeeperUniswapV3';
 import MarginlyKeeperBalancer, { MarginlyKeeperBalancerContract } from '../contract-api/MarginlyKeeperBalancer';
 import MarginlyKeeperAlgebra, { MarginlyKeeperAlgebraContract } from '../contract-api/MarginlyKeeperAlgebra';

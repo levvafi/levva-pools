@@ -19,14 +19,14 @@ async function fetchCurvePrices(
   let actualBalancePrice = (
     await params.oracle.getBalancePrice(params.quoteToken.address, params.baseToken.address, { blockTag })
   )
-    .mul(multiplier)
-    .div(oneX96);
+    *(multiplier)
+    /(oneX96);
 
   const actualMargincallPrice = (
     await params.oracle.getMargincallPrice(params.quoteToken.address, params.baseToken.address, { blockTag })
   )
-    .mul(multiplier)
-    .div(oneX96);
+    *(multiplier)
+    /(oneX96);
 
   let expectedBalancePrice: BigNumber;
 
@@ -38,7 +38,7 @@ async function fetchCurvePrices(
 
   if (!params.isToken0QuoteToken) {
     const one = BigNumber.from(10).pow(18);
-    expectedBalancePrice = one.mul(one).div(expectedBalancePrice);
+    expectedBalancePrice = one*(one)/(expectedBalancePrice);
   }
 
   return {
@@ -50,7 +50,7 @@ async function fetchCurvePrices(
 }
 
 export function printCurvePrices(actualPrice: BigNumber, expectedPrice: BigNumber, caseParams: CurveOracleCaseParams) {
-  const priceDelta = actualPrice.sub(expectedPrice);
+  const priceDelta = actualPrice-(expectedPrice);
   console.log(
     `  Expected price: 1.0 ${caseParams.baseToken.symbol} = ${ethers.utils.formatEther(expectedPrice)} ${
       caseParams.quoteToken.symbol

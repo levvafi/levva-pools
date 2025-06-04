@@ -1,6 +1,6 @@
 import assert = require('assert');
 import { BigNumber } from 'ethers';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseUnits } from 'ethers'
 import { SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import { CallType, decodeSwapEvent, uniswapV3Swapdata } from '../utils/chain-ops';
@@ -31,7 +31,7 @@ export async function longIncome(sut: SystemUnderTest) {
     );
   }
 
-  const wethPriceX96 = BigNumber.from((await marginlyPool.getBasePrice()).inner).mul(10n ** 12n);
+  const wethPriceX96 = BigNumber.from((await marginlyPool.getBasePrice()).inner)*(10n ** 12n);
 
   logger.info(`Weth price = ${toHumanString(wethPriceX96)}`);
 
@@ -55,7 +55,7 @@ export async function longIncome(sut: SystemUnderTest) {
   const longAmount = parseUnits('5', 18);
   logger.info(`Open ${formatUnits(longAmount, 18)} WETH long position`);
 
-  const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+  const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
   await gasReporter.saveGasUsage(
     'long',
     marginlyPool
@@ -66,7 +66,7 @@ export async function longIncome(sut: SystemUnderTest) {
   );
 
   logger.info(`Increasing WETH price by ~10%`);
-  await changeWethPrice(treasury, provider.provider, sut, wethPriceX96.mul(11).div(10).div(FP96.one));
+  await changeWethPrice(treasury, provider.provider, sut, wethPriceX96*(11)/(10)/(FP96.one));
 
   const shiftInDays = 10;
   logger.info(`Shift date by ${shiftInDays} days`);
@@ -94,7 +94,7 @@ export async function longIncome(sut: SystemUnderTest) {
   const discountedBaseCollBefore = BigNumber.from(await marginlyPool.discountedBaseCollateral());
 
   logger.info(`Closing position`);
-  const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+  const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
   const closePosReceipt = await gasReporter.saveGasUsage(
     'closePosition',
     await marginlyPool
@@ -112,29 +112,29 @@ export async function longIncome(sut: SystemUnderTest) {
   const collCoeff = BigNumber.from(await marginlyPool.baseCollateralCoeff());
   const positionAfter = await marginlyPool.positions(borrower.address);
   const positionDiscountedBaseAmountAfter = BigNumber.from(positionAfter.discountedBaseAmount);
-  const expectedPosDiscountedBaseAmount = positionDiscountedBaseAmountBefore.sub(
-    swapAmount.mul(FP96.one).div(collCoeff)
+  const expectedPosDiscountedBaseAmount = positionDiscountedBaseAmountBefore-(
+    swapAmount*(FP96.one)/(collCoeff)
   );
 
   logger.info(`position.discountedBaseAmount: ${formatUnits(positionAfter.discountedBaseAmount, 18)} ETH`);
   assert.deepEqual(expectedPosDiscountedBaseAmount, positionDiscountedBaseAmountAfter, 'pos.discountedBaseAmount');
 
-  const positionRealBaseAmount = BigNumber.from(positionAfter.discountedBaseAmount).mul(collCoeff).div(FP96.one);
+  const positionRealBaseAmount = BigNumber.from(positionAfter.discountedBaseAmount)*(collCoeff)/(FP96.one);
   logger.info(`position real base amount: ${formatUnits(positionRealBaseAmount, 18)} ETH`);
 
   const positionDiscountedQuoteAmountAfter = +BigNumber.from(positionAfter.discountedQuoteAmount);
   assert.deepEqual(0, positionDiscountedQuoteAmountAfter, 'pos.discountedQuoteAmount');
 
   const discountedBaseCollAfter = BigNumber.from(await marginlyPool.discountedBaseCollateral());
-  const expectedDiscountedBaseColl = discountedBaseCollBefore.sub(swapAmount.mul(FP96.one).div(collCoeff));
+  const expectedDiscountedBaseColl = discountedBaseCollBefore-(swapAmount*(FP96.one)/(collCoeff));
   assert.deepEqual(expectedDiscountedBaseColl, discountedBaseCollAfter, 'discountedBaseCollateral');
 
   const discountedQuoteDebt = +BigNumber.from(await marginlyPool.discountedQuoteDebt());
   assert.deepEqual(discountedQuoteDebt, 0, 'discountedQuoteDebt');
 
-  const moneyBefore = +formatUnits(initialBorrBaseBalance.mul(wethPriceX96).div(FP96.one), 18);
+  const moneyBefore = +formatUnits(initialBorrBaseBalance*(wethPriceX96)/(FP96.one), 18);
   const price = BigNumber.from((await marginlyPool.getBasePrice()).inner);
-  const moneyAfter = +formatUnits(positionRealBaseAmount.mul(price).div(FP96.one), 6);
+  const moneyAfter = +formatUnits(positionRealBaseAmount*(price)/(FP96.one), 6);
   logger.info(`WETH initial deposit * initial price:   ${moneyBefore}`);
   logger.info(`WETH after closing pos * current price: ${moneyAfter}`);
   const delta = moneyAfter - moneyBefore;

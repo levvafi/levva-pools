@@ -1,6 +1,6 @@
 import assert = require('assert');
 import { BigNumber } from 'ethers';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseUnits } from 'ethers'
 import { SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import { CallType, decodeSwapEvent, uniswapV3Swapdata } from '../utils/chain-ops';
@@ -13,8 +13,8 @@ export async function shortIncome(sut: SystemUnderTest) {
   const { marginlyPool, treasury, usdc, weth, accounts, provider, uniswap, gasReporter } = sut;
 
   const swapFeeX96 = BigNumber.from((await marginlyPool.params()).swapFee)
-    .mul(FP96.one)
-    .div(1e6);
+    *(FP96.one)
+    /(1e6);
   logger.info(`swapFee: ${toHumanString(swapFeeX96)}`);
 
   const numberOfLenders = 2;
@@ -36,14 +36,14 @@ export async function shortIncome(sut: SystemUnderTest) {
     );
   }
 
-  const wethPriceX96 = BigNumber.from((await marginlyPool.getBasePrice()).inner).mul(10n ** 12n);
+  const wethPriceX96 = BigNumber.from((await marginlyPool.getBasePrice()).inner)*(10n ** 12n);
 
   logger.info(`Weth price = ${toHumanString(wethPriceX96)}`);
 
   const borrower = accounts[numberOfLenders];
   const initialBorrQuoteBalance = BigNumber.from(1_000_000) // 1 WETH is USDC
-    .mul(wethPriceX96)
-    .div(FP96.one);
+    *(wethPriceX96)
+    /(FP96.one);
   logger.info(`borrower initial deposit: ${formatUnits(initialBorrQuoteBalance, 6)} USDC`);
 
   await (await usdc.connect(treasury).transfer(borrower.address, initialBorrQuoteBalance)).wait();
@@ -62,7 +62,7 @@ export async function shortIncome(sut: SystemUnderTest) {
   const shortAmount = parseUnits('5', 18);
   logger.info(`Open ${formatUnits(shortAmount, 18)} WETH short position`);
 
-  const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+  const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
   await gasReporter.saveGasUsage(
     'short',
     marginlyPool
@@ -73,7 +73,7 @@ export async function shortIncome(sut: SystemUnderTest) {
   );
 
   logger.info(`Decreasing WETH price by ~10%`);
-  await changeWethPrice(treasury, provider.provider, sut, wethPriceX96.mul(9).div(10).div(FP96.one));
+  await changeWethPrice(treasury, provider.provider, sut, wethPriceX96*(9)/(10)/(FP96.one));
 
   const shiftInDays = 10;
   logger.info(`Shift date by ${shiftInDays} days`);
@@ -101,7 +101,7 @@ export async function shortIncome(sut: SystemUnderTest) {
   const discountedQuoteCollBefore = BigNumber.from(await marginlyPool.discountedQuoteCollateral());
 
   logger.info(`Closing position`);
-  const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+  const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
   const closePosReceipt = await gasReporter.saveGasUsage(
     'closePosition',
     marginlyPool
@@ -113,7 +113,7 @@ export async function shortIncome(sut: SystemUnderTest) {
   const closePosSwapEvent = decodeSwapEvent(closePosReceipt, uniswap.address);
   const swapAmount = closePosSwapEvent.amount0;
   logger.info(`swapAmount: ${formatUnits(swapAmount, 6)} USDC`);
-  const fee = swapFeeX96.mul(swapAmount).div(FP96.one);
+  const fee = swapFeeX96*(swapAmount)/(FP96.one);
   logger.info(`fee: ${formatUnits(fee, 6)}`);
 
   logger.info(`discountedBaseDebt: ${formatUnits(await marginlyPool.discountedBaseDebt(), 18)} WETH`);
@@ -127,17 +127,17 @@ export async function shortIncome(sut: SystemUnderTest) {
 
   const collCoeff = BigNumber.from(await marginlyPool.quoteCollateralCoeff());
   const positionDiscountedQuoteAmountAfter = BigNumber.from(positionAfter.discountedQuoteAmount);
-  const expectedPosDiscountedQuoteAmount = positionDiscountedQuoteAmountBefore.sub(
-    swapAmount.add(fee).mul(FP96.one).div(collCoeff)
+  const expectedPosDiscountedQuoteAmount = positionDiscountedQuoteAmountBefore-(
+    swapAmount.add(fee)*(FP96.one)/(collCoeff)
   );
   logger.info(`position.discountedQuoteAmount: ${formatUnits(positionDiscountedQuoteAmountAfter, 6)}`);
   assert.deepEqual(expectedPosDiscountedQuoteAmount, positionDiscountedQuoteAmountAfter, 'pos.discountedQuoteAmount');
 
-  const positionRealQuoteAmount = BigNumber.from(positionAfter.discountedQuoteAmount).mul(collCoeff).div(FP96.one);
+  const positionRealQuoteAmount = BigNumber.from(positionAfter.discountedQuoteAmount)*(collCoeff)/(FP96.one);
   logger.info(`position real quote amount: ${formatUnits(positionRealQuoteAmount, 6)} USDC`);
 
   const discountedQuoteCollAfter = BigNumber.from(await marginlyPool.discountedQuoteCollateral());
-  const expectedDiscountedQuoteColl = discountedQuoteCollBefore.sub(swapAmount.add(fee).mul(FP96.one).div(collCoeff));
+  const expectedDiscountedQuoteColl = discountedQuoteCollBefore-(swapAmount.add(fee)*(FP96.one)/(collCoeff));
   assert.deepEqual(expectedDiscountedQuoteColl, discountedQuoteCollAfter, 'discountedQuoteCollateral');
 
   const discountedBaseDebt = +BigNumber.from(await marginlyPool.discountedBaseDebt());

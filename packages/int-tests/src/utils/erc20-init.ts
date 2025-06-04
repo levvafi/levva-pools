@@ -2,7 +2,7 @@ import { Web3Provider } from '@ethersproject/providers';
 import { logger } from './logger';
 import { INITIAL_BALANCE, INITIAL_ETH, INITIAL_USDC, USDC_OWNER_ADDR } from './const';
 import assert = require('assert');
-import { formatEther, formatUnits } from 'ethers/lib/utils';
+import { formatEther, formatUnits } from 'ethers'
 import { Signer } from 'ethers';
 import { usdcContract, wethContract } from './known-contracts';
 import { FiatTokenV2_1Contract } from '../contract-api/FiatTokenV2';
@@ -36,7 +36,7 @@ export async function initUsdc(signer: Signer, provider: Web3Provider): Promise<
   const updateMasterMinterTx = await usdc.connect(signer).updateMasterMinter(address);
   await updateMasterMinterTx.wait();
 
-  const configureMinterTx = await usdc.connect(signer).configureMinter(address, INITIAL_USDC.mul(10));
+  const configureMinterTx = await usdc.connect(signer).configureMinter(address, INITIAL_USDC*(10));
   await configureMinterTx.wait();
 
   const mintTx = await usdc.connect(signer).mint(address, INITIAL_USDC);

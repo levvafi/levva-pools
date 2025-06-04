@@ -1,6 +1,6 @@
 import { BigNumber, ContractTransaction } from 'ethers';
 import { ERC20, MarginlyRouter } from '../../typechain-types';
-import { formatUnits } from 'ethers/lib/utils';
+import { formatUnits } from 'ethers'
 import { reset } from '@nomicfoundation/hardhat-network-helpers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { SwapEvent } from '../../typechain-types/contracts/interfaces/IMarginlyRouter';
@@ -67,7 +67,7 @@ export async function showBalanceDelta(
   const [symbol, decimals] = await Promise.all([token.symbol(), token.decimals()]);
 
   console.log(
-    `${startPhrase.replace('$symbol', symbol)} ${formatUnits(balanceAfter.sub(balanceBefore), decimals)} ${symbol}`
+    `${startPhrase.replace('$symbol', symbol)} ${formatUnits(balanceAfter-(balanceBefore), decimals)} ${symbol}`
   );
 }
 

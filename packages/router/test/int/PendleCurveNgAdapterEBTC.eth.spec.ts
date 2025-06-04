@@ -9,7 +9,7 @@ import {
 } from '../../typechain-types';
 import { constructSwap, Dex, showGasUsage, SWAP_ONE, resetFork, assertSwapEvent } from '../shared/utils';
 import { EthAddress } from '@marginly/common';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseUnits } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { EthereumMainnetERC20BalanceOfSlot, setTokenBalance } from '../shared/tokens';
 
@@ -123,7 +123,7 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
       expect(ptBalanceAfter).to.be.greaterThan(ptBalanceBefore);
       const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
-      expect(WBTCBalanceBefore.sub(WBTCBalanceAfter)).to.be.lessThanOrEqual(WBTCSwapAmount);
+      expect(WBTCBalanceBefore-(WBTCBalanceAfter)).to.be.lessThanOrEqual(WBTCSwapAmount);
 
       await assertSwapEvent(
         {
@@ -131,7 +131,7 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
           tokenIn: WBTC.address,
           tokenOut: ptToken.address,
           amountIn: WBTCSwapAmount,
-          amountOut: ptBalanceAfter.sub(ptBalanceBefore),
+          amountOut: ptBalanceAfter-(ptBalanceBefore),
         },
         router,
         tx
@@ -159,7 +159,7 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceAfter.sub(ptBalanceBefore)).to.be.eq(exactPtOut);
+      expect(ptBalanceAfter-(ptBalanceBefore)).to.be.eq(exactPtOut);
       const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
       expect(WBTCBalanceBefore).to.be.greaterThan(WBTCBalanceAfter);
@@ -169,8 +169,8 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
           isExactInput: false,
           tokenIn: WBTC.address,
           tokenOut: ptToken.address,
-          amountIn: WBTCBalanceBefore.sub(WBTCBalanceAfter),
-          amountOut: ptBalanceAfter.sub(ptBalanceBefore),
+          amountIn: WBTCBalanceBefore-(WBTCBalanceAfter),
+          amountOut: ptBalanceAfter-(ptBalanceBefore),
         },
         router,
         tx
@@ -201,7 +201,7 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceAfter.sub(ptBalanceBefore)).to.be.eq(exactPtOut);
+      expect(ptBalanceAfter-(ptBalanceBefore)).to.be.eq(exactPtOut);
       const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
       expect(WBTCBalanceBefore).to.be.greaterThan(WBTCBalanceAfter);
@@ -211,8 +211,8 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
           isExactInput: false,
           tokenIn: WBTC.address,
           tokenOut: ptToken.address,
-          amountIn: WBTCBalanceBefore.sub(WBTCBalanceAfter),
-          amountOut: ptBalanceAfter.sub(ptBalanceBefore),
+          amountIn: WBTCBalanceBefore-(WBTCBalanceAfter),
+          amountOut: ptBalanceAfter-(ptBalanceBefore),
         },
         router,
         tx
@@ -237,7 +237,7 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceBefore.sub(ptBalanceAfter)).to.be.eq(ptIn);
+      expect(ptBalanceBefore-(ptBalanceAfter)).to.be.eq(ptIn);
       const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
       expect(WBTCBalanceAfter).to.be.greaterThan(WBTCBalanceBefore);
@@ -247,8 +247,8 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
           isExactInput: true,
           tokenIn: ptToken.address,
           tokenOut: WBTC.address,
-          amountIn: ptBalanceBefore.sub(ptBalanceAfter),
-          amountOut: WBTCBalanceAfter.sub(WBTCBalanceBefore),
+          amountIn: ptBalanceBefore-(ptBalanceAfter),
+          amountOut: WBTCBalanceAfter-(WBTCBalanceBefore),
         },
         router,
         tx
@@ -276,7 +276,7 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
       const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
-      expect(WBTCBalanceAfter.sub(WBTCBalanceBefore)).to.be.eq(WBTCOut);
+      expect(WBTCBalanceAfter-(WBTCBalanceBefore)).to.be.eq(WBTCOut);
 
       const WBTCBalanceOnAdapter = await WBTC.balanceOf(pendleCurveAdapter.address);
       console.log(
@@ -288,8 +288,8 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
           isExactInput: false,
           tokenIn: ptToken.address,
           tokenOut: WBTC.address,
-          amountIn: ptBalanceBefore.sub(ptBalanceAfter),
-          amountOut: WBTCBalanceAfter.sub(WBTCBalanceBefore),
+          amountIn: ptBalanceBefore-(ptBalanceAfter),
+          amountOut: WBTCBalanceAfter-(WBTCBalanceBefore),
         },
         router,
         tx
@@ -341,7 +341,7 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
           WBTC.address,
           ptToken.address,
           sUsdeBalanceBefore,
-          sUsdeBalanceBefore.mul(9).div(10)
+          sUsdeBalanceBefore*(9)/(10)
         );
 
       await expect(tx).to.be.revertedWithCustomError(pendleCurveAdapter, 'NotSupported');
@@ -366,7 +366,7 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
       );
 
       const swapCalldata = constructSwap([Dex.PendleCurve], [SWAP_ONE]);
-      const ptOut = WBTCBalanceBefore.div(2);
+      const ptOut = WBTCBalanceBefore/(2);
       await WBTC.connect(user).approve(router.address, WBTCBalanceBefore);
       const tx = router
         .connect(user)
@@ -398,7 +398,7 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceBefore.sub(ptBalanceAfter)).to.be.eq(ptIn);
+      expect(ptBalanceBefore-(ptBalanceAfter)).to.be.eq(ptIn);
       const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
       expect(WBTCBalanceAfter).to.be.greaterThan(WBTCBalanceBefore);
@@ -408,8 +408,8 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
           isExactInput: true,
           tokenIn: ptToken.address,
           tokenOut: WBTC.address,
-          amountIn: ptBalanceBefore.sub(ptBalanceAfter),
-          amountOut: WBTCBalanceAfter.sub(WBTCBalanceBefore),
+          amountIn: ptBalanceBefore-(ptBalanceAfter),
+          amountOut: WBTCBalanceAfter-(WBTCBalanceBefore),
         },
         router,
         tx
@@ -438,15 +438,15 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
       const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
       console.log(`sUsdeBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
-      expect(WBTCBalanceAfter.sub(WBTCBalanceBefore)).to.be.eq(WBTCOut);
+      expect(WBTCBalanceAfter-(WBTCBalanceBefore)).to.be.eq(WBTCOut);
 
       await assertSwapEvent(
         {
           isExactInput: false,
           tokenIn: ptToken.address,
           tokenOut: WBTC.address,
-          amountIn: ptBalanceBefore.sub(ptBalanceAfter),
-          amountOut: WBTCBalanceAfter.sub(WBTCBalanceBefore),
+          amountIn: ptBalanceBefore-(ptBalanceAfter),
+          amountOut: WBTCBalanceAfter-(WBTCBalanceBefore),
         },
         router,
         tx

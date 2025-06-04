@@ -1,5 +1,5 @@
 import assert = require('assert');
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseUnits } from 'ethers'
 import { SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import { ZERO_ADDRESS } from '../utils/const';
@@ -72,15 +72,15 @@ export async function routerSwaps(sut: SystemUnderTest) {
         const currentPoolUsdcBalance = await usdc.balanceOf(dexPoolAddress);
   
         logger.info(`    Checking weth balances`);
-        const poolWethDelta = currentPoolWethBalance.sub(oldPoolWethBalance);
-        const wethDelta = oldWethBalance.sub(currentWethBalance);
+        const poolWethDelta = currentPoolWethBalance-(oldPoolWethBalance);
+        const wethDelta = oldWethBalance-(currentWethBalance);
         assert(wethDelta.gte(poolWethDelta));
         assert(!wethDelta.eq(0));
         assert(wethDelta.lte(wethAmount));
   
         logger.info(`    Checking usdc balances`);
-        const poolUsdcDelta = oldPoolUsdcBalance.sub(currentPoolUsdcBalance);
-        const usdcDelta = currentUsdcBalance.sub(oldUsdcBalance);
+        const poolUsdcDelta = oldPoolUsdcBalance-(currentPoolUsdcBalance);
+        const usdcDelta = currentUsdcBalance-(oldUsdcBalance);
         assert(usdcDelta.gte(poolUsdcDelta));
         assert(usdcDelta.eq(usdcAmount));
       }
@@ -111,8 +111,8 @@ export async function routerSwaps(sut: SystemUnderTest) {
       const currentPoolUsdcBalance = await usdc.balanceOf(dexPoolAddress);
 
       logger.info(`    Checking weth balances`);
-      const poolWethDelta = oldPoolWethBalance.sub(currentPoolWethBalance);
-      const wethDelta = currentWethBalance.sub(oldWethBalance);
+      const poolWethDelta = oldPoolWethBalance-(currentPoolWethBalance);
+      const wethDelta = currentWethBalance-(oldWethBalance);
 
       if (dexInfo[1] != Dex.DodoV2 && dexInfo[1] != Dex.DodoV1) {
         // DODO transfer fee out from the pool, so poolWethDelta > wethDelta
@@ -121,8 +121,8 @@ export async function routerSwaps(sut: SystemUnderTest) {
       assert(wethDelta.gte(wethAmount));
 
       logger.info(`    Checking usdc balances`);
-      const poolUsdcDelta = currentPoolUsdcBalance.sub(oldPoolUsdcBalance);
-      const usdcDelta = oldUsdcBalance.sub(currentUsdcBalance);
+      const poolUsdcDelta = currentPoolUsdcBalance-(oldPoolUsdcBalance);
+      const usdcDelta = oldUsdcBalance-(currentUsdcBalance);
      
       if (dexInfo[1] == Dex.DodoV1) {
         // In case of Dodo V1 exactInput swap usdcDelta = poolUsdcDelta + uniswapV3UsdcDelta
@@ -219,17 +219,17 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
     const currentSecondPoolUsdcBalance = await usdc.balanceOf(dexs[secondDex]!.address);
 
     logger.info(`    Checking weth balances`);
-    const firstPoolWethDelta = currentFirstPoolWethBalance.sub(oldFirstPoolWethBalance);
-    const secondPoolWethDelta = currentSecondPoolWethBalance.sub(oldSecondPoolWethBalance);
-    const wethDelta = oldWethBalance.sub(currentWethBalance);
+    const firstPoolWethDelta = currentFirstPoolWethBalance-(oldFirstPoolWethBalance);
+    const secondPoolWethDelta = currentSecondPoolWethBalance-(oldSecondPoolWethBalance);
+    const wethDelta = oldWethBalance-(currentWethBalance);
     assert(wethDelta.gte(firstPoolWethDelta.add(secondPoolWethDelta)));
     assert(!wethDelta.eq(0));
     assert(wethDelta.lte(wethAmount));
 
     logger.info(`    Checking usdc balances`);
-    const firstPoolUsdcDelta = oldFirstPoolUsdcBalance.sub(currentFirstPoolUsdcBalance);
-    const secondPoolUsdcDelta = oldSecondPoolUsdcBalance.sub(currentSecondPoolUsdcBalance);
-    const usdcDelta = currentUsdcBalance.sub(oldUsdcBalance);
+    const firstPoolUsdcDelta = oldFirstPoolUsdcBalance-(currentFirstPoolUsdcBalance);
+    const secondPoolUsdcDelta = oldSecondPoolUsdcBalance-(currentSecondPoolUsdcBalance);
+    const usdcDelta = currentUsdcBalance-(oldUsdcBalance);
     if (dexs[firstDex]?.dexIndex! != Dex.DodoV2 && dexs[secondDex]?.dexIndex! != Dex.DodoV2) {
       // DODO v2 transfer fee out from the pool, so poolUsdcDelta > usdcDelta
       assert(usdcDelta.eq(firstPoolUsdcDelta.add(secondPoolUsdcDelta)));
@@ -268,9 +268,9 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
     const currentSecondPoolUsdcBalance = await usdc.balanceOf(dexs[secondDex]!.address);
 
     logger.info(`    Checking weth balances`);
-    const firstPoolWethDelta = oldFirstPoolWethBalance.sub(currentFirstPoolWethBalance);
-    const secondPoolWethDelta = oldSecondPoolWethBalance.sub(currentSecondPoolWethBalance);
-    const wethDelta = currentWethBalance.sub(oldWethBalance);
+    const firstPoolWethDelta = oldFirstPoolWethBalance-(currentFirstPoolWethBalance);
+    const secondPoolWethDelta = oldSecondPoolWethBalance-(currentSecondPoolWethBalance);
+    const wethDelta = currentWethBalance-(oldWethBalance);
     if (dexs[firstDex]?.dexIndex! != Dex.DodoV2 && dexs[secondDex]?.dexIndex! != Dex.DodoV2) {
       // DODO v2 transfer fee out from the pool, so poolWethDelta > wethDelta
       assert(wethDelta.eq(firstPoolWethDelta.add(secondPoolWethDelta)));
@@ -278,9 +278,9 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
     assert(wethDelta.gte(wethAmount));
 
     logger.info(`    Checking usdc balances`);
-    const firstPoolUsdcDelta = currentFirstPoolUsdcBalance.sub(oldFirstPoolUsdcBalance);
-    const secondPoolUsdcDelta = currentSecondPoolUsdcBalance.sub(oldSecondPoolUsdcBalance);
-    const usdcDelta = oldUsdcBalance.sub(currentUsdcBalance);
+    const firstPoolUsdcDelta = currentFirstPoolUsdcBalance-(oldFirstPoolUsdcBalance);
+    const secondPoolUsdcDelta = currentSecondPoolUsdcBalance-(oldSecondPoolUsdcBalance);
+    const usdcDelta = oldUsdcBalance-(currentUsdcBalance);
 
     assert(usdcDelta.eq(firstPoolUsdcDelta.add(secondPoolUsdcDelta)));
     assert(usdcDelta.eq(usdcAmount));

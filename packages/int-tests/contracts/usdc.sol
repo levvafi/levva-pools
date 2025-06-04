@@ -713,7 +713,7 @@ contract FiatTokenV1 is AbstractFiatTokenV1, Ownable, Pausable, Blacklistable {
 
         totalSupply_ = totalSupply_.add(_amount);
         balances[_to] = balances[_to].add(_amount);
-        minterAllowed[msg.sender] = mintingAllowedAmount.sub(_amount);
+        minterAllowed[msg.sender] = mintingAllowedAmount-(_amount);
         emit Mint(msg.sender, _to, _amount);
         emit Transfer(address(0), _to, _amount);
         return true;
@@ -843,7 +843,7 @@ contract FiatTokenV1 is AbstractFiatTokenV1, Ownable, Pausable, Blacklistable {
             "ERC20: transfer amount exceeds allowance"
         );
         _transfer(from, to, value);
-        allowed[from][msg.sender] = allowed[from][msg.sender].sub(value);
+        allowed[from][msg.sender] = allowed[from][msg.sender]-(value);
         return true;
     }
 
@@ -883,7 +883,7 @@ contract FiatTokenV1 is AbstractFiatTokenV1, Ownable, Pausable, Blacklistable {
             "ERC20: transfer amount exceeds balance"
         );
 
-        balances[from] = balances[from].sub(value);
+        balances[from] = balances[from]-(value);
         balances[to] = balances[to].add(value);
         emit Transfer(from, to, value);
     }
@@ -938,8 +938,8 @@ contract FiatTokenV1 is AbstractFiatTokenV1, Ownable, Pausable, Blacklistable {
         require(_amount > 0, "FiatToken: burn amount not greater than 0");
         require(balance >= _amount, "FiatToken: burn amount exceeds balance");
 
-        totalSupply_ = totalSupply_.sub(_amount);
-        balances[msg.sender] = balance.sub(_amount);
+        totalSupply_ = totalSupply_-(_amount);
+        balances[msg.sender] = balance-(_amount);
         emit Burn(msg.sender, _amount);
         emit Transfer(msg.sender, address(0), _amount);
     }
@@ -996,7 +996,7 @@ library Address {
 
     /**
      * @dev Replacement for Solidity's `transfer`: sends `amount` wei to
-     * `recipient`, forwarding all available gas and reverting on errors.
+     * `recipient`, forwarding all available gas and reverting on MarginlyMarginlyErrors.
      *
      * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost
      * of certain opcodes, possibly making contracts go over the 2300 gas limit
@@ -1227,7 +1227,7 @@ library SafeERC20 {
         address spender,
         uint256 value
     ) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).sub(
+        uint256 newAllowance = token.allowance(address(this), spender)-(
             value,
             "SafeERC20: decreased allowance below zero"
         );
@@ -2163,7 +2163,7 @@ contract FiatTokenV2 is FiatTokenV1_1, EIP3009, EIP2612 {
         _approve(
             owner,
             spender,
-            allowed[owner][spender].sub(
+            allowed[owner][spender]-(
                 decrement,
                 "ERC20: decreased allowance below zero"
             )

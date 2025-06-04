@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/utils/math/Math.sol';
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
@@ -188,7 +188,7 @@ contract PendleAdapter is IMarginlyAdapter, Ownable2Step {
       if (marketData.yt.isExpired()) {
         // https://github.com/pendle-finance/pendle-core-v2-public/blob/bc27b10c33ac16d6e1936a9ddd24d536b00c96a4/contracts/core/YieldContractsV2/PendleYieldTokenV2.sol#L301
         uint256 index = marketData.yt.pyIndexCurrent();
-        uint256 transferPtAmount = Math.mulDiv(amountToPay, index, PENDLE_ONE, Math.Rounding.Up);
+        uint256 transferPtAmount = Math.mulDiv(amountToPay, index, PENDLE_ONE, Math.Rounding.Ceil);
         callbackAmountIn = transferPtAmount;
 
         syAmountOut = _redeemPY(marketData.yt, data.router, transferPtAmount, data.adapterCallbackData);

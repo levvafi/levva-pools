@@ -1,5 +1,5 @@
 import { BigNumber, BigNumberish } from 'ethers';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseUnits } from 'ethers'
 import { SystemUnderTest } from '.';
 import { MarginlyPoolContract } from '../contract-api/MarginlyPool';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
@@ -33,23 +33,23 @@ async function getDebtAmount(
   const position = await marginlyPool.positions(positionAddress);
 
   if (position._type == 2) {
-    const debt = BigNumber.from(position.discountedBaseAmount).mul(poolCoeffs.baseDebtCoeffX96).div(Fp96One);
-    const debtInQuote = debt.mul(basePriceX96).div(Fp96One);
+    const debt = BigNumber.from(position.discountedBaseAmount)*(poolCoeffs.baseDebtCoeffX96)/(Fp96One);
+    const debtInQuote = debt*(basePriceX96)/(Fp96One);
     const collateral = BigNumber.from(position.discountedQuoteAmount)
-      .mul(poolCoeffs.quoteCollateralCoeffX96)
-      .div(Fp96One);
+      *(poolCoeffs.quoteCollateralCoeffX96)
+      /(Fp96One);
 
-    const leverage = collateral.div(collateral.sub(debtInQuote));
+    const leverage = collateral/(collateral-(debtInQuote));
     console.log(`Position ${positionAddress} leverage is ${leverage}`);
     return debt;
   } else if (position._type == 3) {
-    const debt = BigNumber.from(position.discountedQuoteAmount).mul(poolCoeffs.quoteDebtCoeffX96).div(Fp96One);
+    const debt = BigNumber.from(position.discountedQuoteAmount)*(poolCoeffs.quoteDebtCoeffX96)/(Fp96One);
     const collateral = BigNumber.from(position.discountedBaseAmount)
-      .mul(poolCoeffs.baseCollateralCoeffX96)
-      .div(Fp96One);
-    const collateralInQuote = collateral.mul(basePriceX96).div(Fp96One);
+      *(poolCoeffs.baseCollateralCoeffX96)
+      /(Fp96One);
+    const collateralInQuote = collateral*(basePriceX96)/(Fp96One);
 
-    const leverage = collateralInQuote.div(collateralInQuote.sub(debt));
+    const leverage = collateralInQuote/(collateralInQuote-(debt));
     console.log(`Position ${positionAddress} leverage is ${leverage}`);
     return debt;
   } else {
@@ -97,7 +97,7 @@ export async function keeperUniswapV3(sut: SystemUnderTest) {
         .connect(longer)
         .execute(CallType.DepositBase, baseAmount, 0, 0, false, ZERO_ADDRESS, uniswapV3Swapdata(), ethArgs)
     ).wait();
-    const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+    const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
     await (
       await marginlyPool
         .connect(longer)
@@ -118,7 +118,7 @@ export async function keeperUniswapV3(sut: SystemUnderTest) {
         .connect(shorter)
         .execute(CallType.DepositQuote, quoteAmount, 0, 0, false, ZERO_ADDRESS, uniswapV3Swapdata(), ethArgs)
     ).wait();
-    const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+    const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
     await (
       await marginlyPool
         .connect(shorter)
@@ -161,8 +161,8 @@ export async function keeperUniswapV3(sut: SystemUnderTest) {
   };
   
   // get 1% more than calculated debt value
-  const longerDebtAmount = (await getDebtAmount(marginlyPool, longer.address, basePriceX96, poolCoeffs)).mul(101).div(100);
-  const shorterDebtAmount = (await getDebtAmount(marginlyPool, shorter.address, basePriceX96, poolCoeffs)).mul(101).div(100);
+  const longerDebtAmount = (await getDebtAmount(marginlyPool, longer.address, basePriceX96, poolCoeffs))*(101)/(100);
+  const shorterDebtAmount = (await getDebtAmount(marginlyPool, shorter.address, basePriceX96, poolCoeffs))*(101)/(100);
 
   const liquidator = accounts[4];
 
@@ -177,7 +177,7 @@ export async function keeperUniswapV3(sut: SystemUnderTest) {
       longer.address,
       liquidator.address,
       uniswap.address,
-      BigNumber.from(0),
+      0n,
       BigNumber.from(keeperSwapCallData)
     );
 
@@ -191,7 +191,7 @@ export async function keeperUniswapV3(sut: SystemUnderTest) {
 
   let balanceAfter = BigNumber.from(await usdc.balanceOf(liquidator.address));
 
-  let profit = formatUnits(balanceAfter.sub(balanceBefore), await usdc.decimals());
+  let profit = formatUnits(balanceAfter-(balanceBefore), await usdc.decimals());
   console.log(`Profit after long position liquidation is ${profit} USDC`);
 
   balanceBefore = BigNumber.from(await weth.balanceOf(liquidator.address));
@@ -205,7 +205,7 @@ export async function keeperUniswapV3(sut: SystemUnderTest) {
       shorter.address,
       liquidator.address,
       uniswap.address,
-      BigNumber.from(0),
+      0n,
       BigNumber.from(keeperSwapCallData)
     );
 
@@ -218,6 +218,6 @@ export async function keeperUniswapV3(sut: SystemUnderTest) {
   }
 
   balanceAfter = BigNumber.from(await weth.balanceOf(liquidator.address));
-  profit = formatUnits(balanceAfter.sub(balanceBefore), await weth.decimals());
+  profit = formatUnits(balanceAfter-(balanceBefore), await weth.decimals());
   console.log(`Profit after short position liquidation is ${profit} WETH`);
 }

@@ -71,9 +71,9 @@ describe('Curve adapter', () => {
     const { router, pool, token0, token1 } = await loadFixture(createCurveAdapter);
 
     // 1.0 TK1 = 2.0 TK0
-    const price = BigNumber.from(10).pow(18).mul(2);
+    const price = BigNumber.from(10).pow(18)*(2);
     const amountIn = BigNumber.from(10).pow(17); // 0.1 TK0
-    const minAmountOut = amountIn.mul(ONE).div(price); // 0.05 TK1
+    const minAmountOut = amountIn*(ONE)/(price); // 0.05 TK1
 
     const token0BalanceBefore = await token0.balanceOf(owner.address);
     const token1BalanceBefore = await token1.balanceOf(owner.address);
@@ -83,7 +83,7 @@ describe('Curve adapter', () => {
     const token0BalanceAfter = await token0.balanceOf(owner.address);
     const token1BalanceAfter = await token1.balanceOf(owner.address);
 
-    expect(token0BalanceAfter).to.be.equal(token0BalanceBefore.sub(amountIn));
+    expect(token0BalanceAfter).to.be.equal(token0BalanceBefore-(amountIn));
     expect(token1BalanceAfter).to.be.equal(token1BalanceBefore.add(minAmountOut));
   });
 
@@ -92,9 +92,9 @@ describe('Curve adapter', () => {
     const { router, pool, token0, token1 } = await loadFixture(createCurveAdapter);
 
     // 1.0 TK1 = 2.0 TK0
-    const price = BigNumber.from(10).pow(18).mul(2);
+    const price = BigNumber.from(10).pow(18)*(2);
     const amountIn = BigNumber.from(10).pow(17); // 0.1 TK1
-    const minAmountOut = amountIn.mul(price).div(ONE); // 0.2 TK0
+    const minAmountOut = amountIn*(price)/(ONE); // 0.2 TK0
 
     const token0BalanceBefore = await token0.balanceOf(owner.address);
     const token1BalanceBefore = await token1.balanceOf(owner.address);
@@ -104,7 +104,7 @@ describe('Curve adapter', () => {
     const token0BalanceAfter = await token0.balanceOf(owner.address);
     const token1BalanceAfter = await token1.balanceOf(owner.address);
 
-    expect(token1BalanceAfter).to.be.equal(token1BalanceBefore.sub(amountIn));
+    expect(token1BalanceAfter).to.be.equal(token1BalanceBefore-(amountIn));
     expect(token0BalanceAfter).to.be.equal(token0BalanceBefore.add(minAmountOut));
   });
 
@@ -113,9 +113,9 @@ describe('Curve adapter', () => {
     const { router, pool, token0, token1 } = await loadFixture(createCurveAdapter);
 
     // 1.0 TK1 = 2.0 TK0
-    const price = BigNumber.from(10).pow(18).mul(2);
+    const price = BigNumber.from(10).pow(18)*(2);
     const amountOut = BigNumber.from(10).pow(17); // 0.1 TK1
-    const maxAmountIn = amountOut.mul(price).div(ONE); // 0.05 TK1
+    const maxAmountIn = amountOut*(price)/(ONE); // 0.05 TK1
 
     const token0BalanceBefore = await token0.balanceOf(owner.address);
     const token1BalanceBefore = await token1.balanceOf(owner.address);
@@ -125,7 +125,7 @@ describe('Curve adapter', () => {
     const token0BalanceAfter = await token0.balanceOf(owner.address);
     const token1BalanceAfter = await token1.balanceOf(owner.address);
 
-    expect(token0BalanceAfter).to.be.equal(token0BalanceBefore.sub(maxAmountIn));
+    expect(token0BalanceAfter).to.be.equal(token0BalanceBefore-(maxAmountIn));
     expect(token1BalanceAfter).to.be.equal(token1BalanceBefore.add(amountOut));
   });
 
@@ -134,9 +134,9 @@ describe('Curve adapter', () => {
     const { router, pool, token0, token1 } = await loadFixture(createCurveAdapter);
 
     // 1.0 TK1 = 2.0 TK0
-    const price = BigNumber.from(10).pow(18).mul(2);
+    const price = BigNumber.from(10).pow(18)*(2);
     const amountOut = BigNumber.from(10).pow(17); // 0.1 TK0
-    const maxAmountIn = amountOut.mul(ONE).div(price); // 0.2 TK1
+    const maxAmountIn = amountOut*(ONE)/(price); // 0.2 TK1
 
     const token0BalanceBefore = await token0.balanceOf(owner.address);
     const token1BalanceBefore = await token1.balanceOf(owner.address);
@@ -146,7 +146,7 @@ describe('Curve adapter', () => {
     const token0BalanceAfter = await token0.balanceOf(owner.address);
     const token1BalanceAfter = await token1.balanceOf(owner.address);
 
-    expect(token1BalanceAfter).to.be.equal(token1BalanceBefore.sub(maxAmountIn));
+    expect(token1BalanceAfter).to.be.equal(token1BalanceBefore-(maxAmountIn));
     expect(token0BalanceAfter).to.be.equal(token0BalanceBefore.add(amountOut));
   });
 
@@ -155,9 +155,9 @@ describe('Curve adapter', () => {
     const { router, pool, token0, token1 } = await loadFixture(createCurveAdapterInverse);
 
     // 1.0 TK1 = 2.0 TK0
-    const price = BigNumber.from(10).pow(18).mul(2);
+    const price = BigNumber.from(10).pow(18)*(2);
     const amountIn = BigNumber.from(10).pow(17); // 0.1 TK0
-    const minAmountOut = amountIn.mul(ONE).div(price); // 0.05 TK1
+    const minAmountOut = amountIn*(ONE)/(price); // 0.05 TK1
 
     const token0BalanceBefore = await token0.balanceOf(owner.address);
     const token1BalanceBefore = await token1.balanceOf(owner.address);
@@ -167,7 +167,7 @@ describe('Curve adapter', () => {
     const token0BalanceAfter = await token0.balanceOf(owner.address);
     const token1BalanceAfter = await token1.balanceOf(owner.address);
 
-    expect(token0BalanceAfter).to.be.equal(token0BalanceBefore.sub(amountIn));
+    expect(token0BalanceAfter).to.be.equal(token0BalanceBefore-(amountIn));
     expect(token1BalanceAfter).to.be.equal(token1BalanceBefore.add(minAmountOut));
   });
 
@@ -176,9 +176,9 @@ describe('Curve adapter', () => {
     const { router, pool, token0, token1 } = await loadFixture(createCurveAdapterInverse);
 
     // 1.0 TK1 = 2.0 TK0
-    const price = BigNumber.from(10).pow(18).mul(2);
+    const price = BigNumber.from(10).pow(18)*(2);
     const amountIn = BigNumber.from(10).pow(17); // 0.1 TK1
-    const minAmountOut = amountIn.mul(price).div(ONE); // 0.2 TK0
+    const minAmountOut = amountIn*(price)/(ONE); // 0.2 TK0
 
     const token0BalanceBefore = await token0.balanceOf(owner.address);
     const token1BalanceBefore = await token1.balanceOf(owner.address);
@@ -188,7 +188,7 @@ describe('Curve adapter', () => {
     const token0BalanceAfter = await token0.balanceOf(owner.address);
     const token1BalanceAfter = await token1.balanceOf(owner.address);
 
-    expect(token1BalanceAfter).to.be.equal(token1BalanceBefore.sub(amountIn));
+    expect(token1BalanceAfter).to.be.equal(token1BalanceBefore-(amountIn));
     expect(token0BalanceAfter).to.be.equal(token0BalanceBefore.add(minAmountOut));
   });
 
@@ -197,9 +197,9 @@ describe('Curve adapter', () => {
     const { router, pool, token0, token1 } = await loadFixture(createCurveAdapterInverse);
 
     // 1.0 TK1 = 2.0 TK0
-    const price = BigNumber.from(10).pow(18).mul(2);
+    const price = BigNumber.from(10).pow(18)*(2);
     const amountOut = BigNumber.from(10).pow(17); // 0.1 TK1
-    const maxAmountIn = amountOut.mul(price).div(ONE); // 0.05 TK1
+    const maxAmountIn = amountOut*(price)/(ONE); // 0.05 TK1
 
     const token0BalanceBefore = await token0.balanceOf(owner.address);
     const token1BalanceBefore = await token1.balanceOf(owner.address);
@@ -209,7 +209,7 @@ describe('Curve adapter', () => {
     const token0BalanceAfter = await token0.balanceOf(owner.address);
     const token1BalanceAfter = await token1.balanceOf(owner.address);
 
-    expect(token0BalanceAfter).to.be.equal(token0BalanceBefore.sub(maxAmountIn));
+    expect(token0BalanceAfter).to.be.equal(token0BalanceBefore-(maxAmountIn));
     expect(token1BalanceAfter).to.be.equal(token1BalanceBefore.add(amountOut));
   });
 
@@ -218,9 +218,9 @@ describe('Curve adapter', () => {
     const { router, pool, token0, token1 } = await loadFixture(createCurveAdapterInverse);
 
     // 1.0 TK1 = 2.0 TK0
-    const price = BigNumber.from(10).pow(18).mul(2);
+    const price = BigNumber.from(10).pow(18)*(2);
     const amountOut = BigNumber.from(10).pow(17); // 0.1 TK0
-    const maxAmountIn = amountOut.mul(ONE).div(price); // 0.2 TK1
+    const maxAmountIn = amountOut*(ONE)/(price); // 0.2 TK1
 
     const token0BalanceBefore = await token0.balanceOf(owner.address);
     const token1BalanceBefore = await token1.balanceOf(owner.address);
@@ -230,7 +230,7 @@ describe('Curve adapter', () => {
     const token0BalanceAfter = await token0.balanceOf(owner.address);
     const token1BalanceAfter = await token1.balanceOf(owner.address);
 
-    expect(token1BalanceAfter).to.be.equal(token1BalanceBefore.sub(maxAmountIn));
+    expect(token1BalanceAfter).to.be.equal(token1BalanceBefore-(maxAmountIn));
     expect(token0BalanceAfter).to.be.equal(token0BalanceBefore.add(amountOut));
   });
 });

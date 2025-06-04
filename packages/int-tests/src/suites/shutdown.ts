@@ -1,5 +1,5 @@
 import { BigNumber } from 'ethers';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseUnits } from 'ethers'
 import { SystemUnderTest } from '.';
 import { FP96 } from '../utils/fixed-point';
 import { logger } from '../utils/logger';
@@ -48,7 +48,7 @@ export async function shortEmergency(sut: SystemUnderTest) {
     logger.info(`Shorter deposit ${formatUnits(shorterDepositQuote, 6)} USDC`);
     logger.info(`Short to ${formatUnits(shortAmount, 18)} WETH`);
     await (await usdc.connect(shorter).approve(marginlyPool.address, shorterDepositQuote)).wait();
-    const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+    const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
     await (
       await marginlyPool
         .connect(shorter)
@@ -83,7 +83,7 @@ export async function shortEmergency(sut: SystemUnderTest) {
   // longer make long on 1.8 ETH
   const longAmount = parseUnits('0.5', 18);
   logger.info(`Long to ${formatUnits(longAmount, 18)} WETH`);
-  const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+  const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
   await (
     await marginlyPool
       .connect(longer)
@@ -91,10 +91,10 @@ export async function shortEmergency(sut: SystemUnderTest) {
   ).wait();
   await showSystemAggregates(sut);
 
-  const wethPriceX96 = BigNumber.from((await marginlyPool.getBasePrice()).inner).mul(10n ** 12n);
+  const wethPriceX96 = BigNumber.from((await marginlyPool.getBasePrice()).inner)*(10n ** 12n);
 
   logger.info(`Increasing WETH price by ~80%`);
-  await changeWethPrice(treasury, provider.provider, sut, wethPriceX96.mul(18).div(10).div(FP96.one));
+  await changeWethPrice(treasury, provider.provider, sut, wethPriceX96*(18)/(10)/(FP96.one));
 
   //shift dates and reinit
   logger.info(`Shift date for 1 month, 1 day per iteration`);
@@ -135,8 +135,8 @@ export async function shortEmergency(sut: SystemUnderTest) {
   const lenderPosition = await marginlyPool.positions(lender.address);
   const longerPosition = await marginlyPool.positions(longer.address);
 
-  const lenderAmount = lenderPosition.discountedBaseAmount.mul(emWithdrawCoeff).div(FP96.one);
-  const longerAmount = longerPosition.discountedBaseAmount.mul(emWithdrawCoeff).div(FP96.one);
+  const lenderAmount = lenderPosition.discountedBaseAmount*(emWithdrawCoeff)/(FP96.one);
+  const longerAmount = longerPosition.discountedBaseAmount*(emWithdrawCoeff)/(FP96.one);
 
   const poolBaseBalance = await weth.balanceOf(marginlyPool.address);
 
@@ -191,7 +191,7 @@ export async function longEmergency(sut: SystemUnderTest) {
     const longAmount = parseUnits('0.9', 18);
     logger.info(`Long to ${formatUnits(longAmount, 18)} WETH`);
     await (await weth.connect(longer).approve(marginlyPool.address, longDepositBase)).wait();
-    const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+    const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
     await (
       await marginlyPool
         .connect(longer)
@@ -225,7 +225,7 @@ export async function longEmergency(sut: SystemUnderTest) {
 
   //shorter make short on 2.0 ETH
   const shortAmount = parseUnits('2', 18);
-  const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+  const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
   await (
     await marginlyPool
       .connect(shorter)
@@ -236,10 +236,10 @@ export async function longEmergency(sut: SystemUnderTest) {
   logger.info(`Short to ${formatUnits(shortAmount, 18)} WETH`);
   await showSystemAggregates(sut);
 
-  const wethPriceX96 = BigNumber.from((await marginlyPool.getBasePrice()).inner).mul(10n ** 12n);
+  const wethPriceX96 = BigNumber.from((await marginlyPool.getBasePrice()).inner)*(10n ** 12n);
 
   logger.info(`Decreasing WETH price by ~40%`);
-  await changeWethPrice(treasury, provider.provider, sut, wethPriceX96.mul(6).div(10).div(FP96.one));
+  await changeWethPrice(treasury, provider.provider, sut, wethPriceX96*(6)/(10)/(FP96.one));
 
   //shift dates and reinit
   logger.info(`Shift date for 1 month, 1 day per iteration`);

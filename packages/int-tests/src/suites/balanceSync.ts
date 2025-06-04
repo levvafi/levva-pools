@@ -1,5 +1,5 @@
 import assert = require('assert');
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseUnits } from 'ethers'
 import { SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
@@ -75,7 +75,7 @@ export async function balanceSyncWithdrawBase(sut: SystemUnderTest) {
   await (await usdc.connect(treasury).transfer(shorter.address, quoteTransferAmount, { gasLimit: 80_000 })).wait();
   await (await usdc.connect(shorter).approve(marginlyPool.address, quoteTransferAmount)).wait();
   logger.info(`Shorter deposits`);
-  const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+  const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
   await (
     await marginlyPool
       .connect(shorter)
@@ -101,7 +101,7 @@ export async function balanceSyncWithdrawBase(sut: SystemUnderTest) {
   await (
     await marginlyPool
       .connect(lender)
-      .execute(CallType.WithdrawBase, baseTransferAmount.div(2), 0, 0, false, ZERO_ADDRESS, uniswapV3Swapdata(), {
+      .execute(CallType.WithdrawBase, baseTransferAmount/(2), 0, 0, false, ZERO_ADDRESS, uniswapV3Swapdata(), {
         gasLimit: 1_000_000,
       })
   ).wait();
@@ -112,8 +112,8 @@ export async function balanceSyncWithdrawBase(sut: SystemUnderTest) {
   const discountedBaseCollBefore = await marginlyPool.discountedBaseCollateral();
   const discountedBaseDebtBefore = await marginlyPool.discountedBaseDebt();
 
-  const realCollBefore = baseCollCoeffBefore.mul(discountedBaseCollBefore).div(FP96.one);
-  const realDebtBefore = baseDebtCoeffBefore.mul(discountedBaseDebtBefore).div(FP96.one);
+  const realCollBefore = baseCollCoeffBefore*(discountedBaseCollBefore)/(FP96.one);
+  const realDebtBefore = baseDebtCoeffBefore*(discountedBaseDebtBefore)/(FP96.one);
 
   assert(realDebtBefore.gt(realCollBefore));
   logger.info(`Oops, something went wrong, fixing`);
@@ -128,8 +128,8 @@ export async function balanceSyncWithdrawBase(sut: SystemUnderTest) {
   const discountedBaseCollAfter = await marginlyPool.discountedBaseCollateral();
   const discountedBaseDebtAfter = await marginlyPool.discountedBaseDebt();
 
-  const realCollAfter = baseCollCoeffAfter.mul(discountedBaseCollAfter).div(FP96.one);
-  const realDebtAfter = baseDebtCoeffAfter.mul(discountedBaseDebtAfter).div(FP96.one);
+  const realCollAfter = baseCollCoeffAfter*(discountedBaseCollAfter)/(FP96.one);
+  const realDebtAfter = baseDebtCoeffAfter*(discountedBaseDebtAfter)/(FP96.one);
 
   assert(realDebtAfter.lte(realCollAfter));
   logger.info(`Great, that fixed the problem`);
@@ -169,7 +169,7 @@ export async function balanceSyncWithdrawQuote(sut: SystemUnderTest) {
   await (await weth.connect(treasury).transfer(longer.address, baseTransferAmount, { gasLimit: 80_000 })).wait();
   await (await weth.connect(longer).approve(marginlyPool.address, baseTransferAmount)).wait();
   logger.info(`Long`);
-  const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+  const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
   await (
     await marginlyPool
       .connect(longer)
@@ -197,7 +197,7 @@ export async function balanceSyncWithdrawQuote(sut: SystemUnderTest) {
   await (
     await marginlyPool
       .connect(lender)
-      .execute(CallType.WithdrawQuote, quoteTransferAmount.div(2), 0, 0, false, ZERO_ADDRESS, uniswapV3Swapdata(), {
+      .execute(CallType.WithdrawQuote, quoteTransferAmount/(2), 0, 0, false, ZERO_ADDRESS, uniswapV3Swapdata(), {
         gasLimit: 1_000_000,
       })
   ).wait();
@@ -208,8 +208,8 @@ export async function balanceSyncWithdrawQuote(sut: SystemUnderTest) {
   const discountedQuoteCollBefore = await marginlyPool.discountedQuoteCollateral();
   const discountedQuoteDebtBefore = await marginlyPool.discountedQuoteDebt();
 
-  const realCollBefore = quoteCollCoeffBefore.mul(discountedQuoteCollBefore).div(FP96.one);
-  const realDebtBefore = quoteDebtCoeffBefore.mul(discountedQuoteDebtBefore).div(FP96.one);
+  const realCollBefore = quoteCollCoeffBefore*(discountedQuoteCollBefore)/(FP96.one);
+  const realDebtBefore = quoteDebtCoeffBefore*(discountedQuoteDebtBefore)/(FP96.one);
 
   assert(realDebtBefore.gt(realCollBefore));
   logger.info(`Oops, something went wrong, fixing`);
@@ -224,8 +224,8 @@ export async function balanceSyncWithdrawQuote(sut: SystemUnderTest) {
   const discountedQuoteCollAfter = await marginlyPool.discountedQuoteCollateral();
   const discountedQuoteDebtAfter = await marginlyPool.discountedQuoteDebt();
 
-  const realCollAfter = quoteCollCoeffAfter.mul(discountedQuoteCollAfter).div(FP96.one);
-  const realDebtAfter = quoteDebtCoeffAfter.mul(discountedQuoteDebtAfter).div(FP96.one);
+  const realCollAfter = quoteCollCoeffAfter*(discountedQuoteCollAfter)/(FP96.one);
+  const realDebtAfter = quoteDebtCoeffAfter*(discountedQuoteDebtAfter)/(FP96.one);
 
   assert(realDebtAfter.lte(realCollAfter));
   logger.info(`Great, that fixed the problem`);

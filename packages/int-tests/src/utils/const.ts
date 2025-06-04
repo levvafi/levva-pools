@@ -1,4 +1,4 @@
-import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { parseEther, parseUnits } from 'ethers'
 
 export const TREASURY_ACC_SEC =
   process.env.WALLET_ADDRESS ?? `0x4dd1f7853077c31d5a5ca4b6163e194cdca25047a891d24fac0c16f77aa89f44`;

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@uniswap/v3-core/contracts/libraries/LowGasSafeMath.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
 
-import './Errors.sol';
+import './MarginlyErrors.sol';
 
 library FP96 {
   /// @dev Bits precision of FixedPoint number
@@ -88,7 +88,7 @@ library FP96 {
   /// @return result The Exponentiation of self and rhs
   function powTaylor(FixedPoint memory self, uint256 exponent) internal pure returns (FixedPoint memory result) {
     uint256 x = self.inner - Q96;
-    if (x >= Q96) revert Errors.WrongValue();
+    if (x >= Q96) revert MarginlyErrors.WrongValue();
 
     uint256 resultX96 = Q96;
     uint256 multiplier;

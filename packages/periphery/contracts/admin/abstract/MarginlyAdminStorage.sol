@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
-import '@marginly/contracts/contracts/libraries/Errors.sol';
+import '@marginly/contracts/contracts/libraries/MarginlyErrors.sol';
 import '@marginly/contracts/contracts/interfaces/IMarginlyFactory.sol';
 
 abstract contract MarginlyAdminStorage is Ownable2Step {
@@ -20,7 +20,7 @@ abstract contract MarginlyAdminStorage is Ownable2Step {
   event NewPoolOwner(address indexed pool, address indexed newOwner);
 
   constructor(address marginlyFactory) {
-    if (marginlyFactory == address(0)) revert Errors.Forbidden();
+    if (marginlyFactory == address(0)) revert MarginlyErrors.Forbidden();
     marginlyFactoryAddress = marginlyFactory;
   }
 
@@ -35,7 +35,7 @@ abstract contract MarginlyAdminStorage is Ownable2Step {
     /* address poolAddress = IMarginlyFactory(marginlyFactoryAddress).getPool(poolBaseToken, poolQuoteToken, fee);
 
     if (poolAddress == address(0)) revert NonExistentPool();
-    if (poolsOwners[poolAddress] != address(0)) revert Errors.Forbidden();
+    if (poolsOwners[poolAddress] != address(0)) revert MarginlyErrors.Forbidden();
 
     if (poolOwner == address(0)) poolOwner = msg.sender;
     poolsOwners[poolAddress] = poolOwner;
@@ -44,6 +44,6 @@ abstract contract MarginlyAdminStorage is Ownable2Step {
   }
 
   function renounceOwnership() public view override onlyOwner {
-    revert Errors.Forbidden();
+    revert MarginlyErrors.Forbidden();
   }
 }

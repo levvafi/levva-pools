@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@marginly/contracts/contracts/interfaces/IMarginlyFactory.sol';
-import '@marginly/contracts/contracts/libraries/Errors.sol';
+import '@marginly/contracts/contracts/libraries/MarginlyErrors.sol';
 import '@marginly/router/contracts/MarginlyRouter.sol';
 import '@marginly/router/contracts/abstract/AdapterStorage.sol';
 
@@ -13,9 +13,9 @@ abstract contract AdapterActions is MarginlyAdminStorage {
   /// @param pools New pool parameters
   function addPools(PoolInput[] calldata pools) external onlyOwner {
     address marginlyRouterAddress = IMarginlyFactory(marginlyFactoryAddress).swapRouter();
-    if (marginlyRouterAddress == address(0)) revert Errors.Forbidden();
+    if (marginlyRouterAddress == address(0)) revert MarginlyErrors.Forbidden();
     address adapterAddress = MarginlyRouter(marginlyRouterAddress).adapters(UNISWAPV3_ADAPTER_INDEX);
-    if (adapterAddress == address(0)) revert Errors.Forbidden();
+    if (adapterAddress == address(0)) revert MarginlyErrors.Forbidden();
 
     AdapterStorage adapterStorage = AdapterStorage(adapterAddress);
     adapterStorage.addPools(pools);
@@ -27,7 +27,7 @@ abstract contract AdapterActions is MarginlyAdminStorage {
   function transferRouterAdapterOwnership(uint256 dexIdx, address to) external onlyOwner {
     MarginlyRouter marginlyRouter = MarginlyRouter(IMarginlyFactory(marginlyFactoryAddress).swapRouter());
     address adapterAddress = marginlyRouter.adapters(dexIdx);
-    if (adapterAddress == address(0)) revert Errors.Forbidden();
+    if (adapterAddress == address(0)) revert MarginlyErrors.Forbidden();
     AdapterStorage(adapterAddress).transferOwnership(to);
   }
 
@@ -36,7 +36,7 @@ abstract contract AdapterActions is MarginlyAdminStorage {
   function acceptRouterAdapterOwnership(uint256 dexIdx) external onlyOwner {
     MarginlyRouter marginlyRouter = MarginlyRouter(IMarginlyFactory(marginlyFactoryAddress).swapRouter());
     address adapterAddress = marginlyRouter.adapters(dexIdx);
-    if (adapterAddress == address(0)) revert Errors.Forbidden();
+    if (adapterAddress == address(0)) revert MarginlyErrors.Forbidden();
     Ownable2Step(adapterAddress).acceptOwnership();
   }
 }

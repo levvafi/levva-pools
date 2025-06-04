@@ -12,7 +12,7 @@ import {
   SWAP_ONE,
 } from '../shared/utils';
 import { EthAddress } from '@marginly/common';
-import { parseUnits } from 'ethers/lib/utils';
+import { parseUnits } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { EthereumMainnetERC20BalanceOfSlot, setTokenBalance } from '../shared/tokens';
 import { BigNumber } from 'ethers';
@@ -532,12 +532,12 @@ describe('PendlePtToAssetAdapter', async () => {
           expect(ptBalanceAfter).to.be.greaterThan(ptBalanceBefore);
 
           const ibtBalanceAfter = await showBalance(assetToken, user.address, 'Asset balance After:');
-          expect(ibtBalanceBefore.sub(ibtBalanceAfter)).to.be.lessThanOrEqual(ibtTokenAmount);
+          expect(ibtBalanceBefore-(ibtBalanceAfter)).to.be.lessThanOrEqual(ibtTokenAmount);
 
           await assertSwapEvent(
             {
-              amountIn: ibtBalanceBefore.sub(ibtBalanceAfter),
-              amountOut: ptBalanceAfter.sub(ptBalanceBefore),
+              amountIn: ibtBalanceBefore-(ibtBalanceAfter),
+              amountOut: ptBalanceAfter-(ptBalanceBefore),
               isExactInput: true,
               tokenIn: assetToken.address,
               tokenOut: ptToken.address,
@@ -565,15 +565,15 @@ describe('PendlePtToAssetAdapter', async () => {
           await showGasUsage(tx);
 
           const ptBalanceAfter = await showBalance(ptToken, user.address, 'pt balance After:');
-          expect(ptBalanceAfter.sub(ptBalanceBefore)).to.be.eq(exactPtOut);
+          expect(ptBalanceAfter-(ptBalanceBefore)).to.be.eq(exactPtOut);
 
           const ibtBalanceAfter = await showBalance(assetToken, user.address, 'Asset balance After: ');
           expect(ibtBalanceBefore).to.be.greaterThan(ibtBalanceAfter);
 
           await assertSwapEvent(
             {
-              amountIn: ibtBalanceBefore.sub(ibtBalanceAfter),
-              amountOut: ptBalanceAfter.sub(ptBalanceBefore),
+              amountIn: ibtBalanceBefore-(ibtBalanceAfter),
+              amountOut: ptBalanceAfter-(ptBalanceBefore),
               isExactInput: false,
               tokenIn: assetToken.address,
               tokenOut: ptToken.address,
@@ -601,15 +601,15 @@ describe('PendlePtToAssetAdapter', async () => {
           await showGasUsage(tx);
 
           const ptBalanceAfter = await showBalance(ptToken, user.address, 'pt BalanceAfter:');
-          expect(ptBalanceBefore.sub(ptBalanceAfter)).to.be.eq(ptIn);
+          expect(ptBalanceBefore-(ptBalanceAfter)).to.be.eq(ptIn);
 
           const ibtBalanceAfter = await showBalance(assetToken, user.address, 'Asset balance After:');
           expect(ibtBalanceAfter).to.be.greaterThan(ibtBalanceBefore);
 
           await assertSwapEvent(
             {
-              amountIn: ptBalanceBefore.sub(ptBalanceAfter),
-              amountOut: ibtBalanceAfter.sub(ibtBalanceBefore),
+              amountIn: ptBalanceBefore-(ptBalanceAfter),
+              amountOut: ibtBalanceAfter-(ibtBalanceBefore),
               isExactInput: true,
               tokenIn: ptToken.address,
               tokenOut: assetToken.address,
@@ -640,12 +640,12 @@ describe('PendlePtToAssetAdapter', async () => {
           expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
 
           const ibtBalanceAfter = await showBalance(assetToken, user.address, 'Asset balance After:');
-          expect(ibtBalanceAfter.sub(ibtBalanceBefore)).to.be.eq(ibtMinOut);
+          expect(ibtBalanceAfter-(ibtBalanceBefore)).to.be.eq(ibtMinOut);
 
           await assertSwapEvent(
             {
-              amountIn: ptBalanceBefore.sub(ptBalanceAfter),
-              amountOut: ibtBalanceAfter.sub(ibtBalanceBefore),
+              amountIn: ptBalanceBefore-(ptBalanceAfter),
+              amountOut: ibtBalanceAfter-(ibtBalanceBefore),
               isExactInput: false,
               tokenIn: ptToken.address,
               tokenOut: assetToken.address,
@@ -729,15 +729,15 @@ describe('PendlePtToAssetAdapter', async () => {
           await showGasUsage(tx);
 
           const ptBalanceAfter = await showBalance(ptToken, user.address, 'ptBalanceAfter:');
-          expect(ptBalanceBefore.sub(ptBalanceAfter)).to.be.eq(ptIn);
+          expect(ptBalanceBefore-(ptBalanceAfter)).to.be.eq(ptIn);
 
           const ibtBalanceAfter = await showBalance(assetToken, user.address, 'Asset balance After:');
           expect(ibtBalanceAfter).to.be.greaterThan(ibtBalanceBefore);
 
           await assertSwapEvent(
             {
-              amountIn: ptBalanceBefore.sub(ptBalanceAfter),
-              amountOut: ibtBalanceAfter.sub(ibtBalanceBefore),
+              amountIn: ptBalanceBefore-(ptBalanceAfter),
+              amountOut: ibtBalanceAfter-(ibtBalanceBefore),
               isExactInput: true,
               tokenIn: ptToken.address,
               tokenOut: assetToken.address,
@@ -768,12 +768,12 @@ describe('PendlePtToAssetAdapter', async () => {
           expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
 
           const ibtBalanceAfter = await showBalance(assetToken, user.address, 'Asset balance After:');
-          expect(ibtBalanceAfter.sub(ibtBalanceBefore)).to.be.eq(ibtOut);
+          expect(ibtBalanceAfter-(ibtBalanceBefore)).to.be.eq(ibtOut);
 
           await assertSwapEvent(
             {
-              amountIn: ptBalanceBefore.sub(ptBalanceAfter),
-              amountOut: ibtBalanceAfter.sub(ibtBalanceBefore),
+              amountIn: ptBalanceBefore-(ptBalanceAfter),
+              amountOut: ibtBalanceAfter-(ibtBalanceBefore),
               isExactInput: false,
               tokenIn: ptToken.address,
               tokenOut: assetToken.address,

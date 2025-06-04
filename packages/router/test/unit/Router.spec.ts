@@ -26,7 +26,7 @@ describe('MarginlyRouter UniswapV3', () => {
     const price = await uniswapV3.pool.price();
 
     expect(await token0.balanceOf(user.address)).to.be.equal(0);
-    expect(await token1.balanceOf(user.address)).to.be.equal(price.mul(amountToSwap));
+    expect(await token1.balanceOf(user.address)).to.be.equal(price*(amountToSwap));
   });
 
   it('swapExactInput 0 to 1, less than minimal amount', async () => {
@@ -38,7 +38,7 @@ describe('MarginlyRouter UniswapV3', () => {
     await token0.connect(user).approve(marginlyRouter.address, amountToSwap);
 
     const price = await uniswapV3.pool.price();
-    const amountToGetPlusOne = price.mul(amountToSwap).add(1);
+    const amountToGetPlusOne = price*(amountToSwap).add(1);
 
     const swapCalldata = constructSwap([Dex.UniswapV3], [SWAP_ONE]);
     await expect(
@@ -65,7 +65,7 @@ describe('MarginlyRouter UniswapV3', () => {
     const price = await uniswapV3.pool.price();
 
     expect(await token1.balanceOf(user.address)).to.be.equal(0);
-    expect(await token0.balanceOf(user.address)).to.be.equal(BigNumber.from(amountToSwap).div(price));
+    expect(await token0.balanceOf(user.address)).to.be.equal(BigNumber.from(amountToSwap)/(price));
   });
 
   it('swapExactInput 1 to 0, less than minimal amount', async () => {
@@ -77,7 +77,7 @@ describe('MarginlyRouter UniswapV3', () => {
     await token1.connect(user).approve(marginlyRouter.address, amountToSwap);
 
     const price = await uniswapV3.pool.price();
-    const amountToGetPlusOne = BigNumber.from(amountToSwap).div(price).add(1);
+    const amountToGetPlusOne = BigNumber.from(amountToSwap)/(price).add(1);
 
     const swapCalldata = constructSwap([Dex.UniswapV3], [SWAP_ONE]);
     await expect(
@@ -94,8 +94,8 @@ describe('MarginlyRouter UniswapV3', () => {
     const price = await uniswapV3.pool.price();
 
     const amountToGet = 1000;
-    const amountTransferred = BigNumber.from(amountToGet).div(price);
-    const initialAmount0 = amountTransferred.mul(100);
+    const amountTransferred = BigNumber.from(amountToGet)/(price);
+    const initialAmount0 = amountTransferred*(100);
     await token0.mint(user.address, initialAmount0);
     await token0.connect(user).approve(marginlyRouter.address, initialAmount0);
 
@@ -110,7 +110,7 @@ describe('MarginlyRouter UniswapV3', () => {
     expect(await uniswapV3.pool.debugZeroForOne()).to.be.true;
     expect(await uniswapV3.pool.debugExactInput()).to.be.false;
 
-    expect(await token0.balanceOf(user.address)).to.be.equal(initialAmount0.sub(amountTransferred));
+    expect(await token0.balanceOf(user.address)).to.be.equal(initialAmount0-(amountTransferred));
     expect(await token1.balanceOf(user.address)).to.be.equal(amountToGet);
   });
 
@@ -121,8 +121,8 @@ describe('MarginlyRouter UniswapV3', () => {
     const price = await uniswapV3.pool.price();
 
     const amountToGet = 1000;
-    const amountToSwap = BigNumber.from(amountToGet).div(price);
-    const initialAmount0 = amountToSwap.mul(100);
+    const amountToSwap = BigNumber.from(amountToGet)/(price);
+    const initialAmount0 = amountToSwap*(100);
     await token0.mint(user.address, initialAmount0);
     await token0.connect(user).approve(marginlyRouter.address, initialAmount0);
 
@@ -130,7 +130,7 @@ describe('MarginlyRouter UniswapV3', () => {
     await expect(
       marginlyRouter
         .connect(user)
-        .swapExactOutput(swapCalldata, token0.address, token1.address, amountToSwap.sub(1), amountToGet)
+        .swapExactOutput(swapCalldata, token0.address, token1.address, amountToSwap-(1), amountToGet)
     ).to.be.revertedWithCustomError(uniswapV3.adapter, 'TooMuchRequested');
   });
 
@@ -141,8 +141,8 @@ describe('MarginlyRouter UniswapV3', () => {
     const price = await uniswapV3.pool.price();
 
     const amountToGet = 1000;
-    const amountToSwap = BigNumber.from(amountToGet).mul(price);
-    const initialAmount1 = amountToSwap.mul(100);
+    const amountToSwap = BigNumber.from(amountToGet)*(price);
+    const initialAmount1 = amountToSwap*(100);
     await token1.mint(user.address, initialAmount1);
     await token1.connect(user).approve(marginlyRouter.address, initialAmount1);
     expect(await token1.balanceOf(user.address)).to.be.equal(initialAmount1);
@@ -156,7 +156,7 @@ describe('MarginlyRouter UniswapV3', () => {
     expect(await uniswapV3.pool.debugZeroForOne()).to.be.false;
     expect(await uniswapV3.pool.debugExactInput()).to.be.false;
 
-    expect(await token1.balanceOf(user.address)).to.be.equal(initialAmount1.sub(amountToSwap));
+    expect(await token1.balanceOf(user.address)).to.be.equal(initialAmount1-(amountToSwap));
     expect(await token0.balanceOf(user.address)).to.be.equal(amountToGet);
   });
 
@@ -167,8 +167,8 @@ describe('MarginlyRouter UniswapV3', () => {
     const price = await uniswapV3.pool.price();
 
     const amountToGet = 1000;
-    const amountToSwap = BigNumber.from(amountToGet).mul(price);
-    const initialAmount1 = amountToSwap.mul(100);
+    const amountToSwap = BigNumber.from(amountToGet)*(price);
+    const initialAmount1 = amountToSwap*(100);
     await token1.mint(user.address, initialAmount1);
     await token1.connect(user).approve(marginlyRouter.address, initialAmount1);
 
@@ -176,7 +176,7 @@ describe('MarginlyRouter UniswapV3', () => {
     await expect(
       marginlyRouter
         .connect(user)
-        .swapExactOutput(swapCalldata, token1.address, token0.address, amountToSwap.sub(1), amountToGet)
+        .swapExactOutput(swapCalldata, token1.address, token0.address, amountToSwap-(1), amountToGet)
     ).to.be.revertedWithCustomError(uniswapV3.adapter, 'TooMuchRequested');
   });
 });
@@ -196,8 +196,8 @@ describe('MarginlyRouter UniswapV2', () => {
     await marginlyRouter.connect(user).swapExactInput(swapCalldata, token0.address, token1.address, amountToSwap, 0);
 
     const [reserve0, reserve1] = await uniswapV2.pool.getReserves();
-    const amountToSwapWithFee = BigNumber.from(amountToSwap).mul(997);
-    const amountToGet = reserve1.mul(amountToSwapWithFee).div(reserve0.mul(1000).add(amountToSwapWithFee));
+    const amountToSwapWithFee = BigNumber.from(amountToSwap)*(997);
+    const amountToGet = reserve1*(amountToSwapWithFee)/(reserve0*(1000).add(amountToSwapWithFee));
 
     expect(await token0.balanceOf(user.address)).to.be.equal(0);
     expect(await token1.balanceOf(user.address)).to.be.equal(amountToGet);
@@ -212,8 +212,8 @@ describe('MarginlyRouter UniswapV2', () => {
     await token0.connect(user).approve(marginlyRouter.address, amountToSwap);
 
     const [reserve0, reserve1] = await uniswapV2.pool.getReserves();
-    const amountToSwapWithFee = BigNumber.from(amountToSwap).mul(997);
-    const amountToGet = reserve1.mul(amountToSwapWithFee).div(reserve0.mul(1000).add(amountToSwapWithFee));
+    const amountToSwapWithFee = BigNumber.from(amountToSwap)*(997);
+    const amountToGet = reserve1*(amountToSwapWithFee)/(reserve0*(1000).add(amountToSwapWithFee));
 
     const swapCalldata = constructSwap([Dex.QuickSwap], [SWAP_ONE]);
     await expect(
@@ -236,8 +236,8 @@ describe('MarginlyRouter UniswapV2', () => {
     const swapCalldata = constructSwap([Dex.QuickSwap], [SWAP_ONE]);
     await marginlyRouter.connect(user).swapExactInput(swapCalldata, token1.address, token0.address, amountToSwap, 0);
     const [reserve0, reserve1] = await uniswapV2.pool.getReserves();
-    const amountToSwapWithFee = BigNumber.from(amountToSwap).mul(997);
-    const amountToGet = reserve0.mul(amountToSwapWithFee).div(reserve1.mul(1000).add(amountToSwapWithFee));
+    const amountToSwapWithFee = BigNumber.from(amountToSwap)*(997);
+    const amountToGet = reserve0*(amountToSwapWithFee)/(reserve1*(1000).add(amountToSwapWithFee));
 
     expect(await token1.balanceOf(user.address)).to.be.equal(0);
     expect(await token0.balanceOf(user.address)).to.be.equal(amountToGet);
@@ -252,8 +252,8 @@ describe('MarginlyRouter UniswapV2', () => {
     await token1.connect(user).approve(marginlyRouter.address, amountToSwap);
 
     const [reserve0, reserve1] = await uniswapV2.pool.getReserves();
-    const amountToSwapWithFee = BigNumber.from(amountToSwap).mul(997);
-    const amountToGet = reserve0.mul(amountToSwapWithFee).div(reserve1.mul(1000).add(amountToSwapWithFee));
+    const amountToSwapWithFee = BigNumber.from(amountToSwap)*(997);
+    const amountToGet = reserve0*(amountToSwapWithFee)/(reserve1*(1000).add(amountToSwapWithFee));
 
     const swapCalldata = constructSwap([Dex.QuickSwap], [SWAP_ONE]);
     await expect(
@@ -269,8 +269,8 @@ describe('MarginlyRouter UniswapV2', () => {
 
     const [reserve0, reserve1] = await uniswapV2.pool.getReserves();
     const amountToGet = 1000;
-    const amountTransferred = reserve0.mul(amountToGet).mul(1000).div(reserve1.sub(amountToGet).mul(997)).add(1);
-    const initialAmount0 = amountTransferred.mul(100);
+    const amountTransferred = reserve0*(amountToGet)*(1000)/(reserve1-(amountToGet)*(997)).add(1);
+    const initialAmount0 = amountTransferred*(100);
     await token0.mint(user.address, initialAmount0);
     await token0.connect(user).approve(marginlyRouter.address, initialAmount0);
 
@@ -282,7 +282,7 @@ describe('MarginlyRouter UniswapV2', () => {
       .connect(user)
       .swapExactOutput(swapCalldata, token0.address, token1.address, initialAmount0, amountToGet);
 
-    expect(await token0.balanceOf(user.address)).to.be.equal(initialAmount0.sub(amountTransferred));
+    expect(await token0.balanceOf(user.address)).to.be.equal(initialAmount0-(amountTransferred));
     expect(await token1.balanceOf(user.address)).to.be.equal(amountToGet);
   });
 
@@ -292,9 +292,9 @@ describe('MarginlyRouter UniswapV2', () => {
 
     const [reserve0, reserve1] = await uniswapV2.pool.getReserves();
     const amountToGet = 1000;
-    const amountTransferred = reserve0.mul(amountToGet).mul(1000).div(reserve1.sub(amountToGet).mul(997)).add(1);
+    const amountTransferred = reserve0*(amountToGet)*(1000)/(reserve1-(amountToGet)*(997)).add(1);
 
-    const initialAmount0 = amountTransferred.mul(100);
+    const initialAmount0 = amountTransferred*(100);
     await token0.mint(user.address, initialAmount0);
     await token0.connect(user).approve(marginlyRouter.address, initialAmount0);
 
@@ -302,7 +302,7 @@ describe('MarginlyRouter UniswapV2', () => {
     await expect(
       marginlyRouter
         .connect(user)
-        .swapExactOutput(swapCalldata, token0.address, token1.address, amountTransferred.sub(1), amountToGet)
+        .swapExactOutput(swapCalldata, token0.address, token1.address, amountTransferred-(1), amountToGet)
     ).to.be.revertedWithCustomError(uniswapV2.adapter, 'TooMuchRequested');
   });
 
@@ -312,8 +312,8 @@ describe('MarginlyRouter UniswapV2', () => {
 
     const [reserve0, reserve1] = await uniswapV2.pool.getReserves();
     const amountToGet = 1000;
-    const amountToSwap = reserve1.mul(amountToGet).mul(1000).div(reserve0.sub(amountToGet).mul(997)).add(1);
-    const initialAmount1 = amountToSwap.mul(100);
+    const amountToSwap = reserve1*(amountToGet)*(1000)/(reserve0-(amountToGet)*(997)).add(1);
+    const initialAmount1 = amountToSwap*(100);
     await token1.mint(user.address, initialAmount1);
     await token1.connect(user).approve(marginlyRouter.address, initialAmount1);
     expect(await token1.balanceOf(user.address)).to.be.equal(initialAmount1);
@@ -324,7 +324,7 @@ describe('MarginlyRouter UniswapV2', () => {
       .connect(user)
       .swapExactOutput(swapCalldata, token1.address, token0.address, initialAmount1, amountToGet);
 
-    expect(await token1.balanceOf(user.address)).to.be.equal(initialAmount1.sub(amountToSwap));
+    expect(await token1.balanceOf(user.address)).to.be.equal(initialAmount1-(amountToSwap));
     expect(await token0.balanceOf(user.address)).to.be.equal(amountToGet);
   });
 
@@ -334,9 +334,9 @@ describe('MarginlyRouter UniswapV2', () => {
 
     const [reserve0, reserve1] = await uniswapV2.pool.getReserves();
     const amountToGet = 1000;
-    const amountToSwap = reserve1.mul(amountToGet).mul(1000).div(reserve0.sub(amountToGet).mul(997)).add(1);
+    const amountToSwap = reserve1*(amountToGet)*(1000)/(reserve0-(amountToGet)*(997)).add(1);
 
-    const initialAmount1 = amountToSwap.mul(100);
+    const initialAmount1 = amountToSwap*(100);
     await token1.mint(user.address, initialAmount1);
     await token1.connect(user).approve(marginlyRouter.address, initialAmount1);
 
@@ -344,7 +344,7 @@ describe('MarginlyRouter UniswapV2', () => {
     await expect(
       marginlyRouter
         .connect(user)
-        .swapExactOutput(swapCalldata, token1.address, token0.address, amountToSwap.sub(1), amountToGet)
+        .swapExactOutput(swapCalldata, token1.address, token0.address, amountToSwap-(1), amountToGet)
     ).to.be.revertedWithCustomError(uniswapV2.adapter, 'TooMuchRequested');
   });
 });
@@ -366,7 +366,7 @@ describe('MarginlyRouter Balancer Vault', () => {
     const price = await balancer.vault.price();
 
     expect(await token0.balanceOf(user.address)).to.be.equal(0);
-    expect(await token1.balanceOf(user.address)).to.be.equal(price.mul(amountToSwap));
+    expect(await token1.balanceOf(user.address)).to.be.equal(price*(amountToSwap));
   });
 
   it('swapExactInput 0 to 1, less than minimal amount', async () => {
@@ -378,7 +378,7 @@ describe('MarginlyRouter Balancer Vault', () => {
     await token0.connect(user).approve(marginlyRouter.address, amountToSwap);
 
     const price = await balancer.vault.price();
-    const amountToGetPlusOne = price.mul(amountToSwap).add(1);
+    const amountToGetPlusOne = price*(amountToSwap).add(1);
 
     const swapCalldata = constructSwap([Dex.Balancer], [SWAP_ONE]);
     await expect(
@@ -403,7 +403,7 @@ describe('MarginlyRouter Balancer Vault', () => {
     const price = await balancer.vault.price();
 
     expect(await token1.balanceOf(user.address)).to.be.equal(0);
-    expect(await token0.balanceOf(user.address)).to.be.equal(BigNumber.from(amountToSwap).div(price));
+    expect(await token0.balanceOf(user.address)).to.be.equal(BigNumber.from(amountToSwap)/(price));
   });
 
   it('swapExactInput 1 to 0, less than minimal amount', async () => {
@@ -415,7 +415,7 @@ describe('MarginlyRouter Balancer Vault', () => {
     await token1.connect(user).approve(marginlyRouter.address, amountToSwap);
 
     const price = await balancer.vault.price();
-    const amountToGetPlusOne = BigNumber.from(amountToSwap).div(price).add(1);
+    const amountToGetPlusOne = BigNumber.from(amountToSwap)/(price).add(1);
 
     const swapCalldata = constructSwap([Dex.Balancer], [SWAP_ONE]);
     await expect(
@@ -432,8 +432,8 @@ describe('MarginlyRouter Balancer Vault', () => {
     const price = await balancer.vault.price();
 
     const amountToGet = 1000;
-    const amountTransferred = BigNumber.from(amountToGet).div(price);
-    const initialAmount0 = amountTransferred.mul(100);
+    const amountTransferred = BigNumber.from(amountToGet)/(price);
+    const initialAmount0 = amountTransferred*(100);
     await token0.mint(user.address, initialAmount0);
     await token0.connect(user).approve(marginlyRouter.address, initialAmount0);
 
@@ -445,7 +445,7 @@ describe('MarginlyRouter Balancer Vault', () => {
       .connect(user)
       .swapExactOutput(swapCalldata, token0.address, token1.address, initialAmount0, amountToGet);
 
-    expect(await token0.balanceOf(user.address)).to.be.equal(initialAmount0.sub(amountTransferred));
+    expect(await token0.balanceOf(user.address)).to.be.equal(initialAmount0-(amountTransferred));
     expect(await token1.balanceOf(user.address)).to.be.equal(amountToGet);
   });
 
@@ -456,8 +456,8 @@ describe('MarginlyRouter Balancer Vault', () => {
     const price = await balancer.vault.price();
 
     const amountToGet = 1000;
-    const amountToSwap = BigNumber.from(amountToGet).div(price);
-    const initialAmount0 = amountToSwap.mul(100);
+    const amountToSwap = BigNumber.from(amountToGet)/(price);
+    const initialAmount0 = amountToSwap*(100);
     await token0.mint(user.address, initialAmount0);
     await token0.connect(user).approve(marginlyRouter.address, initialAmount0);
 
@@ -465,7 +465,7 @@ describe('MarginlyRouter Balancer Vault', () => {
     await expect(
       marginlyRouter
         .connect(user)
-        .swapExactOutput(swapCalldata, token0.address, token1.address, amountToSwap.sub(1), amountToGet)
+        .swapExactOutput(swapCalldata, token0.address, token1.address, amountToSwap-(1), amountToGet)
     ).to.be.revertedWith('SWAP_LIMIT');
   });
 
@@ -476,8 +476,8 @@ describe('MarginlyRouter Balancer Vault', () => {
     const price = await balancer.vault.price();
 
     const amountToGet = 1000;
-    const amountToSwap = BigNumber.from(amountToGet).mul(price);
-    const initialAmount1 = amountToSwap.mul(100);
+    const amountToSwap = BigNumber.from(amountToGet)*(price);
+    const initialAmount1 = amountToSwap*(100);
     await token1.mint(user.address, initialAmount1);
     await token1.connect(user).approve(marginlyRouter.address, initialAmount1);
     expect(await token1.balanceOf(user.address)).to.be.equal(initialAmount1);
@@ -488,7 +488,7 @@ describe('MarginlyRouter Balancer Vault', () => {
       .connect(user)
       .swapExactOutput(swapCalldata, token1.address, token0.address, initialAmount1, amountToGet);
 
-    expect(await token1.balanceOf(user.address)).to.be.equal(initialAmount1.sub(amountToSwap));
+    expect(await token1.balanceOf(user.address)).to.be.equal(initialAmount1-(amountToSwap));
     expect(await token0.balanceOf(user.address)).to.be.equal(amountToGet);
   });
 
@@ -499,8 +499,8 @@ describe('MarginlyRouter Balancer Vault', () => {
     const price = await balancer.vault.price();
 
     const amountToGet = 1000;
-    const amountToSwap = BigNumber.from(amountToGet).mul(price);
-    const initialAmount1 = amountToSwap.mul(100);
+    const amountToSwap = BigNumber.from(amountToGet)*(price);
+    const initialAmount1 = amountToSwap*(100);
     await token1.mint(user.address, initialAmount1);
     await token1.connect(user).approve(marginlyRouter.address, initialAmount1);
 
@@ -508,7 +508,7 @@ describe('MarginlyRouter Balancer Vault', () => {
     await expect(
       marginlyRouter
         .connect(user)
-        .swapExactOutput(swapCalldata, token1.address, token0.address, amountToSwap.sub(1), amountToGet)
+        .swapExactOutput(swapCalldata, token1.address, token0.address, amountToSwap-(1), amountToGet)
     ).to.be.revertedWith('SWAP_LIMIT');
   });
 });
@@ -531,7 +531,7 @@ describe('MarginlyRouter WooFi', () => {
     const price1 = (await wooFi.pool.getTokenState(token1.address)).price;
 
     expect(await token0.balanceOf(user.address)).to.be.equal(0);
-    const expectedAmount = price0.mul(amountToSwap).div(price1).sub(2);
+    const expectedAmount = price0*(amountToSwap)/(price1)-(2);
     expect(await token1.balanceOf(user.address)).to.be.equal(expectedAmount);
   });
 
@@ -545,7 +545,7 @@ describe('MarginlyRouter WooFi', () => {
 
     const price0 = (await wooFi.pool.getTokenState(token0.address)).price;
     const price1 = (await wooFi.pool.getTokenState(token1.address)).price;
-    const amountToGetPlusOne = price0.mul(amountToSwap).div(price1).add(1);
+    const amountToGetPlusOne = price0*(amountToSwap)/(price1).add(1);
 
     const swapCalldata = constructSwap([Dex.Woofi], [SWAP_ONE]);
     await expect(
@@ -571,7 +571,7 @@ describe('MarginlyRouter WooFi', () => {
     const price1 = (await wooFi.pool.getTokenState(token1.address)).price;
 
     expect(await token1.balanceOf(user.address)).to.be.equal(0);
-    const expectedAmount = price1.mul(amountToSwap).div(price0).sub(2);
+    const expectedAmount = price1*(amountToSwap)/(price0)-(2);
     expect(await token0.balanceOf(user.address)).to.be.equal(expectedAmount);
   });
 
@@ -586,7 +586,7 @@ describe('MarginlyRouter WooFi', () => {
     const price0 = (await wooFi.pool.getTokenState(token0.address)).price;
     const price1 = (await wooFi.pool.getTokenState(token1.address)).price;
 
-    const amountToGetPlusOne = price1.mul(amountToSwap).div(price0).add(1);
+    const amountToGetPlusOne = price1*(amountToSwap)/(price0).add(1);
 
     const swapCalldata = constructSwap([Dex.Woofi], [SWAP_ONE]);
     await expect(
@@ -604,8 +604,8 @@ describe('MarginlyRouter WooFi', () => {
     const price1 = (await wooFi.pool.getTokenState(token1.address)).price;
 
     const amountToGet = 1000;
-    const amountTransferred = price1.mul(amountToGet).div(price0).mul(105).div(100);
-    const initialAmount0 = amountTransferred.mul(100);
+    const amountTransferred = price1*(amountToGet)/(price0)*(105)/(100);
+    const initialAmount0 = amountTransferred*(100);
     await token0.mint(user.address, initialAmount0);
     await token0.connect(user).approve(marginlyRouter.address, initialAmount0);
 
@@ -618,7 +618,7 @@ describe('MarginlyRouter WooFi', () => {
       .swapExactOutput(swapCalldata, token0.address, token1.address, amountTransferred, amountToGet);
 
     expect(await token0.balanceOf(user.address)).to.be.lt(initialAmount0);
-    expect(await token0.balanceOf(user.address)).to.be.gt(initialAmount0.sub(amountTransferred));
+    expect(await token0.balanceOf(user.address)).to.be.gt(initialAmount0-(amountTransferred));
     expect(await token1.balanceOf(user.address)).to.be.equal(amountToGet);
   });
 
@@ -630,8 +630,8 @@ describe('MarginlyRouter WooFi', () => {
     const price1 = (await wooFi.pool.getTokenState(token1.address)).price;
 
     const amountToGet = 1000;
-    const amountTransferred = price0.mul(amountToGet).div(price1).mul(105).div(100);
-    const initialAmount1 = amountTransferred.mul(100);
+    const amountTransferred = price0*(amountToGet)/(price1)*(105)/(100);
+    const initialAmount1 = amountTransferred*(100);
     await token1.mint(user.address, initialAmount1);
     await token1.connect(user).approve(marginlyRouter.address, amountTransferred);
 
@@ -645,7 +645,7 @@ describe('MarginlyRouter WooFi', () => {
 
     expect(await token0.balanceOf(user.address)).to.be.equal(amountToGet);
     expect(await token1.balanceOf(user.address)).to.be.lt(initialAmount1);
-    expect(await token1.balanceOf(user.address)).to.be.gt(initialAmount1.sub(amountTransferred));
+    expect(await token1.balanceOf(user.address)).to.be.gt(initialAmount1-(amountTransferred));
   });
 });
 
@@ -666,7 +666,7 @@ describe('MarginlyRouter DodoV1', () => {
     const price = await dodoV1.pool._BASE_TO_QUOTE_PRICE_();
 
     expect(await token0.balanceOf(user.address)).to.be.equal(0);
-    const expectedAmount = price.mul(amountToSwap);
+    const expectedAmount = price*(amountToSwap);
     expect(await token1.balanceOf(user.address)).to.be.equal(expectedAmount);
   });
 
@@ -679,7 +679,7 @@ describe('MarginlyRouter DodoV1', () => {
     await token0.connect(user).approve(marginlyRouter.address, amountToSwap);
 
     const price = await dodoV1.pool._BASE_TO_QUOTE_PRICE_();
-    const amountToGetPlusOne = price.mul(amountToSwap).add(1);
+    const amountToGetPlusOne = price*(amountToSwap).add(1);
 
     const swapCalldata = constructSwap([Dex.DodoV1], [SWAP_ONE]);
     await expect(
@@ -695,7 +695,7 @@ describe('MarginlyRouter DodoV1', () => {
 
     const price = await dodoV1.pool._BASE_TO_QUOTE_PRICE_();
     const amountToSwap = 1000;
-    const minAmountOut = BigNumber.from(amountToSwap).mul(9).div(10).div(price);
+    const minAmountOut = BigNumber.from(amountToSwap)*(9)/(10)/(price);
 
     const token0BalanceBefore = await token0.balanceOf(dodoV1.pool.address);
     const token1BalanceBefore = await token0.balanceOf(dodoV1.pool.address);
@@ -711,7 +711,7 @@ describe('MarginlyRouter DodoV1', () => {
       .swapExactInput(swapCalldata, token1.address, token0.address, amountToSwap, minAmountOut);
 
     expect(await token1.balanceOf(user.address)).to.be.equal(0);
-    const expectedAmount = BigNumber.from(amountToSwap).div(price);
+    const expectedAmount = BigNumber.from(amountToSwap)/(price);
     expect(await token0.balanceOf(user.address)).to.be.equal(expectedAmount);
 
     expect(await token0.balanceOf(dodoV1.pool.address)).to.be.not.equal(token0BalanceBefore);
@@ -727,7 +727,7 @@ describe('MarginlyRouter DodoV1', () => {
     await token1.connect(user).approve(marginlyRouter.address, amountToSwap);
 
     const price = await dodoV1.pool._BASE_TO_QUOTE_PRICE_();
-    const amountToGetPlusOne = BigNumber.from(amountToSwap).div(price).add(1);
+    const amountToGetPlusOne = BigNumber.from(amountToSwap)/(price).add(1);
 
     const swapCalldata = constructSwap([Dex.DodoV1], [SWAP_ONE]);
     await expect(
@@ -744,8 +744,8 @@ describe('MarginlyRouter DodoV1', () => {
     const price = await dodoV1.pool._BASE_TO_QUOTE_PRICE_();
 
     const amountToGet = 1000;
-    const amountTransferred = BigNumber.from(amountToGet).div(price).mul(105).div(100);
-    const initialAmount0 = amountTransferred.mul(100);
+    const amountTransferred = BigNumber.from(amountToGet)/(price)*(105)/(100);
+    const initialAmount0 = amountTransferred*(100);
     await token0.mint(user.address, initialAmount0);
     await token0.connect(user).approve(marginlyRouter.address, initialAmount0);
 
@@ -758,7 +758,7 @@ describe('MarginlyRouter DodoV1', () => {
       .swapExactOutput(swapCalldata, token0.address, token1.address, amountTransferred, amountToGet);
 
     expect(await token0.balanceOf(user.address)).to.be.lt(initialAmount0);
-    expect(await token0.balanceOf(user.address)).to.be.gt(initialAmount0.sub(amountTransferred));
+    expect(await token0.balanceOf(user.address)).to.be.gt(initialAmount0-(amountTransferred));
     expect(await token1.balanceOf(user.address)).to.be.equal(amountToGet);
   });
 
@@ -769,8 +769,8 @@ describe('MarginlyRouter DodoV1', () => {
     const price = await dodoV1.pool._BASE_TO_QUOTE_PRICE_();
 
     const amountToGet = 1000;
-    const amountTransferred = price.mul(amountToGet).mul(105).div(100);
-    const initialAmount1 = amountTransferred.mul(100);
+    const amountTransferred = price*(amountToGet)*(105)/(100);
+    const initialAmount1 = amountTransferred*(100);
     await token1.mint(user.address, initialAmount1);
     await token1.connect(user).approve(marginlyRouter.address, amountTransferred);
 
@@ -784,7 +784,7 @@ describe('MarginlyRouter DodoV1', () => {
 
     expect(await token0.balanceOf(user.address)).to.be.equal(amountToGet);
     expect(await token1.balanceOf(user.address)).to.be.lt(initialAmount1);
-    expect(await token1.balanceOf(user.address)).to.be.gt(initialAmount1.sub(amountTransferred));
+    expect(await token1.balanceOf(user.address)).to.be.gt(initialAmount1-(amountTransferred));
   });
 });
 
@@ -805,7 +805,7 @@ describe('MarginlyRouter DodoV2', () => {
     const price = await dodoV2.pool._BASE_TO_QUOTE_PRICE_();
 
     expect(await token0.balanceOf(user.address)).to.be.equal(0);
-    const expectedAmount = price.mul(amountToSwap);
+    const expectedAmount = price*(amountToSwap);
     expect(await token1.balanceOf(user.address)).to.be.equal(expectedAmount);
   });
 
@@ -818,7 +818,7 @@ describe('MarginlyRouter DodoV2', () => {
     await token0.connect(user).approve(marginlyRouter.address, amountToSwap);
 
     const price = await dodoV2.pool._BASE_TO_QUOTE_PRICE_();
-    const amountToGetPlusOne = price.mul(amountToSwap).add(1);
+    const amountToGetPlusOne = price*(amountToSwap).add(1);
 
     const swapCalldata = constructSwap([Dex.DodoV2], [SWAP_ONE]);
     await expect(
@@ -844,7 +844,7 @@ describe('MarginlyRouter DodoV2', () => {
     const price = await dodoV2.pool._BASE_TO_QUOTE_PRICE_();
 
     expect(await token1.balanceOf(user.address)).to.be.equal(0);
-    const expectedAmount = BigNumber.from(amountToSwap).div(price);
+    const expectedAmount = BigNumber.from(amountToSwap)/(price);
     expect(await token0.balanceOf(user.address)).to.be.equal(expectedAmount);
   });
 
@@ -857,7 +857,7 @@ describe('MarginlyRouter DodoV2', () => {
     await token1.connect(user).approve(marginlyRouter.address, amountToSwap);
 
     const price = await dodoV2.pool._BASE_TO_QUOTE_PRICE_();
-    const amountToGetPlusOne = BigNumber.from(amountToSwap).div(price).add(1);
+    const amountToGetPlusOne = BigNumber.from(amountToSwap)/(price).add(1);
 
     const swapCalldata = constructSwap([Dex.DodoV2], [SWAP_ONE]);
     await expect(
@@ -874,8 +874,8 @@ describe('MarginlyRouter DodoV2', () => {
     const price = await dodoV2.pool._BASE_TO_QUOTE_PRICE_();
 
     const amountToGet = 1000;
-    const amountTransferred = BigNumber.from(amountToGet).div(price).mul(105).div(100);
-    const initialAmount0 = amountTransferred.mul(100);
+    const amountTransferred = BigNumber.from(amountToGet)/(price)*(105)/(100);
+    const initialAmount0 = amountTransferred*(100);
     await token0.mint(user.address, initialAmount0);
     await token0.connect(user).approve(marginlyRouter.address, initialAmount0);
 
@@ -888,7 +888,7 @@ describe('MarginlyRouter DodoV2', () => {
       .swapExactOutput(swapCalldata, token0.address, token1.address, amountTransferred, amountToGet);
 
     expect(await token0.balanceOf(user.address)).to.be.lt(initialAmount0);
-    expect(await token0.balanceOf(user.address)).to.be.gt(initialAmount0.sub(amountTransferred));
+    expect(await token0.balanceOf(user.address)).to.be.gt(initialAmount0-(amountTransferred));
     expect(await token1.balanceOf(user.address)).to.be.equal(amountToGet);
   });
 
@@ -899,8 +899,8 @@ describe('MarginlyRouter DodoV2', () => {
     const price = await dodoV2.pool._BASE_TO_QUOTE_PRICE_();
 
     const amountToGet = 1000;
-    const amountTransferred = price.mul(amountToGet).mul(105).div(100);
-    const initialAmount1 = amountTransferred.mul(100);
+    const amountTransferred = price*(amountToGet)*(105)/(100);
+    const initialAmount1 = amountTransferred*(100);
     await token1.mint(user.address, initialAmount1);
     await token1.connect(user).approve(marginlyRouter.address, amountTransferred);
 
@@ -914,7 +914,7 @@ describe('MarginlyRouter DodoV2', () => {
 
     expect(await token0.balanceOf(user.address)).to.be.equal(amountToGet);
     expect(await token1.balanceOf(user.address)).to.be.lt(initialAmount1);
-    expect(await token1.balanceOf(user.address)).to.be.gt(initialAmount1.sub(amountTransferred));
+    expect(await token1.balanceOf(user.address)).to.be.gt(initialAmount1-(amountTransferred));
   });
 });
 

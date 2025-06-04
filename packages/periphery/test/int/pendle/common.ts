@@ -19,7 +19,7 @@ export function printPendlePrices(
   priceFromSecondaryOracle: BigNumber,
   expectedPrice: BigNumber
 ) {
-  const priceDelta = actualPrice.sub(expectedPrice);
+  const priceDelta = actualPrice-(expectedPrice);
   console.log(`  Price from PendlePtLpOracle: 1.0 PT  = ${ethers.utils.formatEther(priceFromPendlePtLpOracle)} SY`);
   console.log(`  Price from SecondaryOracle:  1.0 YQT = ${ethers.utils.formatEther(priceFromSecondaryOracle)} QT`);
   console.log(`  Final expected price:        1.0 PT  = ${ethers.utils.formatEther(expectedPrice)} QT`);
@@ -39,13 +39,13 @@ export async function fetchPendlePrices(
   margincallPriceFromSecondaryOracle: BigNumber;
 }> {
   const actualBalancePrice = (await params.oracle.getBalancePrice(params.qt.address, params.pt.address, { blockTag }))
-    .mul(one)
-    .div(oneX96);
+    *(one)
+    /(oneX96);
   const actualMargincallPrice = (
     await params.oracle.getMargincallPrice(params.qt.address, params.pt.address, { blockTag })
   )
-    .mul(one)
-    .div(oneX96);
+    *(one)
+    /(oneX96);
   const balancePtToSyPrice = await params.pendlePtLpOracle.getPtToSyRate(
     params.pendleMarket.address,
     params.secondsAgo,
@@ -59,13 +59,13 @@ export async function fetchPendlePrices(
   const balancePriceFromSecondaryOracle = (
     await params.secondaryPoolOracle.getBalancePrice(params.qt.address, params.yqt.address, { blockTag })
   )
-    .mul(one)
-    .div(oneX96);
+    *(one)
+    /(oneX96);
   const margincallPriceFromSecondaryOracle = (
     await params.secondaryPoolOracle.getMargincallPrice(params.qt.address, params.yqt.address, { blockTag })
   )
-    .mul(one)
-    .div(oneX96);
+    *(one)
+    /(oneX96);
 
   return {
     actualBalancePrice,

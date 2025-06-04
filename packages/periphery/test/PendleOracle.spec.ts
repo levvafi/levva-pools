@@ -9,8 +9,8 @@ describe('PendleOracle prices before maturity', () => {
     const caseParams = await loadFixture(createPendleUnitTestCase);
 
     const actualPrice = (await caseParams.oracle.getBalancePrice(caseParams.qt.address, caseParams.pt.address))
-      .mul(one)
-      .div(oneX96);
+      *(one)
+      /(oneX96);
 
     const priceFromPendlePtLpOracle = await caseParams.pendlePtLpOracle.getPtToSyRate(
       caseParams.pendleMarket.address,
@@ -19,10 +19,10 @@ describe('PendleOracle prices before maturity', () => {
     const priceFromSecondaryOracle = (
       await caseParams.secondaryPoolOracle.getBalancePrice(caseParams.qt.address, caseParams.yqt.address)
     )
-      .mul(one)
-      .div(oneX96);
+      *(one)
+      /(oneX96);
 
-    const expectedPrice = priceFromPendlePtLpOracle.mul(priceFromSecondaryOracle).div(one);
+    const expectedPrice = priceFromPendlePtLpOracle*(priceFromSecondaryOracle)/(one);
 
     // printPendlePrices(actualPrice, priceFromPendlePtLpOracle, priceFromSecondaryOracle, expectedPrice);
     expect(actualPrice).to.be.closeTo(expectedPrice, 100);
@@ -32,8 +32,8 @@ describe('PendleOracle prices before maturity', () => {
     const caseParams = await loadFixture(createPendleUnitTestCase);
 
     const actualPrice = (await caseParams.oracle.getMargincallPrice(caseParams.qt.address, caseParams.pt.address))
-      .mul(one)
-      .div(oneX96);
+      *(one)
+      /(oneX96);
 
     const priceFromPendlePtLpOracle = await caseParams.pendlePtLpOracle.getPtToSyRate(
       caseParams.pendleMarket.address,
@@ -42,10 +42,10 @@ describe('PendleOracle prices before maturity', () => {
     const priceFromSecondaryOracle = (
       await caseParams.secondaryPoolOracle.getMargincallPrice(caseParams.qt.address, caseParams.yqt.address)
     )
-      .mul(one)
-      .div(oneX96);
+      *(one)
+      /(oneX96);
 
-    const expectedPrice = priceFromPendlePtLpOracle.mul(priceFromSecondaryOracle).div(one);
+    const expectedPrice = priceFromPendlePtLpOracle*(priceFromSecondaryOracle)/(one);
 
     // printPendlePrices(actualPrice, priceFromPendlePtLpOracle, priceFromSecondaryOracle, expectedPrice);
     expect(actualPrice).to.be.closeTo(expectedPrice, 100);
@@ -174,8 +174,8 @@ describe('PendleOracle prices after maturity', () => {
     expect(await caseParams.pendleMarket.isExpired());
 
     const actualPrice = (await caseParams.oracle.getBalancePrice(caseParams.qt.address, caseParams.pt.address))
-      .mul(one)
-      .div(oneX96);
+      *(one)
+      /(oneX96);
 
     const priceFromPendlePtLpOracle = await caseParams.pendlePtLpOracle.getPtToSyRate(
       caseParams.pendleMarket.address,
@@ -185,10 +185,10 @@ describe('PendleOracle prices after maturity', () => {
     const priceFromSecondaryOracle = (
       await caseParams.secondaryPoolOracle.getBalancePrice(caseParams.qt.address, caseParams.yqt.address)
     )
-      .mul(one)
-      .div(oneX96);
+      *(one)
+      /(oneX96);
 
-    const expectedPrice = priceFromPendlePtLpOracle.mul(priceFromSecondaryOracle).div(one);
+    const expectedPrice = priceFromPendlePtLpOracle*(priceFromSecondaryOracle)/(one);
 
     // printPendlePrices(actualPrice, one, priceFromSecondaryOracle, priceFromSecondaryOracle);
     expect(actualPrice).to.be.closeTo(expectedPrice, 100);
@@ -202,8 +202,8 @@ describe('PendleOracle prices after maturity', () => {
     expect(await caseParams.pendleMarket.isExpired());
 
     const actualPrice = (await caseParams.oracle.getMargincallPrice(caseParams.qt.address, caseParams.pt.address))
-      .mul(one)
-      .div(oneX96);
+      *(one)
+      /(oneX96);
 
     const priceFromPendlePtLpOracle = await caseParams.pendlePtLpOracle.getPtToSyRate(
       caseParams.pendleMarket.address,
@@ -213,10 +213,10 @@ describe('PendleOracle prices after maturity', () => {
     const priceFromSecondaryOracle = (
       await caseParams.secondaryPoolOracle.getMargincallPrice(caseParams.qt.address, caseParams.yqt.address)
     )
-      .mul(one)
-      .div(oneX96);
+      *(one)
+      /(oneX96);
 
-    const expectedPrice = priceFromPendlePtLpOracle.mul(priceFromSecondaryOracle).div(one);
+    const expectedPrice = priceFromPendlePtLpOracle*(priceFromSecondaryOracle)/(one);
 
     // printPendlePrices(actualPrice, one, priceFromSecondaryOracle, priceFromSecondaryOracle);
     expect(actualPrice).to.be.closeTo(expectedPrice, 100);

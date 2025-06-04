@@ -19,7 +19,7 @@ import {
 } from './abi';
 
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
-import { parseEther } from 'ethers/lib/utils';
+import { parseEther } from 'ethers'
 import { MarginlyAdmin, MarginlyRouter } from '../../typechain-types';
 import { UniswapV3Adapter } from '@marginly/router/typechain-types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';

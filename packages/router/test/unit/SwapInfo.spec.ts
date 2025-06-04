@@ -104,7 +104,7 @@ describe('SwapInfo decoding', () => {
     console.log([firstDex, secondDex]);
     console.log([firstDexRatio, secondDexRatio]);
 
-    const swap = constructSwap([firstDex, secondDex], [firstDexRatio, secondDexRatio]).sub(2);
+    const swap = constructSwap([firstDex, secondDex], [firstDexRatio, secondDexRatio])-(2);
     await expect(swapInfoTest.decodeSwapInfo(swap, SWAP_ONE, SWAP_ONE)).to.be.revertedWithCustomError(
       swapInfoTest,
       'WrongSwapsNumber'

@@ -2,7 +2,7 @@
 // Used to set ERC20 account balance on fork
 // internal details: https://docs.soliditylang.org/en/latest/internals/layout_in_storage.html#mappings-and-dynamic-arrays
 import { EthAddress } from '@marginly/common';
-import { keccak256 } from 'ethers/lib/utils';
+import { keccak256 } from 'ethers'
 import { BigNumber, utils } from 'ethers';
 import { ethers } from 'hardhat';
 

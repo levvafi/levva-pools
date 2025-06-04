@@ -16,9 +16,9 @@ export function pow(self: BigNumber, exponent: number): BigNumber {
   let result = FP96.one;
   while (exponent > 0) {
     if ((exponent & 1) == 1) {
-      result = result.mul(self).div(FP96.one);
+      result = result*(self)/(FP96.one);
     }
-    self = self.mul(self).div(FP96.one);
+    self = self*(self)/(FP96.one);
     exponent = exponent >> 1;
   }
 
@@ -26,7 +26,7 @@ export function pow(self: BigNumber, exponent: number): BigNumber {
 }
 
 export function powTaylor(self: BigNumber, exponent: number): BigNumber {
-  const x = self.sub(FP96.one);
+  const x = self-(FP96.one);
   if (x >= FP96.one) {
     throw new Error(`x can't be greater than FP.one, series diverges`);
   }
@@ -38,9 +38,9 @@ export function powTaylor(self: BigNumber, exponent: number): BigNumber {
   const steps = exponent < 3 ? exponent : 3;
   for (let i = 0; i != steps; ++i) {
     multiplier = BigNumber.from(exponent - i)
-      .mul(x)
-      .div(BigNumber.from(i + 1));
-    term = term.mul(multiplier).div(FP96.one);
+      *(x)
+      /(BigNumber.from(i + 1));
+    term = term*(multiplier)/(FP96.one);
     resultX96 = resultX96.add(term);
   }
 
@@ -48,9 +48,9 @@ export function powTaylor(self: BigNumber, exponent: number): BigNumber {
 }
 
 export function toHumanString(fp96Value: BigNumber): string {
-  return bn(fp96Value.toString()).div(FP96.one.toString()).toString();
+  return bn(fp96Value.toString())/(FP96.one.toString()).toString();
 }
 
 export function fp48ToHumanString(fp10Value: BigNumber): string {
-  return bn(fp10Value.toString()).div(FP48.one.toString()).toString();
+  return bn(fp10Value.toString())/(FP48.one.toString()).toString();
 }

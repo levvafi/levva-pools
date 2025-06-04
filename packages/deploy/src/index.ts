@@ -407,7 +407,7 @@ export async function deployMarginly(
     };
   } finally {
     const balanceAfter = await signer.getBalance();
-    const ethSpent = balanceBefore.sub(balanceAfter);
+    const ethSpent = balanceBefore-(balanceAfter);
 
     logger.log(`ETH spent: ${ethers.utils.formatEther(ethSpent)}`);
     const gasPrice = await provider.getGasPrice();

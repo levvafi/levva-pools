@@ -1,6 +1,6 @@
 import assert = require('assert');
 import { BigNumber } from 'ethers';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatUnits, parseUnits } from 'ethers'
 import { SystemUnderTest } from '.';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { ZERO_ADDRESS } from '../utils/const';
@@ -211,7 +211,7 @@ export async function deleveragePrecisionLong(sut: SystemUnderTest) {
     );
 
     logger.info(`  Longer longs`);
-    const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+    const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
     const longTx = await (
       await marginlyPool
         .connect(liquidatedLong)
@@ -221,7 +221,7 @@ export async function deleveragePrecisionLong(sut: SystemUnderTest) {
     ).wait();
     await gasReporter.saveGasUsage('long', longTx);
 
-    const swapPrice = BigNumber.from(longTx.events?.find((e) => e.event == 'Long')?.args?.swapPriceX96).mul(10n ** 12n);
+    const swapPrice = BigNumber.from(longTx.events?.find((e) => e.event == 'Long')?.args?.swapPriceX96)*(10n ** 12n);
     await addToLogs(
       sut,
       1,
@@ -266,7 +266,7 @@ export async function deleveragePrecisionLong(sut: SystemUnderTest) {
       );
 
       logger.info(`  Shorter_${j} shorts`);
-      const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+      const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
       const shortTx = await (
         await marginlyPool
           .connect(shorters[j])
@@ -275,7 +275,7 @@ export async function deleveragePrecisionLong(sut: SystemUnderTest) {
           })
       ).wait();
       await gasReporter.saveGasUsage('short', shortTx);
-      const swapPrice = BigNumber.from(shortTx.events?.find((e) => e.event == 'Short')?.args?.swapPriceX96).mul(
+      const swapPrice = BigNumber.from(shortTx.events?.find((e) => e.event == 'Short')?.args?.swapPriceX96)*(
         10n ** 12n
       );
       await addToLogs(
@@ -327,7 +327,7 @@ export async function deleveragePrecisionLong(sut: SystemUnderTest) {
 
     for (let j = 0; j < itersNum; ++j) {
       logger.info(`  Shorter_${j} closes position`);
-      const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+      const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
       const closePosTx = await (
         await marginlyPool
           .connect(shorters[j])
@@ -338,7 +338,7 @@ export async function deleveragePrecisionLong(sut: SystemUnderTest) {
       await gasReporter.saveGasUsage('closePosition', closePosTx);
       const swapPrice = BigNumber.from(
         closePosTx.events?.find((e) => e.event == 'ClosePosition')?.args?.swapPriceX96
-      ).mul(10n ** 12n);
+      )*(10n ** 12n);
       await addToLogs(
         sut,
         1,
@@ -498,7 +498,7 @@ async function deleveragePrecisionLongCollateralReinitInner(sut: SystemUnderTest
     );
 
     logger.info(`  Longer longs`);
-    const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+    const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
     const longTx = await (
       await marginlyPool
         .connect(liquidatedLong)
@@ -507,7 +507,7 @@ async function deleveragePrecisionLongCollateralReinitInner(sut: SystemUnderTest
         })
     ).wait();
     await gasReporter.saveGasUsage('long', longTx);
-    let swapPrice = BigNumber.from(longTx.events?.find((e) => e.event == 'Long')?.args?.swapPriceX96).mul(10n ** 12n);
+    let swapPrice = BigNumber.from(longTx.events?.find((e) => e.event == 'Long')?.args?.swapPriceX96)*(10n ** 12n);
     await addToLogs(
       sut,
       1,
@@ -551,7 +551,7 @@ async function deleveragePrecisionLongCollateralReinitInner(sut: SystemUnderTest
 
     logger.info(`  Shorter shorts`);
     const shorterBaseDebt = parseUnits('13', 18);
-    const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+    const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
     const shortTx = await (
       await marginlyPool
         .connect(shorter)
@@ -560,7 +560,7 @@ async function deleveragePrecisionLongCollateralReinitInner(sut: SystemUnderTest
         })
     ).wait();
     await gasReporter.saveGasUsage('short', shortTx);
-    swapPrice = BigNumber.from(shortTx.events?.find((e) => e.event == 'Short')?.args?.swapPriceX96).mul(10n ** 12n);
+    swapPrice = BigNumber.from(shortTx.events?.find((e) => e.event == 'Short')?.args?.swapPriceX96)*(10n ** 12n);
     await addToLogs(
       sut,
       1,
@@ -632,7 +632,7 @@ async function deleveragePrecisionLongCollateralReinitInner(sut: SystemUnderTest
     }
 
     logger.info(`  Shorter closes position`);
-    const closePosMaxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+    const closePosMaxPrice = (await marginlyPool.getBasePrice()).inner*(2);
     const closePosTx = await (
       await marginlyPool
         .connect(shorter)
@@ -641,7 +641,7 @@ async function deleveragePrecisionLongCollateralReinitInner(sut: SystemUnderTest
         })
     ).wait();
     await gasReporter.saveGasUsage('closePosition', closePosTx);
-    swapPrice = BigNumber.from(closePosTx.events?.find((e) => e.event == 'ClosePosition')?.args?.swapPriceX96).mul(
+    swapPrice = BigNumber.from(closePosTx.events?.find((e) => e.event == 'ClosePosition')?.args?.swapPriceX96)*(
       10n ** 12n
     );
     await addToLogs(
@@ -717,7 +717,7 @@ export async function deleveragePrecisionShort(sut: SystemUnderTest) {
   const price = (await marginlyPool.getBasePrice()).inner;
 
   const lenderBaseAmount = parseUnits('100', 18); // 100 WETH
-  const lenderQuoteAmount = parseUnits('1', 18).mul(price).div(FP96.one); // USDC equivalent of 1 WETH
+  const lenderQuoteAmount = parseUnits('1', 18)*(price)/(FP96.one); // USDC equivalent of 1 WETH
 
   await (await usdc.connect(treasury).transfer(lender.address, lenderQuoteAmount)).wait();
   await (await usdc.connect(lender).approve(marginlyPool.address, lenderQuoteAmount)).wait();
@@ -832,7 +832,7 @@ export async function deleveragePrecisionShort(sut: SystemUnderTest) {
     logger.info(`iteration ${i + 1}`);
     let price = (await marginlyPool.getBasePrice()).inner;
     const shorterQuoteDeposit =
-      i < 5 ? parseUnits('1', 18).mul(price).div(FP96.one) : parseUnits('2', 18).mul(price).div(FP96.one);
+      i < 5 ? parseUnits('1', 18)*(price)/(FP96.one) : parseUnits('2', 18)*(price)/(FP96.one);
     await (await usdc.connect(treasury).transfer(liquidatedShort.address, shorterQuoteDeposit)).wait();
     await (await usdc.connect(liquidatedShort).approve(marginlyPool.address, shorterQuoteDeposit)).wait();
 
@@ -861,7 +861,7 @@ export async function deleveragePrecisionShort(sut: SystemUnderTest) {
     );
 
     logger.info(`  Shorter shorts`);
-    const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+    const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
     const shortTx = await (
       await marginlyPool
         .connect(liquidatedShort)
@@ -870,7 +870,7 @@ export async function deleveragePrecisionShort(sut: SystemUnderTest) {
         })
     ).wait();
     await gasReporter.saveGasUsage('short', shortTx);
-    const swapPrice = BigNumber.from(shortTx.events?.find((e) => e.event == 'Short')?.args?.swapPriceX96).mul(
+    const swapPrice = BigNumber.from(shortTx.events?.find((e) => e.event == 'Short')?.args?.swapPriceX96)*(
       10n ** 12n
     );
     await addToLogs(
@@ -923,18 +923,18 @@ export async function deleveragePrecisionShort(sut: SystemUnderTest) {
         j + 1 != itersNum
           ? longersLongAmount[j]
           : BigNumber.from(await usdc.balanceOf(marginlyPool.address))
-              .mul(FP96.one)
-              .div(price)
-              .mul(999)
-              .div(1000);
-      const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+              *(FP96.one)
+              /(price)
+              *(999)
+              /(1000);
+      const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
       const longTx = await (
         await marginlyPool
           .connect(longers[j])
           .execute(CallType.Long, amount, 0, maxPrice, false, ZERO_ADDRESS, uniswapV3Swapdata(), { gasLimit: 500_000 })
       ).wait();
       await gasReporter.saveGasUsage('long', longTx);
-      const swapPrice = BigNumber.from(longTx.events?.find((e) => e.event == 'Long')?.args?.swapPriceX96).mul(
+      const swapPrice = BigNumber.from(longTx.events?.find((e) => e.event == 'Long')?.args?.swapPriceX96)*(
         10n ** 12n
       );
       await addToLogs(
@@ -986,7 +986,7 @@ export async function deleveragePrecisionShort(sut: SystemUnderTest) {
 
     for (let j = 0; j < itersNum; ++j) {
       logger.info(`  Longer_${j} closes position`);
-      const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+      const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
       const closePosTx = await (
         await marginlyPool
           .connect(longers[j])
@@ -997,7 +997,7 @@ export async function deleveragePrecisionShort(sut: SystemUnderTest) {
       await gasReporter.saveGasUsage('closePosition', closePosTx);
       const swapPrice = BigNumber.from(
         closePosTx.events?.find((e) => e.event == 'ClosePosition')?.args?.swapPriceX96
-      ).mul(10n ** 12n);
+      )*(10n ** 12n);
       await addToLogs(
         sut,
         1,
@@ -1071,7 +1071,7 @@ async function deleveragePrecisionShortCollateralReinitInner(sut: SystemUnderTes
   const price = (await marginlyPool.getBasePrice()).inner;
 
   const lenderBaseAmount = parseUnits('18', 18); // 100 WETH
-  const lenderQuoteAmount = parseUnits('1', 18).mul(price).div(FP96.one); // USDC equivalent of 1 WETH
+  const lenderQuoteAmount = parseUnits('1', 18)*(price)/(FP96.one); // USDC equivalent of 1 WETH
 
   await (await usdc.connect(treasury).transfer(lender.address, lenderQuoteAmount)).wait();
   await (await usdc.connect(lender).approve(marginlyPool.address, lenderQuoteAmount)).wait();
@@ -1130,7 +1130,7 @@ async function deleveragePrecisionShortCollateralReinitInner(sut: SystemUnderTes
   for (let i = 0; i < 10; ++i) {
     logger.info(`iteration ${i + 1}`);
     let price = (await marginlyPool.getBasePrice()).inner;
-    const shorterQuoteDeposit = parseUnits('1', 18).mul(price).div(FP96.one);
+    const shorterQuoteDeposit = parseUnits('1', 18)*(price)/(FP96.one);
     await (await usdc.connect(treasury).transfer(liquidatedShort.address, shorterQuoteDeposit)).wait();
     await (await usdc.connect(liquidatedShort).approve(marginlyPool.address, shorterQuoteDeposit)).wait();
 
@@ -1159,7 +1159,7 @@ async function deleveragePrecisionShortCollateralReinitInner(sut: SystemUnderTes
     );
 
     logger.info(`  Shorter shorts`);
-    const minPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+    const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
     const shortTx = await (
       await marginlyPool
         .connect(liquidatedShort)
@@ -1168,7 +1168,7 @@ async function deleveragePrecisionShortCollateralReinitInner(sut: SystemUnderTes
         })
     ).wait();
     await gasReporter.saveGasUsage('short', shortTx);
-    let swapPrice = BigNumber.from(shortTx.events?.find((e) => e.event == 'Short')?.args?.swapPriceX96).mul(10n ** 12n);
+    let swapPrice = BigNumber.from(shortTx.events?.find((e) => e.event == 'Short')?.args?.swapPriceX96)*(10n ** 12n);
     await addToLogs(
       sut,
       1,
@@ -1214,7 +1214,7 @@ async function deleveragePrecisionShortCollateralReinitInner(sut: SystemUnderTes
     price = BigNumber.from((await marginlyPool.getBasePrice()).inner);
 
     const longAmount = parseUnits('13', 18);
-    const maxPrice = (await marginlyPool.getBasePrice()).inner.mul(2);
+    const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
     const longTx = await (
       await marginlyPool
         .connect(longer)
@@ -1223,7 +1223,7 @@ async function deleveragePrecisionShortCollateralReinitInner(sut: SystemUnderTes
         })
     ).wait();
     await gasReporter.saveGasUsage('long', longTx);
-    swapPrice = BigNumber.from(longTx.events?.find((e) => e.event == 'Long')?.args?.swapPriceX96).mul(10n ** 12n);
+    swapPrice = BigNumber.from(longTx.events?.find((e) => e.event == 'Long')?.args?.swapPriceX96)*(10n ** 12n);
     await addToLogs(
       sut,
       1,
@@ -1295,7 +1295,7 @@ async function deleveragePrecisionShortCollateralReinitInner(sut: SystemUnderTes
     }
 
     logger.info(`  Longer closes position`);
-    const closeMinPrice = (await marginlyPool.getBasePrice()).inner.div(2);
+    const closeMinPrice = (await marginlyPool.getBasePrice()).inner/(2);
     const closePosTx = await (
       await marginlyPool
         .connect(longer)
@@ -1304,7 +1304,7 @@ async function deleveragePrecisionShortCollateralReinitInner(sut: SystemUnderTes
         })
     ).wait();
     await gasReporter.saveGasUsage('closePosition', closePosTx);
-    swapPrice = BigNumber.from(closePosTx.events?.find((e) => e.event == 'ClosePosition')?.args?.swapPriceX96).mul(
+    swapPrice = BigNumber.from(closePosTx.events?.find((e) => e.event == 'ClosePosition')?.args?.swapPriceX96)*(
       10n ** 12n
     );
     await addToLogs(
@@ -1394,18 +1394,18 @@ async function addToLogs(
   const discountedBaseCollateral = await marginlyPool.discountedBaseCollateral();
   const discountedQuoteDebt = await marginlyPool.discountedQuoteDebt();
   const realBaseCollateral = baseCollateralCoeff
-    .mul(discountedBaseCollateral)
-    .div(FP96.one)
-    .sub(baseDelevCoeff.mul(discountedQuoteDebt).div(FP96.one));
-  const realQuoteDebt = quoteDebtCoeff.mul(discountedQuoteDebt).div(FP96.one);
+    *(discountedBaseCollateral)
+    /(FP96.one)
+    -(baseDelevCoeff*(discountedQuoteDebt)/(FP96.one));
+  const realQuoteDebt = quoteDebtCoeff*(discountedQuoteDebt)/(FP96.one);
 
   const discountedBaseDebt = await marginlyPool.discountedBaseDebt();
   const discountedQuoteCollateral = await marginlyPool.discountedQuoteCollateral();
   const realQuoteCollateral = quoteCollateralCoeff
-    .mul(discountedQuoteCollateral)
-    .div(FP96.one)
-    .sub(quoteDelevCoeff.mul(discountedBaseDebt).div(FP96.one));
-  const realBaseDebt = baseDebtCoeff.mul(discountedBaseDebt).div(FP96.one);
+    *(discountedQuoteCollateral)
+    /(FP96.one)
+    -(quoteDelevCoeff*(discountedBaseDebt)/(FP96.one));
+  const realBaseDebt = baseDebtCoeff*(discountedBaseDebt)/(FP96.one);
 
   aggregates[transactionName] = {
     discountedBaseCollateral: discountedBaseCollateral.toString(),
@@ -1420,8 +1420,8 @@ async function addToLogs(
 
   const actualWethBalance = formatUnits(await weth.balanceOf(marginlyPool.address), 18);
   const actualUsdcBalance = formatUnits(await usdc.balanceOf(marginlyPool.address), 6);
-  const calculatedWethBalance = formatUnits(realBaseCollateral.sub(realBaseDebt), 18);
-  const calculatedUsdcBalance = formatUnits(realQuoteCollateral.sub(realQuoteDebt), 6);
+  const calculatedWethBalance = formatUnits(realBaseCollateral-(realBaseDebt), 18);
+  const calculatedUsdcBalance = formatUnits(realQuoteCollateral-(realQuoteDebt), 6);
 
   balances[transactionName] = {
     calculatedWethBalance: calculatedWethBalance,
@@ -1436,8 +1436,8 @@ async function addToLogs(
     const techPosition = await marginlyPool.positions(await marginlyFactory.techPositionOwner());
     const discountedBaseCollateral = techPosition.discountedBaseAmount;
     const discountedQuoteCollateral = techPosition.discountedQuoteAmount;
-    const realBaseCollateral = baseCollateralCoeff.mul(discountedBaseCollateral).div(FP96.one);
-    const realQuoteCollateral = quoteCollateralCoeff.mul(discountedQuoteCollateral).div(FP96.one);
+    const realBaseCollateral = baseCollateralCoeff*(discountedBaseCollateral)/(FP96.one);
+    const realQuoteCollateral = quoteCollateralCoeff*(discountedQuoteCollateral)/(FP96.one);
 
     positionsInfo.set(`tech position type`, techPosition._type.toString());
     positionsInfo.set(`tech position discountedBaseAmount`, discountedBaseCollateral.toString());
@@ -1450,8 +1450,8 @@ async function addToLogs(
     const position = await marginlyPool.positions(lenders[i].address);
     const discountedBaseCollateral = position.discountedBaseAmount;
     const discountedQuoteCollateral = position.discountedQuoteAmount;
-    const realBaseCollateral = baseCollateralCoeff.mul(discountedBaseCollateral).div(FP96.one);
-    const realQuoteCollateral = quoteCollateralCoeff.mul(discountedQuoteCollateral).div(FP96.one);
+    const realBaseCollateral = baseCollateralCoeff*(discountedBaseCollateral)/(FP96.one);
+    const realQuoteCollateral = quoteCollateralCoeff*(discountedQuoteCollateral)/(FP96.one);
 
     positionsInfo.set(`lender_${i} type`, position._type.toString());
     positionsInfo.set(`lender_${i} discountedBaseAmount`, discountedBaseCollateral.toString());
@@ -1465,10 +1465,10 @@ async function addToLogs(
     const discountedBaseCollateral = position.discountedBaseAmount;
     const discountedQuoteDebt = position.discountedQuoteAmount;
     const realBaseCollateral = baseCollateralCoeff
-      .mul(discountedBaseCollateral)
-      .div(FP96.one)
-      .sub(baseDelevCoeff.mul(discountedQuoteDebt).div(FP96.one));
-    const realQuoteDebt = quoteDebtCoeff.mul(discountedQuoteDebt).div(FP96.one);
+      *(discountedBaseCollateral)
+      /(FP96.one)
+      -(baseDelevCoeff*(discountedQuoteDebt)/(FP96.one));
+    const realQuoteDebt = quoteDebtCoeff*(discountedQuoteDebt)/(FP96.one);
 
     positionsInfo.set(`longer_${i} type`, position._type.toString());
     positionsInfo.set(`longer_${i} discountedBaseAmount`, discountedBaseCollateral.toString());
@@ -1482,10 +1482,10 @@ async function addToLogs(
     const discountedBaseDebt = position.discountedBaseAmount;
     const discountedQuoteCollateral = position.discountedQuoteAmount;
     const realQuoteCollateral = quoteCollateralCoeff
-      .mul(discountedQuoteCollateral)
-      .div(FP96.one)
-      .sub(quoteDelevCoeff.mul(discountedBaseDebt).div(FP96.one));
-    const realBaseDebt = baseDebtCoeff.mul(discountedBaseDebt).div(FP96.one);
+      *(discountedQuoteCollateral)
+      /(FP96.one)
+      -(quoteDelevCoeff*(discountedBaseDebt)/(FP96.one));
+    const realBaseDebt = baseDebtCoeff*(discountedBaseDebt)/(FP96.one);
 
     positionsInfo.set(`shorter_${i} type`, position._type.toString());
     positionsInfo.set(`shorter_${i} discountedBaseAmount`, discountedBaseDebt.toString());

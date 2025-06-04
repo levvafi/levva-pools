@@ -12,8 +12,8 @@ describe('PendleMarketOracle prices before maturity', () => {
     const caseParams = await loadFixture(createPendleMarketOracle);
 
     const actualPrice = (await caseParams.oracle.getBalancePrice(caseParams.ib.address, caseParams.pt.address))
-      .mul(one)
-      .div(oneX96);
+      *(one)
+      /(oneX96);
 
     const expectedPrice = await caseParams.pendlePtLpOracle.getPtToSyRate(
       caseParams.pendleMarket.address,
@@ -27,8 +27,8 @@ describe('PendleMarketOracle prices before maturity', () => {
     const caseParams = await loadFixture(createPendleMarketOracle);
 
     const actualPrice = oneX96
-      .mul(one)
-      .div(await caseParams.oracle.getBalancePrice(caseParams.pt.address, caseParams.ib.address));
+      *(one)
+      /(await caseParams.oracle.getBalancePrice(caseParams.pt.address, caseParams.ib.address));
 
     const expectedPrice = await caseParams.pendlePtLpOracle.getPtToSyRate(
       caseParams.pendleMarket.address,
@@ -42,8 +42,8 @@ describe('PendleMarketOracle prices before maturity', () => {
     const caseParams = await loadFixture(createPendleMarketOracle);
 
     const actualPrice = (await caseParams.oracle.getMargincallPrice(caseParams.ib.address, caseParams.pt.address))
-      .mul(one)
-      .div(oneX96);
+      *(one)
+      /(oneX96);
 
     const expectedPrice = await caseParams.pendlePtLpOracle.getPtToSyRate(
       caseParams.pendleMarket.address,
@@ -57,8 +57,8 @@ describe('PendleMarketOracle prices before maturity', () => {
     const caseParams = await loadFixture(createPendleMarketOracle);
 
     const actualPrice = oneX96
-      .mul(one)
-      .div(await caseParams.oracle.getMargincallPrice(caseParams.pt.address, caseParams.ib.address));
+      *(one)
+      /(await caseParams.oracle.getMargincallPrice(caseParams.pt.address, caseParams.ib.address));
 
     const expectedPrice = await caseParams.pendlePtLpOracle.getPtToSyRate(
       caseParams.pendleMarket.address,
@@ -189,8 +189,8 @@ describe('PendleOracle prices after maturity', () => {
     const caseParams = await loadFixture(createPendleMarketOracleAfterMaturity);
 
     const actualPrice = (await caseParams.oracle.getBalancePrice(caseParams.ib.address, caseParams.pt.address))
-      .mul(one)
-      .div(oneX96);
+      *(one)
+      /(oneX96);
 
     const expectedPrice = await caseParams.pendlePtLpOracle.getPtToSyRate(
       caseParams.pendleMarket.address,
@@ -204,8 +204,8 @@ describe('PendleOracle prices after maturity', () => {
     const caseParams = await loadFixture(createPendleMarketOracleAfterMaturity);
 
     const actualPrice = (await caseParams.oracle.getMargincallPrice(caseParams.ib.address, caseParams.pt.address))
-      .mul(one)
-      .div(oneX96);
+      *(one)
+      /(oneX96);
 
     const expectedPrice = await caseParams.pendlePtLpOracle.getPtToSyRate(
       caseParams.pendleMarket.address,

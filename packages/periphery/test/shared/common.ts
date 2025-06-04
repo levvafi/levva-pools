@@ -6,7 +6,7 @@ export function toHumanPrice(priceX96: BigNumber, decimalsDiff: number) {
   const one = bn(2 ** 96);
 
   const multiplier = bn(10).pow(decimalsDiff);
-  return bn(priceX96.toString()).times(multiplier).div(one.toString()).toString();
+  return bn(priceX96.toString()).times(multiplier)/(one.toString()).toString();
 }
 
 export function printPrices(balancePrice: BigNumber, mcPrice: BigNumber, decimalsDiff: number) {

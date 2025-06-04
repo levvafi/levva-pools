@@ -1,15 +1,14 @@
-import { HardhatUserConfig } from 'hardhat/config';
+import { config as dotEnvConfig } from 'dotenv';
 import '@nomicfoundation/hardhat-toolbox';
-require('hardhat-contract-sizer');
+import 'hardhat-contract-sizer';
 import 'solidity-docgen';
 import './scripts';
-import { config as dotEnvConfig } from 'dotenv';
 
 dotEnvConfig();
 
 const config = {
   solidity: {
-    version: '0.8.19',
+    version: '0.8.28',
     settings: {
       optimizer: {
         enabled: true,

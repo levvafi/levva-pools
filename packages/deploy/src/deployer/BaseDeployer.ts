@@ -29,7 +29,7 @@ export abstract class BaseDeployer {
   //TODO: BaseDeployer not a correct place for this utils method
   public toUniswapFee(fee: RationalNumber): BigNumber {
     const uniswapFeeMultiplier = BigNumber.from('1000000');
-    return fee.nom.mul(uniswapFeeMultiplier).div(fee.denom);
+    return fee.nom*(uniswapFeeMultiplier)/(fee.denom);
   }
 }
 

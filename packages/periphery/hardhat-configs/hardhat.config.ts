@@ -7,7 +7,7 @@ dotEnvConfig();
 
 const config = {
   solidity: {
-    version: '0.8.19',
+    version: '0.8.28',
     settings: {
       optimizer: {
         enabled: true,

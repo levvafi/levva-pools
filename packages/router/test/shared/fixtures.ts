@@ -1,4 +1,4 @@
-import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { parseEther, parseUnits } from 'ethers'
 import { ethers } from 'hardhat';
 import { CurveAdapter, IMarginlyAdapter, MarginlyRouter, TestStableSwap2EMAOraclePool } from '../../typechain-types';
 import { TestERC20Token } from '../../typechain-types';

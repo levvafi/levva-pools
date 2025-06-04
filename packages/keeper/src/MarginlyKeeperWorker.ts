@@ -3,7 +3,7 @@ import { Worker } from '@marginly/common/lifecycle';
 import { using } from '@marginly/common/resource';
 import { ethers } from 'ethers';
 import { BigNumber } from '@ethersproject/bignumber';
-import { formatEther, formatUnits, parseUnits } from 'ethers/lib/utils';
+import { formatEther, formatUnits, parseUnits } from 'ethers'
 import {
   EthOptions,
   ContractDescriptions,
@@ -116,10 +116,10 @@ export class MarginlyKeeperWorker implements Worker {
 
     logger.info(
       `Liquidation profit = ${balanceAfter} - ${balanceBefore} = ${formatUnits(
-        balanceAfter.sub(balanceBefore),
+        balanceAfter-(balanceBefore),
         decimals
       )} ${symbol}. Tx fee = ${ethBalanceBefore} - ${ethBalanceAfter} = ${formatEther(
-        ethBalanceBefore.sub(ethBalanceAfter)
+        ethBalanceBefore-(ethBalanceAfter)
       )} ETH`
     );
   }
@@ -219,8 +219,8 @@ export class MarginlyKeeperWorker implements Worker {
     liquidationParams: LiquidationParams
   ): Promise<void> {
     let uniswapPool: ethers.Contract | undefined;
-    let amount0 = BigNumber.from(0);
-    let amount1 = BigNumber.from(0);
+    let amount0 = 0n;
+    let amount1 = 0n;
     for (const uniswapPoolAddress of config.flashLoanPools) {
       const contract = new ethers.Contract(uniswapPoolAddress, this.contractDescriptions.uniswapPool.abi, this.signer);
 
@@ -290,8 +290,8 @@ export class MarginlyKeeperWorker implements Worker {
     liquidationParams: LiquidationParams
   ): Promise<void> {
     let algebraPool: ethers.Contract | undefined;
-    let amount0 = BigNumber.from(0);
-    let amount1 = BigNumber.from(0);
+    let amount0 = 0n;
+    let amount1 = 0n;
     for (const uniswapPoolAddress of config.flashLoanPools) {
       const contract = new ethers.Contract(uniswapPoolAddress, this.contractDescriptions.uniswapPool.abi, this.signer);
 

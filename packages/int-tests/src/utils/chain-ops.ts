@@ -5,7 +5,7 @@ import { MarginlyPoolContract } from '../contract-api/MarginlyPool';
 import { BigNumber, ethers, ContractReceipt } from 'ethers';
 import { FP96, powTaylor } from './fixed-point';
 import { TechnicalPositionOwner } from '../suites';
-import { defaultAbiCoder } from 'ethers/lib/utils';
+import { defaultAbiCoder } from 'ethers'
 
 export const PositionType = {
   Uninitialized: 0,
@@ -110,7 +110,7 @@ export async function getLongSortKeyX48(
   accountAddress: string
 ): Promise<BigNumber> {
   const position = await marginlyPool.positions(accountAddress);
-  const index = BigNumber.from(position.heapPosition).sub(1);
+  const index = BigNumber.from(position.heapPosition)-(1);
   logger.debug(`  heap position is ${position.heapPosition}`);
   const [, leverage] = await marginlyPool.getHeapPosition(index, false);
   return BigNumber.from(leverage.key);
@@ -121,25 +121,25 @@ export async function getShortSortKeyX48(
   accountAddress: string
 ): Promise<BigNumber> {
   const position = await marginlyPool.positions(accountAddress);
-  const index = BigNumber.from(position.heapPosition).sub(1);
+  const index = BigNumber.from(position.heapPosition)-(1);
   logger.debug(`  heap position is ${position.heapPosition}`);
   const [, leverage] = await marginlyPool.getHeapPosition(index, true);
   return BigNumber.from(leverage.key);
 }
 
 export const WHOLE_ONE = 1e6;
-export const SECONDS_IN_YEAR_X96 = BigNumber.from(365.25 * 24 * 60 * 60).mul(FP96.one);
+export const SECONDS_IN_YEAR_X96 = BigNumber.from(365.25 * 24 * 60 * 60)*(FP96.one);
 
 function mulFp96(firstX96: BigNumber, secondX96: BigNumber): BigNumber {
-  return firstX96.mul(secondX96).div(FP96.one);
+  return firstX96*(secondX96)/(FP96.one);
 }
 
 function divFp96(nomX96: BigNumber, denomX96: BigNumber): BigNumber {
-  return nomX96.mul(FP96.one).div(denomX96);
+  return nomX96*(FP96.one)/(denomX96);
 }
 
 function fp96FromRatio(nom: BigNumber, denom: BigNumber): BigNumber {
-  return nom.mul(FP96.one).div(denom);
+  return nom*(FP96.one)/(denom);
 }
 
 /// Same as accrueInterest in smart contract
@@ -157,7 +157,7 @@ export async function calcAccruedRateCoeffs(
 
   const lastReinitOnPrevBlock = await marginlyPool.lastReinitTimestampSeconds(callOpt);
   const lastReinitTimestamp = await marginlyPool.lastReinitTimestampSeconds();
-  const secondsPassed = BigNumber.from(lastReinitTimestamp).sub(lastReinitOnPrevBlock);
+  const secondsPassed = BigNumber.from(lastReinitTimestamp)-(lastReinitOnPrevBlock);
 
   const baseDebtCoeffPrev = await marginlyPool.baseDebtCoeff(callOpt);
   const quoteDebtCoeffPrev = await marginlyPool.quoteDebtCoeff(callOpt);
@@ -173,8 +173,8 @@ export async function calcAccruedRateCoeffs(
     quoteCollateralCoeff: quoteCollateralCoeffPrev,
     baseDelevCoeff: baseDelevCoeffPrev,
     quoteDelevCoeff: quoteDelevCoeffPrev,
-    discountedBaseDebtFee: BigNumber.from(0),
-    discountedQuoteDebtFee: BigNumber.from(0),
+    discountedBaseDebtFee: 0n,
+    discountedQuoteDebtFee: 0n,
   };
 
   if (+secondsPassed === 0) {
@@ -186,47 +186,47 @@ export async function calcAccruedRateCoeffs(
   const discountedBaseCollateralPrev = await marginlyPool.discountedBaseCollateral(callOpt);
   const discountedQuoteCollateralPrev = await marginlyPool.discountedQuoteCollateral(callOpt);
 
-  const interestRateX96 = BigNumber.from(params.interestRate).mul(FP96.one).div(WHOLE_ONE);
-  const feeX96 = BigNumber.from(params.fee).mul(FP96.one).div(WHOLE_ONE);
+  const interestRateX96 = BigNumber.from(params.interestRate)*(FP96.one)/(WHOLE_ONE);
+  const feeX96 = BigNumber.from(params.fee)*(FP96.one)/(WHOLE_ONE);
 
-  const onePlusFee = feeX96.mul(FP96.one).div(SECONDS_IN_YEAR_X96).add(FP96.one);
+  const onePlusFee = feeX96*(FP96.one)/(SECONDS_IN_YEAR_X96).add(FP96.one);
   const feeDt = powTaylor(onePlusFee, +secondsPassed);
 
   if (!discountedBaseCollateralPrev.isZero()) {
-    const realBaseDebtPrev = baseDebtCoeffPrev.mul(discountedBaseDebtPrev).div(FP96.one);
-    const onePlusIRshort = interestRateX96.mul(leverageShortX96).div(SECONDS_IN_YEAR_X96).add(FP96.one);
+    const realBaseDebtPrev = baseDebtCoeffPrev*(discountedBaseDebtPrev)/(FP96.one);
+    const onePlusIRshort = interestRateX96*(leverageShortX96)/(SECONDS_IN_YEAR_X96).add(FP96.one);
     const accruedRateDt = powTaylor(onePlusIRshort, +secondsPassed);
-    const realBaseCollateral = baseCollateralCoeffPrev.mul(discountedBaseCollateralPrev).div(FP96.one);
+    const realBaseCollateral = baseCollateralCoeffPrev*(discountedBaseCollateralPrev)/(FP96.one);
     const factor = FP96.one.add(
-      fp96FromRatio(accruedRateDt.sub(FP96.one).mul(realBaseDebtPrev).div(FP96.one), realBaseCollateral)
+      fp96FromRatio(accruedRateDt-(FP96.one)*(realBaseDebtPrev)/(FP96.one), realBaseCollateral)
     );
-    const baseCollateralCoeff = baseCollateralCoeffPrev.mul(factor).div(FP96.one);
-    const baseDelevCoeff = baseDelevCoeffPrev.mul(factor);
-    const baseDebtCoeff = baseDebtCoeffPrev.mul(accruedRateDt).div(FP96.one).mul(feeDt).div(FP96.one);
+    const baseCollateralCoeff = baseCollateralCoeffPrev*(factor)/(FP96.one);
+    const baseDelevCoeff = baseDelevCoeffPrev*(factor);
+    const baseDebtCoeff = baseDebtCoeffPrev*(accruedRateDt)/(FP96.one)*(feeDt)/(FP96.one);
 
-    const realBaseDebtFee = accruedRateDt.mul(feeDt.sub(FP96.one)).div(FP96.one).mul(realBaseDebtPrev).div(FP96.one);
+    const realBaseDebtFee = accruedRateDt*(feeDt-(FP96.one))/(FP96.one)*(realBaseDebtPrev)/(FP96.one);
 
-    result.discountedBaseDebtFee = realBaseDebtFee.mul(FP96.one).div(baseCollateralCoeff);
+    result.discountedBaseDebtFee = realBaseDebtFee*(FP96.one)/(baseCollateralCoeff);
     result.baseCollateralCoeff = baseCollateralCoeff;
     result.baseDebtCoeff = baseDebtCoeff;
     result.baseDelevCoeff = baseDelevCoeff;
   }
 
   if (!discountedQuoteCollateralPrev.isZero()) {
-    const realQuoteDebtPrev = quoteDebtCoeffPrev.mul(discountedQuoteDebtPrev).div(FP96.one);
-    const onePlusIRLong = interestRateX96.mul(leverageLongX96).div(SECONDS_IN_YEAR_X96).add(FP96.one);
+    const realQuoteDebtPrev = quoteDebtCoeffPrev*(discountedQuoteDebtPrev)/(FP96.one);
+    const onePlusIRLong = interestRateX96*(leverageLongX96)/(SECONDS_IN_YEAR_X96).add(FP96.one);
     const accruedRateDt = powTaylor(onePlusIRLong, +secondsPassed);
-    const quoteDebtCoeff = quoteDebtCoeffPrev.mul(accruedRateDt).div(FP96.one).mul(feeDt).div(FP96.one);
-    const realQuoteCollateral = quoteCollateralCoeffPrev.mul(discountedQuoteCollateralPrev).div(FP96.one);
+    const quoteDebtCoeff = quoteDebtCoeffPrev*(accruedRateDt)/(FP96.one)*(feeDt)/(FP96.one);
+    const realQuoteCollateral = quoteCollateralCoeffPrev*(discountedQuoteCollateralPrev)/(FP96.one);
     const factor = FP96.one.add(
-      fp96FromRatio(accruedRateDt.sub(FP96.one).mul(realQuoteDebtPrev).div(FP96.one), realQuoteCollateral)
+      fp96FromRatio(accruedRateDt-(FP96.one)*(realQuoteDebtPrev)/(FP96.one), realQuoteCollateral)
     );
-    const quoteCollateralCoeff = quoteCollateralCoeffPrev.mul(factor).div(FP96.one);
-    const quoteDelevCoeff = quoteDelevCoeffPrev.mul(factor).div(FP96.one);
+    const quoteCollateralCoeff = quoteCollateralCoeffPrev*(factor)/(FP96.one);
+    const quoteDelevCoeff = quoteDelevCoeffPrev*(factor)/(FP96.one);
 
-    const realQuoteDebtFee = accruedRateDt.mul(feeDt.sub(FP96.one)).div(FP96.one).mul(realQuoteDebtPrev).div(FP96.one);
+    const realQuoteDebtFee = accruedRateDt*(feeDt-(FP96.one))/(FP96.one)*(realQuoteDebtPrev)/(FP96.one);
 
-    result.discountedQuoteDebtFee = realQuoteDebtFee.mul(FP96.one).div(quoteCollateralCoeff);
+    result.discountedQuoteDebtFee = realQuoteDebtFee*(FP96.one)/(quoteCollateralCoeff);
     result.quoteDebtCoeff = quoteDebtCoeff;
     result.quoteCollateralCoeff = quoteCollateralCoeff;
     result.quoteDelevCoeff = quoteDelevCoeff;

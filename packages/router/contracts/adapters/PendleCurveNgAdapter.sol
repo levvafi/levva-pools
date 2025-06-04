@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/utils/math/Math.sol';
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
@@ -356,7 +356,7 @@ contract PendleCurveNgAdapter is IMarginlyAdapter, Ownable2Step {
 
       // calculate pt amountIn
       // https://github.com/pendle-finance/pendle-core-v2-public/blob/bc27b10c33ac16d6e1936a9ddd24d536b00c96a4/contracts/core/YieldContractsV2/PendleYieldTokenV2.sol#L301
-      amountIn = Math.mulDiv(estimatedIbAmount, routeData.yt.pyIndexCurrent(), PENDLE_ONE, Math.Rounding.Up);
+      amountIn = Math.mulDiv(estimatedIbAmount, routeData.yt.pyIndexCurrent(), PENDLE_ONE, Math.Rounding.Ceil);
 
       uint256 ibRedeemed = _pendleRedeemSy(
         routeData,

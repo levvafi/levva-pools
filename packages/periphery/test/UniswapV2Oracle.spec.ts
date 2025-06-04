@@ -10,7 +10,7 @@ import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 
 function getPairKey(pair: string, baseToken: string, quoteToken: string) {
-  return BigNumber.from(baseToken).lt(BigNumber.from(quoteToken)) ? BigNumber.from(pair) : BigNumber.from(pair).mul(-1);
+  return BigNumber.from(baseToken).lt(BigNumber.from(quoteToken)) ? BigNumber.from(pair) : BigNumber.from(pair)*(-1);
 }
 
 describe('UniswapV2Oracle prices', () => {
@@ -383,7 +383,7 @@ describe('UniswapV2Oracle prices', () => {
     const { oracle } = await loadFixture(createUniswapV2OracleWithPairsAndObservations);
 
     const balancePriceRaw = await oracle.getBalancePrice(Tokens.USDC, Tokens.WETH);
-    const balancePrice = balancePriceRaw.mul(10n ** 12n).div(2n ** 96n);
+    const balancePrice = balancePriceRaw*(10n ** 12n)/(2n ** 96n);
     expect(balancePrice).to.be.eq(3579);
     console.log(`Balance price is ${balancePrice}`);
   });
@@ -392,7 +392,7 @@ describe('UniswapV2Oracle prices', () => {
     const { oracle } = await loadFixture(createUniswapV2OracleWithPairsAndObservations);
 
     const mcPriceRaw = await oracle.getMargincallPrice(Tokens.USDC, Tokens.WETH);
-    const mcPrice = mcPriceRaw.mul(10n ** 12n).div(2n ** 96n);
+    const mcPrice = mcPriceRaw*(10n ** 12n)/(2n ** 96n);
     expect(mcPrice).to.be.eq(3579);
     console.log(`MC price is ${mcPrice}`);
   });

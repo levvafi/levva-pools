@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@marginly/contracts/contracts/interfaces/IMarginlyFactory.sol';
 import '@marginly/router/contracts/MarginlyRouter.sol';
@@ -27,6 +27,6 @@ abstract contract RouterActions is MarginlyAdminStorage {
   /// @dev returns swap router address from factory. Reverts in case of null address
   function getSwapRouterAddressSafe() private view returns (address swapRouter) {
     swapRouter = IMarginlyFactory(marginlyFactoryAddress).swapRouter();
-    if (swapRouter == address(0)) revert Errors.Forbidden();
+    if (swapRouter == address(0)) revert MarginlyErrors.Forbidden();
   }
 }

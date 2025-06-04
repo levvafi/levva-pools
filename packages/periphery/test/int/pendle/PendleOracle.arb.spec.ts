@@ -22,8 +22,8 @@ describe('Pendle PT oracle before maturity (PendleOracle)', () => {
       margincallPriceFromSecondaryOracle,
     } = await fetchPendlePrices(caseParams);
 
-    const expectedBalancePrice = balancePtToSyPrice.mul(balancePriceFromSecondaryOracle).div(one);
-    const expectedMargincallPrice = margincallPtToSyPrice.mul(margincallPriceFromSecondaryOracle).div(one);
+    const expectedBalancePrice = balancePtToSyPrice*(balancePriceFromSecondaryOracle)/(one);
+    const expectedMargincallPrice = margincallPtToSyPrice*(margincallPriceFromSecondaryOracle)/(one);
 
     printPendleTokenSymbols(caseParams);
 
@@ -53,8 +53,8 @@ describe('Pendle PT oracle before maturity (PendleOracle)', () => {
       margincallPriceFromSecondaryOracle,
     } = await fetchPendlePrices(caseParams);
 
-    const expectedBalancePrice = balancePtToSyPrice.mul(balancePriceFromSecondaryOracle).div(one);
-    const expectedMargincallPrice = margincallPtToSyPrice.mul(margincallPriceFromSecondaryOracle).div(one);
+    const expectedBalancePrice = balancePtToSyPrice*(balancePriceFromSecondaryOracle)/(one);
+    const expectedMargincallPrice = margincallPtToSyPrice*(margincallPriceFromSecondaryOracle)/(one);
 
     printPendleTokenSymbols(caseParams);
 
@@ -84,8 +84,8 @@ describe('Pendle PT oracle before maturity (PendleOracle)', () => {
       margincallPriceFromSecondaryOracle,
     } = await fetchPendlePrices(caseParams);
 
-    const expectedBalancePrice = balancePtToSyPrice.mul(balancePriceFromSecondaryOracle).div(one);
-    const expectedMargincallPrice = margincallPtToSyPrice.mul(margincallPriceFromSecondaryOracle).div(one);
+    const expectedBalancePrice = balancePtToSyPrice*(balancePriceFromSecondaryOracle)/(one);
+    const expectedMargincallPrice = margincallPtToSyPrice*(margincallPriceFromSecondaryOracle)/(one);
 
     printPendleTokenSymbols(caseParams);
 
@@ -117,8 +117,8 @@ describe('Pendle PT oracle after maturity (PendleOracle)', () => {
       margincallPriceFromSecondaryOracle,
     } = await fetchPendlePrices(caseParams);
 
-    const expectedBalancePrice = balancePtToSyPrice.mul(balancePriceFromSecondaryOracle).div(one);
-    const expectedMargincallPrice = margincallPtToSyPrice.mul(margincallPriceFromSecondaryOracle).div(one);
+    const expectedBalancePrice = balancePtToSyPrice*(balancePriceFromSecondaryOracle)/(one);
+    const expectedMargincallPrice = margincallPtToSyPrice*(margincallPriceFromSecondaryOracle)/(one);
 
     printPendleTokenSymbols(caseParams);
 
