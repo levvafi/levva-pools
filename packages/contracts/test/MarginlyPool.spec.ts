@@ -1916,7 +1916,7 @@ describe('MarginlyPool.Base', () => {
     });
 
     it('slippage fail', async () => {
-      const { marginlyPool } = await loadFixture(createMarginlyPool);
+      const { marginlyPool, quoteContract} = await loadFixture(createMarginlyPool);
       const [_, longer, depositor] = await ethers.getSigners();
       const price = (await marginlyPool.getBasePrice()).inner;
       const amountToDeposit = 400_000;
@@ -1941,7 +1941,7 @@ describe('MarginlyPool.Base', () => {
             ZERO_ADDRESS,
             uniswapV3Swapdata()
           )
-      ).to.be.revertedWith('ERC20: insufficient allowance');
+      ).to.be.revertedWithCustomError(quoteContract, 'ERC20InsufficientAllowance');
     });
 
     it('should not exceed quoteLimit when deposit base cover debt', async () => {
