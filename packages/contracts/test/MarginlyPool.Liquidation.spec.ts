@@ -206,12 +206,12 @@ describe('MarginlyPool.Liquidation', () => {
     expect(newPosition.heapPosition).to.be.equal(0);
     const expectedDiscountedQuoteAmountDelta = (quoteAmount * FP96.one) / quoteCollateralCoeff;
     expect(newPosition.discountedQuoteAmount).to.be.equal(
-      beforeLiquidationPosition.discountedQuoteAmount + (expectedDiscountedQuoteAmountDelta)
+      beforeLiquidationPosition.discountedQuoteAmount + expectedDiscountedQuoteAmountDelta
     );
 
     const expectedDiscountedBaseAmount =
-      baseAmount -
-      (((beforeLiquidationPosition.discountedBaseAmount * baseDebtCoeff) / FP96.one) * FP96.one) / baseCollateralCoeff;
+      ((baseAmount - (beforeLiquidationPosition.discountedBaseAmount * baseDebtCoeff) / FP96.one) * FP96.one) /
+      baseCollateralCoeff;
     expect(newPosition.discountedBaseAmount).to.be.equal(expectedDiscountedBaseAmount);
 
     //assert aggregates
@@ -221,10 +221,10 @@ describe('MarginlyPool.Liquidation', () => {
     expect(await marginlyPool.discountedBaseDebt()).to.be.equal(0);
     expect(await marginlyPool.discountedQuoteDebt()).to.be.equal(0);
     expect(await marginlyPool.discountedBaseCollateral()).to.be.equal(
-      beforeDiscountedBaseCollateral + (newPosition.discountedBaseAmount) + (expectedCoeffs.discountedBaseDebtFee)
+      beforeDiscountedBaseCollateral + newPosition.discountedBaseAmount + expectedCoeffs.discountedBaseDebtFee
     );
     expect(await marginlyPool.discountedQuoteCollateral()).to.be.equal(
-      beforeDiscountedQuoteCollateral + (expectedDiscountedQuoteAmountDelta)
+      beforeDiscountedQuoteCollateral + expectedDiscountedQuoteAmountDelta
     );
 
     const expectedLongLeverageX96 = calcLeverageLong(
@@ -244,8 +244,8 @@ describe('MarginlyPool.Liquidation', () => {
       await marginlyPool.discountedBaseDebt()
     );
     expect((await marginlyPool.systemLeverage()).shortX96).to.be.equal(expectedShortLeverageX96);
-    expect(await token0.balanceOf(marginlyPool)).to.be.equal(token0BalanceBefore + (quoteAmount));
-    expect(await token1.balanceOf(marginlyPool)).to.be.equal(token1BalanceBefore + (baseAmount));
+    expect(await token0.balanceOf(marginlyPool)).to.be.equal(token0BalanceBefore + quoteAmount);
+    expect(await token1.balanceOf(marginlyPool)).to.be.equal(token1BalanceBefore + baseAmount);
   });
 
   it('should create new position without debt after long liquidation', async () => {
@@ -302,22 +302,21 @@ describe('MarginlyPool.Liquidation', () => {
     expect(newPosition.heapPosition).to.be.equal(0);
     const expectedDiscountedBaseAmountDelta = (baseAmount * FP96.one) / baseCollateralCoeff;
     expect(newPosition.discountedBaseAmount).to.be.equal(
-      beforeLiquidationPosition.discountedBaseAmount + (expectedDiscountedBaseAmountDelta)
+      beforeLiquidationPosition.discountedBaseAmount + expectedDiscountedBaseAmountDelta
     ); // should receive bad position collateral
     const expectedDiscountedQuoteAmount =
-      quoteAmount -
-      (((beforeLiquidationPosition.discountedQuoteAmount * quoteDebtCoeff) / FP96.one) * FP96.one) /
-        quoteCollateralCoeff;
+      ((quoteAmount - (beforeLiquidationPosition.discountedQuoteAmount * quoteDebtCoeff) / FP96.one) * FP96.one) /
+      quoteCollateralCoeff;
     expect(newPosition.discountedQuoteAmount).to.be.equal(expectedDiscountedQuoteAmount);
 
     //assert aggregates
     expect(await marginlyPool.discountedBaseDebt()).to.be.equal(0);
     expect(await marginlyPool.discountedQuoteDebt()).to.be.equal(0);
     expect(await marginlyPool.discountedBaseCollateral()).to.be.equal(
-      beforeDiscountedBaseCollateral + (expectedDiscountedBaseAmountDelta)
+      beforeDiscountedBaseCollateral + expectedDiscountedBaseAmountDelta
     );
     expect(await marginlyPool.discountedQuoteCollateral()).to.be.equal(
-      beforeDiscountedQuoteCollateral + (newPosition.discountedQuoteAmount)
+      beforeDiscountedQuoteCollateral + newPosition.discountedQuoteAmount
     );
 
     const expectedLongLeverageX96 = calcLeverageLong(
@@ -337,8 +336,8 @@ describe('MarginlyPool.Liquidation', () => {
       await marginlyPool.discountedBaseDebt()
     );
     expect((await marginlyPool.systemLeverage()).shortX96).to.be.equal(expectedShortLeverageX96);
-    expect(await token0.balanceOf(marginlyPool)).to.be.equal(token0BalanceBefore + (quoteAmount));
-    expect(await token1.balanceOf(marginlyPool)).to.be.equal(token1BalanceBefore + (baseAmount));
+    expect(await token0.balanceOf(marginlyPool)).to.be.equal(token0BalanceBefore + quoteAmount);
+    expect(await token1.balanceOf(marginlyPool)).to.be.equal(token1BalanceBefore + baseAmount);
   });
 
   it('should create new short position after short liquidation', async () => {
@@ -395,8 +394,7 @@ describe('MarginlyPool.Liquidation', () => {
     expect(newPosition.heapPosition).to.be.equal(1);
 
     const expectedQuoteAmount =
-      (quoteAmount * FP96.one) /
-      quoteCollateralCoeff + (beforeLiquidationPosition.discountedQuoteAmount);
+      (quoteAmount * FP96.one) / quoteCollateralCoeff + beforeLiquidationPosition.discountedQuoteAmount;
     expect(newPosition.discountedQuoteAmount).to.be.equal(expectedQuoteAmount); // should receive bad position collateral
     const baseCollateralCoeff = await marginlyPool.baseCollateralCoeff();
     const expectedDiscountedBaseAmount =
@@ -407,9 +405,9 @@ describe('MarginlyPool.Liquidation', () => {
     expect(await marginlyPool.discountedBaseDebt()).to.be.equal(expectedDiscountedBaseAmount);
     expect(await marginlyPool.discountedQuoteDebt()).to.be.equal(0);
     expect(await marginlyPool.discountedBaseCollateral()).to.be.equal(
-      beforeDiscountedBaseCollateral + (expectedCoeffs.discountedBaseDebtFee)
+      beforeDiscountedBaseCollateral + expectedCoeffs.discountedBaseDebtFee
     );
-    expect(await marginlyPool.discountedQuoteCollateral()).to.be.equal(expectedQuoteAmount + (depositAmount));
+    expect(await marginlyPool.discountedQuoteCollateral()).to.be.equal(expectedQuoteAmount + depositAmount);
 
     const expectedLongLeverageX96 = calcLeverageLong(
       basePrice.inner,
@@ -428,8 +426,8 @@ describe('MarginlyPool.Liquidation', () => {
       await marginlyPool.discountedBaseDebt()
     );
     expect((await marginlyPool.systemLeverage()).shortX96).to.be.equal(expectedShortLeverageX96);
-    expect(await token0.balanceOf(marginlyPool)).to.be.equal(token0BalanceBefore + (quoteAmount));
-    expect(await token1.balanceOf(marginlyPool)).to.be.equal(token1BalanceBefore + (baseAmount));
+    expect(await token0.balanceOf(marginlyPool)).to.be.equal(token0BalanceBefore + quoteAmount);
+    expect(await token1.balanceOf(marginlyPool)).to.be.equal(token1BalanceBefore + baseAmount);
   });
 
   it('should create new long position after long liquidation', async () => {
@@ -486,7 +484,7 @@ describe('MarginlyPool.Liquidation', () => {
     expect(newPosition._type).to.be.equal(3); // Long position
     expect(newPosition.heapPosition).to.be.equal(1);
     const expectedBaseAmount =
-      (baseAmount * FP96.one) / baseCollateralCoeff + (beforeLiquidationPosition.discountedBaseAmount);
+      (baseAmount * FP96.one) / baseCollateralCoeff + beforeLiquidationPosition.discountedBaseAmount;
     expect(newPosition.discountedBaseAmount).to.be.equal(expectedBaseAmount); // should receive bad position collateral
 
     const expectedDiscountedQuoteAmount =
@@ -499,7 +497,7 @@ describe('MarginlyPool.Liquidation', () => {
     expect(await marginlyPool.discountedQuoteDebt()).to.be.equal(expectedDiscountedQuoteAmount);
     expect(await marginlyPool.discountedBaseCollateral()).to.be.equal(expectedBaseAmount + depositAmount);
     expect(await marginlyPool.discountedQuoteCollateral()).to.be.equal(
-      beforeDiscountedQuoteCollateral + (expectedCoeffs.discountedQuoteDebtFee)
+      beforeDiscountedQuoteCollateral + expectedCoeffs.discountedQuoteDebtFee
     );
 
     const expectedLongLeverageX96 = calcLeverageLong(
@@ -520,7 +518,7 @@ describe('MarginlyPool.Liquidation', () => {
     );
     expect((await marginlyPool.systemLeverage()).shortX96).to.be.equal(expectedShortLeverageX96);
     expect(await token0.balanceOf(marginlyPool)).to.be.equal(token0BalanceBefore + quoteAmount);
-    expect(await token1.balanceOf(marginlyPool)).to.be.equal(token1BalanceBefore + (baseAmount));
+    expect(await token1.balanceOf(marginlyPool)).to.be.equal(token1BalanceBefore + baseAmount);
   });
 
   it('should create better short position after short liquidation', async () => {

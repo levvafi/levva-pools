@@ -12,6 +12,5 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
-  },
-  "include": ["packages/**/src", "packages/**/test"]
+  }
 }

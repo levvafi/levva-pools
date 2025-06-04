@@ -12,7 +12,7 @@ describe('MaxBinaryHeapTest', () => {
 
     const factory = await ethers.getContractFactory('MaxBinaryHeapTest');
     const contract = await factory.deploy();
-    await contract.deployed();
+    await contract.deploymentTransaction()?.wait();
 
     return { contract, owner, otherAccount, signers };
   }
@@ -20,7 +20,7 @@ describe('MaxBinaryHeapTest', () => {
   it('should create empty heap', async () => {
     const { contract } = await loadFixture(deployMaxBinaryHeapTestFixture);
 
-    expect((await contract.getHeapLength()).toNumber()).to.equal(0);
+    expect(await contract.getHeapLength()).to.equal(0);
   });
 
   it('should return false when peek root on empty heap', async () => {
@@ -294,7 +294,7 @@ describe('MaxBinaryHeapTest', () => {
 
       const factory = await ethers.getContractFactory('MaxBinaryHeapTest');
       const contract = await factory.deploy();
-      await contract.deployed();
+      await contract.deploymentTransaction()?.wait();
 
       await contract.connect(owner).add(50, owner.address);
       await contract.connect(first).add(40, first.address);
@@ -347,7 +347,7 @@ describe('MaxBinaryHeapTest', () => {
       await snapshotGasCost(contract.connect(owner).updateByIndex(0, 55));
 
       const [, rootNode] = await contract.getNodeByIndex(0);
-      expect(rootNode.key.toNumber()).to.be.equal(55);
+      expect(rootNode.key).to.be.equal(55);
       expect(rootNode.account).to.be.equal(owner.address);
     });
 
@@ -356,11 +356,11 @@ describe('MaxBinaryHeapTest', () => {
       await snapshotGasCost(contract.connect(owner).updateByIndex(1, 55));
 
       const [, rootNode] = await contract.getNodeByIndex(0);
-      expect(rootNode.key.toNumber()).to.be.equal(55);
+      expect(rootNode.key).to.be.equal(55);
       expect(rootNode.account).to.be.equal(first.address);
 
       const [, firstNode] = await contract.getNodeByIndex(1);
-      expect(firstNode.key.toNumber()).to.be.equal(50);
+      expect(firstNode.key).to.be.equal(50);
       expect(firstNode.account).to.be.equal(owner.address);
     });
 
@@ -369,11 +369,11 @@ describe('MaxBinaryHeapTest', () => {
       await snapshotGasCost(contract.connect(first).updateByIndex(1, 15));
 
       const [, middleNode] = await contract.getNodeByIndex(1);
-      expect(middleNode.key.toNumber()).to.be.equal(20);
+      expect(middleNode.key).to.be.equal(20);
       expect(middleNode.account).to.be.equal(third.address);
 
       const [, bottomNode] = await contract.getNodeByIndex(3);
-      expect(bottomNode.key.toNumber()).to.be.equal(15);
+      expect(bottomNode.key).to.be.equal(15);
       expect(bottomNode.account).to.be.equal(first.address);
     });
 
@@ -383,17 +383,17 @@ describe('MaxBinaryHeapTest', () => {
 
       const [getTopNodeSuccess, topNode] = await contract.getNodeByIndex(0);
       expect(getTopNodeSuccess).to.be.true;
-      expect(topNode.key.toNumber()).to.be.equal(40);
+      expect(topNode.key).to.be.equal(40);
       expect(topNode.account).to.be.equal(first.address);
 
       const [getFirstNodeSuccess, firstNode] = await contract.getNodeByIndex(1);
       expect(getFirstNodeSuccess).to.be.true;
-      expect(firstNode.key.toNumber()).to.be.equal(20);
+      expect(firstNode.key).to.be.equal(20);
       expect(firstNode.account).to.be.equal(third.address);
 
       const [getThirdNodeSuccess, thirdNode] = await contract.getNodeByIndex(3);
       expect(getThirdNodeSuccess).to.be.true;
-      expect(thirdNode.key.toNumber()).to.be.equal(15);
+      expect(thirdNode.key).to.be.equal(15);
       expect(thirdNode.account).to.be.equal(owner.address);
     });
 
@@ -403,17 +403,17 @@ describe('MaxBinaryHeapTest', () => {
 
       const [getTopNodeSuccess, topNode] = await contract.getNodeByIndex(0);
       expect(getTopNodeSuccess).to.be.true;
-      expect(topNode.key.toNumber()).to.be.equal(55);
+      expect(topNode.key).to.be.equal(55);
       expect(topNode.account).to.be.equal(fourth.address);
 
       const [getBottomNodeSuccess, bottomNode] = await contract.getNodeByIndex(4);
       expect(getBottomNodeSuccess).to.be.true;
-      expect(bottomNode.key.toNumber()).to.be.equal(40);
+      expect(bottomNode.key).to.be.equal(40);
       expect(bottomNode.account).to.be.equal(first.address);
 
       const [getFirstNodeSuccess, firstNode] = await contract.getNodeByIndex(1);
       expect(getFirstNodeSuccess).to.be.true;
-      expect(firstNode.key.toNumber()).to.be.equal(50);
+      expect(firstNode.key).to.be.equal(50);
       expect(firstNode.account).to.be.equal(owner.address);
     });
 
@@ -453,7 +453,7 @@ describe('MaxBinaryHeapTest', () => {
     let prevKey;
     for (let i = 0; i < heapLength; i++) {
       const [_, topItem] = await contract.getNodeByIndex(0);
-      const itemKey = topItem.key.toNumber();
+      const itemKey = topItem.key;
 
       if (i == 0) {
         //measure only first call

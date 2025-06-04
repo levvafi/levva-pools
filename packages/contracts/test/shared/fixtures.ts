@@ -20,7 +20,7 @@ import {
   MarginlyKeeperAave,
 } from '../../typechain-types';
 import { MarginlyParamsStruct } from '../../typechain-types/contracts/MarginlyFactory';
-import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import {
   CallType,
   ZERO_ADDRESS,
@@ -186,7 +186,7 @@ async function createMarginlyPoolInternal(baseTokenIsWETH: boolean): Promise<{
   const pool = poolFactory.attach(poolAddress) as MarginlyPool;
 
   // mint for the first five signers and approve spend for marginlyPool
-  const amountToDeposit = 5000n * 10n ** BigInt(await uniswapPoolInfo.token0.decimals());
+  const amountToDeposit = 5000n * 10n ** (await uniswapPoolInfo.token0.decimals());
 
   const signers = (await ethers.getSigners()).slice(0, 10);
   for (let i = 0; i < signers.length; i++) {
@@ -242,7 +242,7 @@ export async function getInitializedPool(): Promise<{
 }> {
   const { marginlyPool, factoryOwner, uniswapPoolInfo } = await createMarginlyPool();
 
-  const amountToDeposit = 5000n * 10n ** BigInt(await uniswapPoolInfo.token0.decimals());
+  const amountToDeposit = 5000n * 10n ** (await uniswapPoolInfo.token0.decimals());
   const signers = await ethers.getSigners();
   for (let i = 0; i < signers.length; i++) {
     await uniswapPoolInfo.token0.mint(signers[i], amountToDeposit);
@@ -303,7 +303,7 @@ export async function getDeleveragedPool(): Promise<{
 
   await marginlyPool.connect(factoryOwner).setParameters(paramsDefaultLeverageWithoutIr);
 
-  const amountToDeposit = 5000n * 10n ** BigInt(await uniswapPoolInfo.token0.decimals());
+  const amountToDeposit = 5000n * 10n ** (await uniswapPoolInfo.token0.decimals());
   const signers = await ethers.getSigners();
   for (let i = 0; i < signers.length; i++) {
     await uniswapPoolInfo.token0.mint(signers[i].address, amountToDeposit);
@@ -394,7 +394,9 @@ export async function createAavePool(): Promise<MockAavePool> {
   return factory.deploy();
 }
 
-export async function createAavePoolAddressProvider(poolAddress: string | Addressable): Promise<MockAavePoolAddressesProvider> {
+export async function createAavePoolAddressProvider(
+  poolAddress: string | Addressable
+): Promise<MockAavePoolAddressesProvider> {
   const factory = await ethers.getContractFactory('MockAavePoolAddressesProvider');
   return factory.deploy(poolAddress);
 }
@@ -413,7 +415,10 @@ export async function createMockMarginlyPool(
   return factory.deploy(marginlyFactory, quoteToken, baseToken);
 }
 
-export async function createSwapRouter(quoteToken: string | Addressable, baseToken: string | Addressable): Promise<MockSwapRouter> {
+export async function createSwapRouter(
+  quoteToken: string | Addressable,
+  baseToken: string | Addressable
+): Promise<MockSwapRouter> {
   const factory = await ethers.getContractFactory('MockSwapRouter');
   return factory.deploy(quoteToken, baseToken);
 }
@@ -433,7 +438,7 @@ export async function createMarginlyKeeperContract(): Promise<{
   const marginlyFactory = await createMockMarginlyFactory(swapRouter);
   const marginlyPool = await createMockMarginlyPool(marginlyFactory, quoteToken, baseToken);
 
-  const decimals = BigInt(await baseToken.decimals());
+  const decimals = await baseToken.decimals();
   const mintAmount = 10000000000n * 10n ** decimals;
 
   await baseToken.mint(marginlyPool, mintAmount);
@@ -472,11 +477,9 @@ export async function createMarginlyKeeperUniswapV3Contract(): Promise<{
   const marginlyFactory = await createMockMarginlyFactory(swapRouter);
   const marginlyPool = await createMockMarginlyPool(marginlyFactory, quoteToken, baseToken);
   const marginlyKeeperUniswapV3 = await (await ethers.getContractFactory('MarginlyKeeperUniswapV3')).deploy();
-  const uniswapPool = await (
-    await ethers.getContractFactory('TestUniswapPool')
-  ).deploy(quoteToken, baseToken);
+  const uniswapPool = await (await ethers.getContractFactory('TestUniswapPool')).deploy(quoteToken, baseToken);
 
-  const decimals = BigInt(await baseToken.decimals());
+  const decimals = await baseToken.decimals();
   const mintAmount = 10000000000n * 10n ** decimals;
 
   await baseToken.mint(marginlyPool, mintAmount);
@@ -515,7 +518,7 @@ export async function createMarginlyKeeperBalancer(): Promise<{
   const balancerVault = await (await ethers.getContractFactory('TestBalancerVault')).deploy();
   const keeper = await (await ethers.getContractFactory('MarginlyKeeperBalancer')).deploy(balancerVault);
 
-  const decimals = BigInt(await baseToken.decimals());
+  const decimals = await baseToken.decimals();
   const mintAmount = 10000000000n * 10n ** decimals;
 
   await baseToken.mint(marginlyPool, mintAmount);
@@ -552,11 +555,9 @@ export async function createMarginlyKeeperAlgebra(): Promise<{
   const marginlyFactory = await createMockMarginlyFactory(swapRouter);
   const marginlyPool = await createMockMarginlyPool(marginlyFactory, quoteToken, baseToken);
   const keeper = await (await ethers.getContractFactory('MarginlyKeeperAlgebra')).deploy();
-  const algebraPool = await (
-    await ethers.getContractFactory('TestAlgebraPool')
-  ).deploy(quoteToken, baseToken);
+  const algebraPool = await (await ethers.getContractFactory('TestAlgebraPool')).deploy(quoteToken, baseToken);
 
-  const decimals = BigInt(await baseToken.decimals());
+  const decimals = await baseToken.decimals();
   const mintAmount = 10000000000n * 10n ** decimals;
 
   await baseToken.mint(marginlyPool, mintAmount);

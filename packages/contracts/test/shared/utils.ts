@@ -45,15 +45,20 @@ export const CallType = {
 
 export const FP96 = {
   Q96: 2 ** 96,
-  one: BigInt(2 ** 96),
+  one: 2n ** 96n,
 };
 
 export const FP48 = {
-  Q48: BigInt(2 ** 48),
+  Q48: 2n ** 48n,
 };
 
 export function convertNumberToFP96(num: number): { inner: bigint } {
   return { inner: BigInt(num * FP96.Q96) };
+}
+
+export function convertFP96ToNumber(fp: bigint): number {
+  const tmp = fp / 2n ** 48n;
+  return Number(tmp) / 2 ** 48;
 }
 
 export function pow(self: bigint, exponent: bigint): bigint {
@@ -208,8 +213,8 @@ export async function calcAccruedRateCoeffs(marginlyPool: MarginlyPool, prevStat
   const discountedBaseCollateralPrev = prevState.discountedBaseCollateral;
   const discountedQuoteCollateralPrev = prevState.discountedQuoteCollateral;
 
-  const interestRateX96 = (BigInt(params.interestRate) * FP96.one) / WHOLE_ONE;
-  const feeX96 = (BigInt(params.fee) * FP96.one) / WHOLE_ONE;
+  const interestRateX96 = (params.interestRate * FP96.one) / WHOLE_ONE;
+  const feeX96 = (params.fee * FP96.one) / WHOLE_ONE;
 
   const onePlusFee = (feeX96 * FP96.one) / SECONDS_IN_YEAR_X96 + FP96.one;
 
@@ -243,7 +248,7 @@ export async function calcAccruedRateCoeffs(marginlyPool: MarginlyPool, prevStat
 
     const quoteCollateralCoeff =
       quoteCollateralCoeffPrev +
-      fp96FromRatio(accruedRateDt - (FP96.one * realQuoteDebtPrev) / FP96.one, discountedQuoteCollateralPrev);
+      fp96FromRatio(((accruedRateDt - FP96.one) * realQuoteDebtPrev) / FP96.one, discountedQuoteCollateralPrev);
 
     const realQuoteDebtFee = (((accruedRateDt * (feeDt - FP96.one)) / FP96.one) * realQuoteDebtPrev) / FP96.one;
 

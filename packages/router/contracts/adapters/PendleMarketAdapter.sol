@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import '@openzeppelin/contracts/utils/math/Math.sol';
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 
-import '@pendle/core-v2/contracts/router/base/MarketApproxLib.sol';
+import '@pendle/core-v2/contracts/offchain-helpers/router-static/base/MarketApproxLibV1.sol';
 import '@pendle/core-v2/contracts/interfaces/IPMarket.sol';
 import '@pendle/core-v2/contracts/core/StandardizedYield/PYIndex.sol';
 
@@ -58,7 +58,7 @@ contract PendleMarketAdapter is IMarginlyAdapter, Ownable2Step {
   error UnknownPair();
   error WrongPoolInput();
 
-  constructor(PoolInput[] memory poolsData) {
+  constructor(PoolInput[] memory poolsData) Ownable(msg.sender) {
     _addPools(poolsData);
   }
 
@@ -269,7 +269,7 @@ contract PendleMarketAdapter is IMarginlyAdapter, Ownable2Step {
       eps: EPSILON
     });
 
-    (ptAmountOut, ) = MarketApproxPtOutLib.approxSwapExactSyForPt(
+    (ptAmountOut, , ) = MarketApproxPtOutLibV1.approxSwapExactSyForPt(
       marketData.market.readState(address(this)),
       marketData.yt.newIndex(),
       syAmountIn,
@@ -296,7 +296,7 @@ contract PendleMarketAdapter is IMarginlyAdapter, Ownable2Step {
       eps: EPSILON
     });
 
-    (actualPtAmountIn, , ) = MarketApproxPtInLib.approxSwapPtForExactSy(
+    (actualPtAmountIn, , ) = MarketApproxPtInLibV1.approxSwapPtForExactSy(
       IPMarket(marketData.market).readState(address(this)),
       marketData.yt.newIndex(),
       syAmountOut,

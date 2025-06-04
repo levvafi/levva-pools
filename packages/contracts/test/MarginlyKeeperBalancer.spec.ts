@@ -34,7 +34,7 @@ describe('MarginlyKeeperBalancer', () => {
     const { keeper, swapRouter, baseToken, marginlyPool, balancerVault } =
       await loadFixture(createMarginlyKeeperBalancer);
     const [, badPosition, liquidator] = await ethers.getSigners();
-    const decimals = BigInt(await baseToken.decimals());
+    const decimals = await baseToken.decimals();
     const price = 1500; // 1 ETH = 1500 USDC
     await swapRouter.setExchangePrice(price);
 
@@ -58,7 +58,7 @@ describe('MarginlyKeeperBalancer', () => {
     const balanceBefore = await baseToken.balanceOf(liquidator.address);
 
     const flashCalldata = encodeLiquidationParams(
-      marginlyPool,
+      marginlyPool.target,
       badPosition.address,
       liquidator.address,
       minProfitETH,
@@ -76,7 +76,7 @@ describe('MarginlyKeeperBalancer', () => {
     const { keeper, swapRouter, baseToken, quoteToken, marginlyPool, balancerVault } =
       await loadFixture(createMarginlyKeeperBalancer);
     const [, badPosition, liquidator] = await ethers.getSigners();
-    const decimals = BigInt(await baseToken.decimals());
+    const decimals = await baseToken.decimals();
     const price = 1500; // 1 ETH = 1500 USDC
     await swapRouter.setExchangePrice(price);
 
@@ -100,7 +100,7 @@ describe('MarginlyKeeperBalancer', () => {
     const balanceBefore = await quoteToken.balanceOf(liquidator.address);
 
     const liquidationParams = encodeLiquidationParams(
-      marginlyPool,
+      marginlyPool.target,
       badPosition.address,
       liquidator.address,
       minProfitETH,
@@ -118,7 +118,7 @@ describe('MarginlyKeeperBalancer', () => {
     const { keeper, swapRouter, baseToken, quoteToken, marginlyPool, balancerVault } =
       await loadFixture(createMarginlyKeeperBalancer);
     const [, badPosition, liquidator] = await ethers.getSigners();
-    const decimals = BigInt(await baseToken.decimals());
+    const decimals = await baseToken.decimals();
     const price = 1500; // 1 ETH = 1500 USDC
     await swapRouter.setExchangePrice(price);
 
@@ -140,7 +140,7 @@ describe('MarginlyKeeperBalancer', () => {
     const minProfitETH = 500n * 10n ** decimals; // 500 USDC
 
     const liquidationParams = encodeLiquidationParams(
-      marginlyPool,
+      marginlyPool.target,
       badPosition.address,
       liquidator.address,
       minProfitETH,

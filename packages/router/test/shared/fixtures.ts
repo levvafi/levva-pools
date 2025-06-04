@@ -11,7 +11,6 @@ import { TestDodoV2Pool } from '../../typechain-types';
 import { TestBalancerPool } from '../../typechain-types';
 import { TestSwapInfo } from '../../typechain-types';
 import { Dex } from './utils';
-import { BigNumber } from 'ethers';
 
 export interface UniswapPoolInfo {
   token0: TestERC20Token;
@@ -26,7 +25,7 @@ export async function createToken(name: string, symbol: string): Promise<TestERC
   const factory = await ethers.getContractFactory('TestERC20Token');
   const tokenContract = await factory.deploy(name, symbol);
   await signer.sendTransaction({
-    to: tokenContract.address,
+    to: tokenContract,
     value: parseEther('100'),
   });
 

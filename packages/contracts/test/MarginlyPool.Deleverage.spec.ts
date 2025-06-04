@@ -55,7 +55,7 @@ describe('Deleverage', () => {
     await marginlyPool.connect(factoryOwner).setParameters(paramsLowLeverageWithoutIr);
     await marginlyPool.connect(lender).execute(CallType.Reinit, 0, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    const poolBaseBalance = baseCollCoeff * discountedBaseCollateral - (baseDebtCoeff * discountedBaseDebt) / FP96.one;
+    const poolBaseBalance = (baseCollCoeff * discountedBaseCollateral - baseDebtCoeff * discountedBaseDebt) / FP96.one;
 
     const longerPosition = await marginlyPool.positions(longer.address);
 
@@ -128,7 +128,7 @@ describe('Deleverage', () => {
     await marginlyPool.connect(lender).execute(CallType.Reinit, 0, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
     const poolQuoteBalance =
-      quoteCollCoeff * discountedQuoteCollateral - (quoteDebtCoeff * discountedQuoteDebt) / FP96.one;
+      (quoteCollCoeff * discountedQuoteCollateral - quoteDebtCoeff * discountedQuoteDebt) / FP96.one;
 
     const shorterPosition = await marginlyPool.positions(shorter.address);
 
@@ -192,8 +192,8 @@ describe('Deleverage', () => {
     const disQuoteCollateralAfter = await marginlyPool.discountedQuoteCollateral();
 
     const quoteCollDelta =
-      (price * shortAmount) /
-      quoteCollCoeff + ((quoteDelevCoeff * shortAmount * FP96.one) / baseDebtCoeff / quoteCollCoeff);
+      (price * shortAmount) / quoteCollCoeff +
+      (quoteDelevCoeff * shortAmount * FP96.one) / baseDebtCoeff / quoteCollCoeff;
 
     const posQuoteCollDelta = positionAfter.discountedQuoteAmount - positionBefore.discountedQuoteAmount;
     expect(posQuoteCollDelta).to.be.equal(quoteCollDelta);
@@ -234,10 +234,8 @@ describe('Deleverage', () => {
     const disBaseCollateralAfter = await marginlyPool.discountedBaseCollateral();
 
     const baseCollDelta =
-      (longAmount * FP96.one) /
-      baseCollCoeff + (
-        (((((baseDelevCoeff * price) / FP96.one) * longAmount) / quoteDebtCoeff) * FP96.one) / baseCollCoeff
-      );
+      (longAmount * FP96.one) / baseCollCoeff +
+      (((((baseDelevCoeff * price) / FP96.one) * longAmount) / quoteDebtCoeff) * FP96.one) / baseCollCoeff;
 
     const posBaseCollDelta = positionAfter.discountedBaseAmount - positionBefore.discountedBaseAmount;
     expect(posBaseCollDelta).to.be.closeTo(baseCollDelta, 1n);
@@ -462,8 +460,7 @@ describe('Deleverage', () => {
     const realCollDelta = (positionBefore.discountedQuoteAmount * quoteDebtCoeff) / price;
     // (realCollDelta + pos.discountedQuoteAmount * baseDelevCoeff) / baseCollCoeff
     const disBaseCollDelta =
-      (realCollDelta + ((positionBefore.discountedQuoteAmount * baseDelevCoeff) / FP96.one) * FP96.one) /
-      baseCollCoeff;
+      ((realCollDelta + (positionBefore.discountedQuoteAmount * baseDelevCoeff) / FP96.one) * FP96.one) / baseCollCoeff;
 
     const disBaseCollateralAfter = await marginlyPool.discountedBaseCollateral();
 
@@ -519,7 +516,7 @@ describe('Deleverage', () => {
     const realCollDelta = (((positionBefore.discountedBaseAmount * baseDebtCoeff) / FP96.one) * price) / FP96.one;
     // (realCollDelta + pos.discountedBaseAmount * quoteDelevCoeff) / quoteCollCoeff
     const disQuoteCollDelta =
-      (realCollDelta + ((positionBefore.discountedBaseAmount * quoteDelevCoeff) / FP96.one) * FP96.one) /
+      ((realCollDelta + (positionBefore.discountedBaseAmount * quoteDelevCoeff) / FP96.one) * FP96.one) /
       quoteCollCoeff;
 
     const disQuoteCollateralAfter = await marginlyPool.discountedQuoteCollateral();
@@ -553,8 +550,15 @@ describe('Deleverage', () => {
       .connect(shorter)
       .execute(CallType.DepositQuote, depositQuoteAmount, shortAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    let newParams = { ...params };
-    newParams.maxLeverage /= 2n;
+    const newParams = {
+      maxLeverage: params.maxLeverage / 2n,
+      interestRate: params.interestRate,
+      fee: params.fee,
+      swapFee: params.swapFee,
+      mcSlippage: params.mcSlippage,
+      positionMinAmount: params.positionMinAmount,
+      quoteLimit: params.quoteLimit,
+    };
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     const positionBefore = await marginlyPool.positions(shorter.address);
@@ -628,8 +632,15 @@ describe('Deleverage', () => {
       .connect(longer)
       .execute(CallType.DepositBase, depositBaseAmount, longAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    let newParams = { ...params };
-    newParams.maxLeverage /= 2n;
+    const newParams = {
+      maxLeverage: params.maxLeverage / 2n,
+      interestRate: params.interestRate,
+      fee: params.fee,
+      swapFee: params.swapFee,
+      mcSlippage: params.mcSlippage,
+      positionMinAmount: params.positionMinAmount,
+      quoteLimit: params.quoteLimit,
+    };
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     const positionBefore = await marginlyPool.positions(longer.address);
@@ -664,7 +675,10 @@ describe('Deleverage', () => {
 
     const posRealQuoteDebtBefore = (quoteDebtCoeff * positionBefore.discountedQuoteAmount) / FP96.one;
     const posRealQuoteDebtAfter = (quoteDebtCoeff * positionAfter.discountedQuoteAmount) / FP96.one;
-    expect(posRealQuoteDebtBefore - posRealQuoteDebtAfter).to.be.closeTo(receiveQuoteAmount, receiveQuoteAmount / 1000n);
+    expect(posRealQuoteDebtBefore - posRealQuoteDebtAfter).to.be.closeTo(
+      receiveQuoteAmount,
+      receiveQuoteAmount / 1000n
+    );
 
     const realBaseCollBefore =
       (baseCollateralCoeff * baseCollBefore) / FP96.one - (baseDelevCoeff * quoteDebtBefore) / FP96.one;
@@ -688,10 +702,15 @@ describe('Deleverage', () => {
     const price = (await marginlyPool.getBasePrice()).inner;
 
     const params = await marginlyPool.params();
-    let newParams = { ...params };
-    newParams.interestRate = 0n;
-    newParams.fee = 0n;
-    newParams.swapFee = 0n;
+    const newParams = {
+      maxLeverage: params.maxLeverage,
+      interestRate: 0n,
+      fee: 0n,
+      swapFee: 0n,
+      mcSlippage: params.mcSlippage,
+      positionMinAmount: params.positionMinAmount,
+      quoteLimit: params.quoteLimit,
+    };
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     await marginlyPool
@@ -718,7 +737,7 @@ describe('Deleverage', () => {
     const quoteCollBefore = await marginlyPool.discountedQuoteCollateral();
     const baseCollBefore = await marginlyPool.discountedBaseCollateral();
 
-    const receiveBaseAmount = ((shortAmount) * 5n) / 4n;
+    const receiveBaseAmount = (shortAmount * 5n) / 4n;
     const baseOverflow = receiveBaseAmount - shortAmount;
     expect(baseOverflow).to.be.greaterThan(0);
     await marginlyPool
@@ -771,10 +790,15 @@ describe('Deleverage', () => {
     const price = (await marginlyPool.getBasePrice()).inner;
 
     const params = await marginlyPool.params();
-    let newParams = { ...params };
-    newParams.interestRate = 0n;
-    newParams.fee = 0n;
-    newParams.swapFee = 0n;
+    let newParams = {
+      maxLeverage: params.maxLeverage,
+      interestRate: 0n,
+      fee: 0n,
+      swapFee: 0n,
+      mcSlippage: params.mcSlippage,
+      positionMinAmount: params.positionMinAmount,
+      quoteLimit: params.quoteLimit,
+    };
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     await marginlyPool
@@ -792,7 +816,15 @@ describe('Deleverage', () => {
       .connect(longer)
       .execute(CallType.DepositBase, depositBaseAmount, longAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    newParams.maxLeverage /= 2n;
+    newParams = {
+      maxLeverage: newParams.maxLeverage / 2n,
+      interestRate: params.interestRate,
+      fee: params.fee,
+      swapFee: params.swapFee,
+      mcSlippage: params.mcSlippage,
+      positionMinAmount: params.positionMinAmount,
+      quoteLimit: params.quoteLimit,
+    };
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     const positionBefore = await marginlyPool.positions(longer.address);
@@ -855,10 +887,15 @@ describe('Deleverage', () => {
     const price = (await marginlyPool.getBasePrice()).inner;
 
     const params = await marginlyPool.params();
-    let newParams = { ...params };
-    newParams.interestRate = 0n;
-    newParams.fee = 0n;
-    newParams.swapFee = 0n;
+    let newParams = {
+      maxLeverage: params.maxLeverage,
+      interestRate: 0n,
+      fee: 0n,
+      swapFee: 0n,
+      mcSlippage: params.mcSlippage,
+      positionMinAmount: params.positionMinAmount,
+      quoteLimit: params.quoteLimit,
+    };
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     await marginlyPool
@@ -876,7 +913,15 @@ describe('Deleverage', () => {
       .connect(shorter)
       .execute(CallType.DepositQuote, depositQuoteAmount, shortAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    newParams.maxLeverage /= 2n;
+    newParams = {
+      maxLeverage: newParams.maxLeverage / 2n,
+      interestRate: params.interestRate,
+      fee: params.fee,
+      swapFee: params.swapFee,
+      mcSlippage: params.mcSlippage,
+      positionMinAmount: params.positionMinAmount,
+      quoteLimit: params.quoteLimit,
+    };
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     const positionBefore = await marginlyPool.positions(shorter.address);
@@ -915,7 +960,10 @@ describe('Deleverage', () => {
     const posRealQuoteCollAfter =
       (quoteCollateralCoeff * positionAfter.discountedQuoteAmount) / FP96.one -
       (quoteDelevCoeff * positionBefore.discountedBaseAmount) / FP96.one;
-    expect(posRealQuoteCollAfter - posRealQuoteCollBefore).to.be.closeTo(receiveQuoteAmount, receiveQuoteAmount / 1000n);
+    expect(posRealQuoteCollAfter - posRealQuoteCollBefore).to.be.closeTo(
+      receiveQuoteAmount,
+      receiveQuoteAmount / 1000n
+    );
   });
 
   it('receive long position after deleverage, increasing collateral', async () => {
@@ -925,10 +973,15 @@ describe('Deleverage', () => {
     const price = (await marginlyPool.getBasePrice()).inner;
 
     const params = await marginlyPool.params();
-    let newParams = { ...params };
-    newParams.interestRate = 0n;
-    newParams.fee = 0n;
-    newParams.swapFee = 0n;
+    let newParams = {
+      maxLeverage: params.maxLeverage,
+      interestRate: 0n,
+      fee: 0n,
+      swapFee: 0n,
+      mcSlippage: params.mcSlippage,
+      positionMinAmount: params.positionMinAmount,
+      quoteLimit: params.quoteLimit,
+    };
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     await marginlyPool
@@ -946,7 +999,15 @@ describe('Deleverage', () => {
       .connect(longer)
       .execute(CallType.DepositBase, depositBaseAmount, longAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
 
-    newParams.maxLeverage /= 2n;
+    newParams = {
+      maxLeverage: newParams.maxLeverage / 2n,
+      interestRate: params.interestRate,
+      fee: params.fee,
+      swapFee: params.swapFee,
+      mcSlippage: params.mcSlippage,
+      positionMinAmount: params.positionMinAmount,
+      quoteLimit: params.quoteLimit,
+    };
     await marginlyPool.connect(factoryOwner).setParameters(newParams);
 
     const positionBefore = await marginlyPool.positions(longer.address);

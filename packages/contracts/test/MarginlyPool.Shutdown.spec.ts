@@ -611,7 +611,7 @@ describe('MarginlyPool.Shutdown', () => {
 
     const emergencyWithdrawCoeff = await marginlyPool.emergencyWithdrawCoeff();
 
-    const depositorBalanceBefore = await depositor.getBalance();
+    const depositorBalanceBefore = await depositor.provider.getBalance(depositor);
 
     const depositorPosition = await marginlyPool.positions(depositor.address);
 
@@ -623,11 +623,11 @@ describe('MarginlyPool.Shutdown', () => {
     expect(txReceipt).to.be.not.null;
     const txFee = txReceipt!.gasUsed * txReceipt!.gasPrice;
 
-    const depositorBalanceAfter = await depositor.getBalance();
+    const depositorBalanceAfter = await depositor.provider.getBalance(depositor);
 
     const expectedDepositorBaseAmount = (emergencyWithdrawCoeff * depositorPosition.discountedBaseAmount) / FP96.one;
 
-    expect(depositorBalanceBefore - txFee + (expectedDepositorBaseAmount)).to.be.equal(depositorBalanceAfter);
+    expect(depositorBalanceBefore - txFee + expectedDepositorBaseAmount).to.be.equal(depositorBalanceAfter);
   });
 
   it('should revert withdraw tokens from Short position in ShortEmergency mode', async () => {

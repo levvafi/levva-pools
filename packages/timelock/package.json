@@ -23,14 +23,14 @@
     "@typescript-eslint/eslint-plugin": "^8.33.1",
     "@typescript-eslint/parser": "^8.33.1",
     "@uniswap/v3-periphery": "^1.4.3",
-    "chai": "^5.2.0",
+    "@types/chai": "^4.2.0",
     "dotenv": "^16.3.1",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.1.5",
     "ethers": "^6.13.2",
     "ganache": "^7.8.0",
     "hardhat": "^2.22.6",
-    "hardhat-contract-sizer": "^2.6.1",
+    "hardhat-contract-sizer": "^2.10.0",
     "hardhat-gas-reporter": "^2.2.0",
     "mocha-chai-jest-snapshot": "^1.1.4",
     "optifat-snapshot-gas-cost": "1.1.0",
@@ -40,7 +40,7 @@
     "solhint-plugin-prettier": "0.1.0",
     "solidity-coverage": "^0.8.12",
     "ts-node": "^10.9.1",
-    "typechain": "^8.1.1",
+    "typechain": "^8.3.0",
     "typescript": "^5.5.4"
   }
 }

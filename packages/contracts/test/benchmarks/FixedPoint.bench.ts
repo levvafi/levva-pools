@@ -11,7 +11,7 @@ describe('Gas Benchmark - FixedPoint', () => {
     result: number;
     expected: number;
     delta: number;
-    gasUsed: number;
+    gasUsed: bigint;
   }[] = [];
 
   async function deployFixedPointFixture() {
@@ -20,7 +20,7 @@ describe('Gas Benchmark - FixedPoint', () => {
 
     const factory = await ethers.getContractFactory('FixedPointTest');
     const contract = await factory.deploy();
-    await contract.deployed();
+    await contract.deploymentTransaction()?.wait();
 
     return { contract, owner };
   }
@@ -59,7 +59,10 @@ describe('Gas Benchmark - FixedPoint', () => {
     for (const { time, exp } of exponents) {
       const powTx = await contract.connect(owner).pow(baseFp, exp);
       const powReceipt = await powTx.wait();
-      const currentGasUsed = powReceipt.gasUsed.toNumber();
+      if (powReceipt === null) {
+        throw new Error('Failed to obtain receipt');
+      }
+      const currentGasUsed = powReceipt.gasUsed;
 
       const result = convertFP96ToNumber(await contract.result());
       const expected = Math.pow(base, exp);
@@ -107,7 +110,10 @@ describe('Gas Benchmark - FixedPoint', () => {
     for (const { time, exp } of exponents) {
       const powTaylorTx = await contract.connect(owner).powTaylor(baseFp, exp);
       const powTaylorReceipt = await powTaylorTx.wait();
-      const currentGasUsed = powTaylorReceipt.gasUsed.toNumber();
+      if (powTaylorReceipt === null) {
+        throw new Error('Failed to obtain receipt');
+      }
+      const currentGasUsed = powTaylorReceipt.gasUsed;
 
       const result = +toHumanString(await contract.result());
       const expected = Math.pow(base, exp);

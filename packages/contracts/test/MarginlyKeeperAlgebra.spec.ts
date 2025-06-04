@@ -30,7 +30,16 @@ function encodeLiquidationParams(
 
   return AbiCoder.defaultAbiCoder().encode(
     ['address', 'uint256', 'address', 'address', 'address', 'address', 'uint256', 'uint256'],
-    [asset.toString(), amount, marginlyPool.toString(), positionToLiquidate, liquidator, algebraPool.toString(), minProfit, swapCallData]
+    [
+      asset.toString(),
+      amount,
+      marginlyPool.toString(),
+      positionToLiquidate,
+      liquidator,
+      algebraPool.toString(),
+      minProfit,
+      swapCallData,
+    ]
   );
 }
 
@@ -38,7 +47,7 @@ describe('MarginlyKeeperAlgebra', () => {
   it('Should liquidate short bad position', async () => {
     const { keeper, swapRouter, baseToken, marginlyPool, algebraPool } = await loadFixture(createMarginlyKeeperAlgebra);
     const [, badPosition, liquidator] = await ethers.getSigners();
-    const decimals = BigInt(await baseToken.decimals());
+    const decimals = await baseToken.decimals();
     const price = 1500; // 1 ETH = 1500 USDC
     await swapRouter.setExchangePrice(price);
 
@@ -61,14 +70,15 @@ describe('MarginlyKeeperAlgebra', () => {
 
     const balanceBefore = await baseToken.balanceOf(liquidator.address);
 
-    const [amount0, amount1] = (await algebraPool.token0()) == await baseToken.getAddress() ? [baseAmount, 0] : [0, baseAmount];
+    const [amount0, amount1] =
+      (await algebraPool.token0()) == (await baseToken.getAddress()) ? [baseAmount, 0] : [0, baseAmount];
     const flashCalldata = encodeLiquidationParams(
-      baseToken,
+      baseToken.target,
       baseAmount,
-      marginlyPool,
+      marginlyPool.target,
       badPosition.address,
       liquidator.address,
-      algebraPool,
+      algebraPool.target,
       minProfitETH,
       keeperSwapCallData
     );
@@ -84,7 +94,7 @@ describe('MarginlyKeeperAlgebra', () => {
     const { keeper, swapRouter, baseToken, quoteToken, marginlyPool, algebraPool } =
       await loadFixture(createMarginlyKeeperAlgebra);
     const [, badPosition, liquidator] = await ethers.getSigners();
-    const decimals = BigInt(await baseToken.decimals());
+    const decimals = await baseToken.decimals();
     const price = 1500; // 1 ETH = 1500 USDC
     await swapRouter.setExchangePrice(price);
 
@@ -107,14 +117,15 @@ describe('MarginlyKeeperAlgebra', () => {
 
     const balanceBefore = await quoteToken.balanceOf(liquidator.address);
 
-    const [amount0, amount1] = (await algebraPool.token0()) == await quoteToken.getAddress() ? [quoteAmount, 0] : [0, quoteAmount];
+    const [amount0, amount1] =
+      (await algebraPool.token0()) == (await quoteToken.getAddress()) ? [quoteAmount, 0] : [0, quoteAmount];
     const liquidationParams = encodeLiquidationParams(
-      quoteToken,
+      quoteToken.target,
       quoteAmount,
-      marginlyPool,
+      marginlyPool.target,
       badPosition.address,
       liquidator.address,
-      algebraPool,
+      algebraPool.target,
       minProfitETH,
       keeperSwapCallData
     );
@@ -130,7 +141,7 @@ describe('MarginlyKeeperAlgebra', () => {
     const { keeper, swapRouter, baseToken, quoteToken, marginlyPool, algebraPool } =
       await loadFixture(createMarginlyKeeperAlgebra);
     const [, badPosition, liquidator] = await ethers.getSigners();
-    const decimals = BigInt(await baseToken.decimals());
+    const decimals = await baseToken.decimals();
     const price = 1500; // 1 ETH = 1500 USDC
     await swapRouter.setExchangePrice(price);
 
@@ -151,14 +162,15 @@ describe('MarginlyKeeperAlgebra', () => {
 
     const minProfitETH = 500n * 10n ** decimals; // 500 USDC
 
-    const [amount0, amount1] = (await algebraPool.token0()) == await quoteToken.getAddress() ? [quoteAmount, 0] : [0, quoteAmount];
+    const [amount0, amount1] =
+      (await algebraPool.token0()) == (await quoteToken.getAddress()) ? [quoteAmount, 0] : [0, quoteAmount];
     const liquidationParams = encodeLiquidationParams(
-      quoteToken,
+      quoteToken.target,
       quoteAmount,
-      marginlyPool,
+      marginlyPool.target,
       badPosition.address,
       liquidator.address,
-      algebraPool,
+      algebraPool.target,
       minProfitETH,
       keeperSwapCallData
     );

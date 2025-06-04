@@ -5,7 +5,7 @@ import '@openzeppelin/contracts/utils/math/Math.sol';
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import '@pendle/core-v2/contracts/router/base/MarketApproxLib.sol';
+import '@pendle/core-v2/contracts/offchain-helpers/router-static/base/MarketApproxLibV1.sol';
 import '@pendle/core-v2/contracts/interfaces/IPMarket.sol';
 import '@pendle/core-v2/contracts/core/StandardizedYield/PYIndex.sol';
 
@@ -74,7 +74,7 @@ contract PendleCurveNgAdapter is IMarginlyAdapter, Ownable2Step {
   error WrongInput();
   error ZeroAddress();
 
-  constructor(RouteInput[] memory routes) {
+  constructor(RouteInput[] memory routes) Ownable(msg.sender) {
     _addPairs(routes);
   }
 
@@ -399,7 +399,7 @@ contract PendleCurveNgAdapter is IMarginlyAdapter, Ownable2Step {
       eps: EPSILON
     });
 
-    (ptAmountOut, ) = MarketApproxPtOutLib.approxSwapExactSyForPt(
+    (ptAmountOut, , ) = MarketApproxPtOutLibV1.approxSwapExactSyForPt(
       routeData.pendleMarket.readState(address(this)),
       routeData.yt.newIndex(),
       syAmountIn,
@@ -426,7 +426,7 @@ contract PendleCurveNgAdapter is IMarginlyAdapter, Ownable2Step {
       eps: EPSILON
     });
 
-    (actualPtAmountIn, , ) = MarketApproxPtInLib.approxSwapPtForExactSy(
+    (actualPtAmountIn, , ) = MarketApproxPtInLibV1.approxSwapPtForExactSy(
       routeData.pendleMarket.readState(address(this)),
       routeData.yt.newIndex(),
       syAmountOut,

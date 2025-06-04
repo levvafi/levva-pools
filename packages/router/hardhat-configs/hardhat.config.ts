@@ -1,6 +1,6 @@
 import { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
-require('hardhat-contract-sizer');
+import 'hardhat-contract-sizer';
 import 'solidity-docgen';
 import '../scripts';
 import { config as dotEnvConfig } from 'dotenv';

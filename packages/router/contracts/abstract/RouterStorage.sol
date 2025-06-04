@@ -19,7 +19,7 @@ abstract contract RouterStorage is IMarginlyRouter, Ownable2Step {
 
   mapping(uint256 => address) public adapters;
 
-  constructor(AdapterInput[] memory _adapters) {
+  constructor(AdapterInput[] memory _adapters) Ownable(msg.sender) {
     AdapterInput memory input;
     uint256 length = _adapters.length;
     for (uint256 i; i < length; ) {

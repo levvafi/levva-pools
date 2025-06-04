@@ -56,7 +56,7 @@ contract SpectraAdapter is IMarginlyAdapter, Ownable2Step {
 
   mapping(address => mapping(address => PoolData)) public getPoolData;
 
-  constructor(PoolInput[] memory pools) {
+  constructor(PoolInput[] memory pools) Ownable(msg.sender) {
     _addPools(pools);
   }
 
