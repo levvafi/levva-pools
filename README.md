@@ -33,10 +33,6 @@ The package contains library for deploying smart contracts and deploy configurat
 
 This package contains integration tests. It create mainnet fork for every test and uses Ganache as a network emulator. [More information](./packages/int-tests/README.md)
 
-### frontend
-
-The package contains simple frontend interacting with the protocol smart contracts and also scripts to run network with test accounts. [More information](./packages/frontend/README.md)
-
 ## Licensing
 
 The primary license for Marginly protocol is the [Business Source License 1.1 (BUSL-1.1)](./LICENSE).
