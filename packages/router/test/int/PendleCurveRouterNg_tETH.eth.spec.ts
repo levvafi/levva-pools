@@ -9,7 +9,7 @@ import {
 } from '../../typechain-types';
 import { constructSwap, Dex, resetFork, showGasUsage, SWAP_ONE, assertSwapEvent } from '../shared/utils';
 import { EthAddress } from '@marginly/common';
-import { formatUnits, parseUnits } from 'ethers'
+import { formatUnits, parseUnits } from 'ethers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { EthereumMainnetERC20BalanceOfSlot, setTokenBalance } from '../shared/tokens';
 
@@ -149,7 +149,7 @@ describe('Pendle PT-tETH - WETH', () => {
       expect(ptBalanceAfter).to.be.greaterThan(ptBalanceBefore);
       const tokenBalanceAfter = await weth.balanceOf(user.address);
       console.log(`wethBalanceAfter: ${formatUnits(tokenBalanceAfter, await weth.decimals())} ${await weth.symbol()}`);
-      expect(tokenBalanceBefore-(tokenBalanceAfter)).to.be.lessThanOrEqual(wethSwapAmount);
+      expect(tokenBalanceBefore - tokenBalanceAfter).to.be.lessThanOrEqual(wethSwapAmount);
     });
 
     it('WETH to pt-tETH exact output', async () => {
@@ -173,7 +173,7 @@ describe('Pendle PT-tETH - WETH', () => {
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceAfter-(ptBalanceBefore)).to.be.eq(exactPtOut);
+      expect(ptBalanceAfter - ptBalanceBefore).to.be.eq(exactPtOut);
       const wethBalanceAfter = await weth.balanceOf(user.address);
       console.log(`wethBalanceAfter: ${formatUnits(wethBalanceAfter, await weth.decimals())} ${await weth.symbol()}`);
       expect(wethBalanceBefore).to.be.greaterThan(wethBalanceAfter);
@@ -191,8 +191,8 @@ describe('Pendle PT-tETH - WETH', () => {
           isExactInput: false,
           tokenIn: weth.address,
           tokenOut: ptToken.address,
-          amountIn: wethBalanceBefore-(wethBalanceAfter),
-          amountOut: ptBalanceAfter-(ptBalanceBefore),
+          amountIn: wethBalanceBefore - wethBalanceAfter,
+          amountOut: ptBalanceAfter - ptBalanceBefore,
         },
         router,
         tx
@@ -220,7 +220,7 @@ describe('Pendle PT-tETH - WETH', () => {
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceAfter-(ptBalanceBefore)).to.be.eq(exactPtOut);
+      expect(ptBalanceAfter - ptBalanceBefore).to.be.eq(exactPtOut);
       const wethBalanceAfter = await weth.balanceOf(user.address);
       console.log(`wethBalanceAfter: ${formatUnits(wethBalanceAfter, await weth.decimals())} ${await weth.symbol()}`);
       expect(wethBalanceBefore).to.be.greaterThan(wethBalanceAfter);
@@ -238,8 +238,8 @@ describe('Pendle PT-tETH - WETH', () => {
           isExactInput: false,
           tokenIn: weth.address,
           tokenOut: ptToken.address,
-          amountIn: wethBalanceBefore-(wethBalanceAfter),
-          amountOut: ptBalanceAfter-(ptBalanceBefore),
+          amountIn: wethBalanceBefore - wethBalanceAfter,
+          amountOut: ptBalanceAfter - ptBalanceBefore,
         },
         router,
         tx
@@ -261,7 +261,7 @@ describe('Pendle PT-tETH - WETH', () => {
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceBefore-(ptBalanceAfter)).to.be.eq(ptIn);
+      expect(ptBalanceBefore - ptBalanceAfter).to.be.eq(ptIn);
       const wethBalanceAfter = await weth.balanceOf(user.address);
       console.log(`wethBalanceAfter: ${formatUnits(wethBalanceAfter, await weth.decimals())} ${await weth.symbol()}`);
       expect(wethBalanceAfter).to.be.greaterThan(wethBalanceBefore);
@@ -271,8 +271,8 @@ describe('Pendle PT-tETH - WETH', () => {
           isExactInput: true,
           tokenIn: ptToken.address,
           tokenOut: weth.address,
-          amountIn: ptBalanceBefore-(ptBalanceAfter),
-          amountOut: wethBalanceAfter-(wethBalanceBefore),
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: wethBalanceAfter - wethBalanceBefore,
         },
         router,
         tx
@@ -300,7 +300,7 @@ describe('Pendle PT-tETH - WETH', () => {
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
       const wethBalanceAfter = await weth.balanceOf(user.address);
       console.log(`wethBalanceAfter: ${formatUnits(wethBalanceAfter, await weth.decimals())} ${await weth.symbol()}`);
-      expect(wethBalanceAfter-(wethBalanceBefore)).to.be.eq(wethOut);
+      expect(wethBalanceAfter - wethBalanceBefore).to.be.eq(wethOut);
 
       const wethBalanceOnAdapter = await weth.balanceOf(pendleCurveAdapter.address);
       console.log(
@@ -312,8 +312,8 @@ describe('Pendle PT-tETH - WETH', () => {
           isExactInput: false,
           tokenIn: ptToken.address,
           tokenOut: weth.address,
-          amountIn: ptBalanceBefore-(ptBalanceAfter),
-          amountOut: wethBalanceAfter-(wethBalanceBefore),
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: wethBalanceAfter - wethBalanceBefore,
         },
         router,
         tx

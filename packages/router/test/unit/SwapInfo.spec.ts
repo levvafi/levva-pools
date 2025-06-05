@@ -18,7 +18,7 @@ describe('SwapInfo decoding', () => {
 
   it('only uniswapV3', async () => {
     const swapInfoTest = await loadFixture(createTestSwapInfo);
-    const onlyUniswapV3Swap = constructSwap([Dex.UniswapV3], [SWAP_ONE]);
+    const onlyUniswapV3Swap = constructSwap([Dex.UniswapV3], [BigInt(SWAP_ONE)]);
     const decodingResult = await swapInfoTest.decodeSwapInfo(onlyUniswapV3Swap, SWAP_ONE, SWAP_ONE);
     expect(decodingResult[1]).to.be.equal(1);
 
@@ -31,15 +31,15 @@ describe('SwapInfo decoding', () => {
   it('split randomly between 2 Dexs', async () => {
     const swapInfoTest = await loadFixture(createTestSwapInfo);
 
-    const firstDexRatio = Math.floor(Math.random() * SWAP_ONE);
-    const secondDexRatio = SWAP_ONE - firstDexRatio;
+    const firstDexRatio = BigInt(Math.floor(Math.random() * SWAP_ONE));
+    const secondDexRatio = BigInt(SWAP_ONE) - firstDexRatio;
 
     const dexNumber = Object.entries(Dex).length;
-    const firstDex = Math.floor(Math.random() * dexNumber);
+    const firstDex = BigInt(Math.floor(Math.random() * dexNumber));
     let secondDex;
 
     do {
-      secondDex = Math.floor(Math.random() * dexNumber);
+      secondDex = BigInt(Math.floor(Math.random() * dexNumber));
     } while (secondDex === firstDex);
 
     console.log([firstDex, secondDex]);
@@ -63,18 +63,18 @@ describe('SwapInfo decoding', () => {
   it('Wrong swap ratios', async () => {
     const swapInfoTest = await loadFixture(createTestSwapInfo);
 
-    const firstDexRatio = Math.floor(Math.random() * SWAP_ONE);
+    const firstDexRatio = BigInt(Math.floor(Math.random() * SWAP_ONE));
     let secondDexRatio;
     do {
-      secondDexRatio = Math.floor(Math.random() * SWAP_ONE);
-    } while (secondDexRatio === SWAP_ONE - firstDexRatio);
+      secondDexRatio = BigInt(Math.floor(Math.random() * SWAP_ONE));
+    } while (secondDexRatio === BigInt(SWAP_ONE) - firstDexRatio);
 
     const dexNumber = Object.entries(Dex).length;
-    const firstDex = Math.floor(Math.random() * dexNumber);
+    const firstDex = BigInt(Math.floor(Math.random() * dexNumber));
     let secondDex;
 
     do {
-      secondDex = Math.floor(Math.random() * dexNumber);
+      secondDex = BigInt(Math.floor(Math.random() * dexNumber));
     } while (secondDex === firstDex);
 
     console.log([firstDex, secondDex]);
@@ -90,21 +90,21 @@ describe('SwapInfo decoding', () => {
   it('Wrong swaps number', async () => {
     const swapInfoTest = await loadFixture(createTestSwapInfo);
 
-    const firstDexRatio = Math.floor(Math.random() * SWAP_ONE);
-    const secondDexRatio = SWAP_ONE - firstDexRatio;
+    const firstDexRatio = BigInt(Math.floor(Math.random() * SWAP_ONE));
+    const secondDexRatio = BigInt(SWAP_ONE) - firstDexRatio;
 
     const dexNumber = Object.entries(Dex).length;
-    const firstDex = Math.floor(Math.random() * dexNumber);
+    const firstDex = BigInt(Math.floor(Math.random() * dexNumber));
     let secondDex;
 
     do {
-      secondDex = Math.floor(Math.random() * dexNumber);
+      secondDex = BigInt(Math.floor(Math.random() * dexNumber));
     } while (secondDex === firstDex);
 
     console.log([firstDex, secondDex]);
     console.log([firstDexRatio, secondDexRatio]);
 
-    const swap = constructSwap([firstDex, secondDex], [firstDexRatio, secondDexRatio])-(2);
+    const swap = constructSwap([firstDex, secondDex], [firstDexRatio, secondDexRatio]) - 2n;
     await expect(swapInfoTest.decodeSwapInfo(swap, SWAP_ONE, SWAP_ONE)).to.be.revertedWithCustomError(
       swapInfoTest,
       'WrongSwapsNumber'
@@ -115,12 +115,12 @@ describe('SwapInfo decoding', () => {
     const swapInfoTest = await loadFixture(createTestSwapInfo);
 
     const dexNumber = Object.entries(Dex).length;
-    const dex = Math.floor(Math.random() * dexNumber);
+    const dex = BigInt(Math.floor(Math.random() * dexNumber));
 
     console.log([dex]);
 
-    let swap = constructSwap([dex], [SWAP_ONE]);
-    swap = swap.add(2 ** Math.ceil(Math.log2(swap.toNumber()) + 8));
+    let swap = constructSwap([dex], [BigInt(SWAP_ONE)]);
+    swap = swap + 2n ** BigInt(Math.ceil(Math.log2(Number(swap)) + 8));
     await expect(swapInfoTest.decodeSwapInfo(swap, SWAP_ONE, SWAP_ONE)).to.be.revertedWithCustomError(
       swapInfoTest,
       'WrongSwapsNumber'

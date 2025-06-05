@@ -1,73 +1,66 @@
-import { BigNumber, ContractTransaction } from 'ethers';
+import { ContractTransaction } from 'ethers';
 import { ERC20, MarginlyRouter } from '../../typechain-types';
-import { formatUnits } from 'ethers'
+import { formatUnits } from 'ethers';
 import { reset } from '@nomicfoundation/hardhat-network-helpers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
-import { SwapEvent } from '../../typechain-types/contracts/interfaces/IMarginlyRouter';
 import { expect } from 'chai';
 const hre = require('hardhat');
 
 export const SWAP_ONE = 1 << 15;
 
 export const Dex = {
-  UniswapV3: 0,
-  ApeSwap: 1,
-  Balancer: 2,
-  Camelot: 3,
-  KyberClassicSwap: 4,
-  KyberElasticSwap: 5,
-  QuickSwap: 6,
-  SushiSwap: 7,
-  TraderJoe: 8,
-  Woofi: 9,
-  Ramses: 10,
-  DodoV1: 11,
-  DodoV2: 12,
-  Curve: 13,
-  Pendle: 17,
-  PendleMarket: 19,
-  PendleCurveRouter: 30,
-  PendleCurve: 31,
-  Spectra: 32,
-  PendlePtToAsset: 33,
+  UniswapV3: 0n,
+  ApeSwap: 1n,
+  Balancer: 2n,
+  Camelot: 3n,
+  KyberClassicSwap: 4n,
+  KyberElasticSwap: 5n,
+  QuickSwap: 6n,
+  SushiSwap: 7n,
+  TraderJoe: 8n,
+  Woofi: 9n,
+  Ramses: 10n,
+  DodoV1: 11n,
+  DodoV2: 12n,
+  Curve: 13n,
+  Pendle: 17n,
+  PendleMarket: 19n,
+  PendleCurveRouter: 30n,
+  PendleCurve: 31n,
+  Spectra: 32n,
+  PendlePtToAsset: 33n,
 };
 
-export function constructSwap(dex: number[], ratios: number[]): BigNumber {
+export function constructSwap(dex: bigint[], ratios: bigint[]): bigint {
   if (dex.length != ratios.length) {
     throw new Error(`dex and ratios arrays length are different`);
   }
 
-  let swap = BigInt(0);
+  let swap = 0n;
   for (let i = 0; i < dex.length; ++i) {
-    swap = (((swap << BigInt(6)) + BigInt(dex[i])) << BigInt(16)) + BigInt(ratios[i]);
+    swap = (((swap << 6n) + dex[i]) << 16n) + ratios[i];
   }
-  swap = (swap << BigInt(4)) + BigInt(dex.length);
-  return BigNumber.from(swap);
+  swap = (swap << 4n) + BigInt(dex.length);
+  return swap;
 }
 
 export async function showGasUsage(tx: ContractTransaction) {
-  const txReceipt = await tx.wait();
   const warningLimit = 1_000_000;
   console.log(`⛽ gas used ${txReceipt.gasUsed} ${txReceipt.gasUsed.gt(warningLimit) ? '!!! WARNING' : ''}`);
 }
 
-export async function showBalance(token: ERC20, account: string, startPhrase = ''): Promise<BigNumber> {
+export async function showBalance(token: ERC20, account: string, startPhrase = ''): Promise<bigint> {
   const [balance, symbol, decimals] = await Promise.all([token.balanceOf(account), token.symbol(), token.decimals()]);
 
   console.log(`${startPhrase.replace('$symbol', symbol)} ${formatUnits(balance, decimals)} ${symbol}`);
   return balance;
 }
 
-export async function showBalanceDelta(
-  balanceBefore: BigNumber,
-  balanceAfter: BigNumber,
-  token: ERC20,
-  startPhrase = ''
-) {
+export async function showBalanceDelta(balanceBefore: bigint, balanceAfter: bigint, token: ERC20, startPhrase = '') {
   const [symbol, decimals] = await Promise.all([token.symbol(), token.decimals()]);
 
   console.log(
-    `${startPhrase.replace('$symbol', symbol)} ${formatUnits(balanceAfter-(balanceBefore), decimals)} ${symbol}`
+    `${startPhrase.replace('$symbol', symbol)} ${formatUnits(balanceAfter - balanceBefore, decimals)} ${symbol}`
   );
 }
 
@@ -86,8 +79,8 @@ export function delay(ms: number) {
 export async function assertSwapEvent(
   expectedValues: {
     isExactInput: boolean;
-    amountIn: BigNumber;
-    amountOut: BigNumber;
+    amountIn: bigint;
+    amountOut: bigint;
     tokenIn: string;
     tokenOut: string;
   },
@@ -102,15 +95,8 @@ export async function assertSwapEvent(
   expect(swapEvent.args.tokenOut.toLocaleLowerCase()).to.be.eq(expectedValues.tokenOut.toLocaleLowerCase());
 }
 
-async function getSwapEvent(router: MarginlyRouter, tx: any): Promise<SwapEvent> {
-  const eventFilter = router.filters['Swap(bool,uint256,address,address,address,uint256,uint256)'](
-    null,
-    null,
-    null,
-    null,
-    null,
-    null
-  );
+async function getSwapEvent(router: MarginlyRouter, tx: any): Promise<any> {
+  const eventFilter = router.filters['Swap(bool,uint256,address,address,address,uint256,uint256)'];
   const events = await router.queryFilter(eventFilter, tx.blockHash);
   expect(events.length).to.be.eq(1);
   const swapEvent = events[0];

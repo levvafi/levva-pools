@@ -9,7 +9,7 @@ import {
 } from '../../typechain-types';
 import { constructSwap, Dex, resetFork, showGasUsage, SWAP_ONE, assertSwapEvent } from '../shared/utils';
 import { EthAddress } from '@marginly/common';
-import { formatUnits, parseUnits } from 'ethers'
+import { formatUnits, parseUnits } from 'ethers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { EthereumMainnetERC20BalanceOfSlot, setTokenBalance } from '../shared/tokens';
 
@@ -146,14 +146,14 @@ describe('Pendle PT-sUSDe - USDC', () => {
       await showGasUsage(tx);
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
-      const ptOut = ptBalanceAfter-(ptBalanceBefore);
+      const ptOut = ptBalanceAfter - ptBalanceBefore;
       console.log(`ptOut: ${formatUnits(ptOut, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceAfter).to.be.greaterThan(ptBalanceBefore);
 
       const tokenBalanceAfter = await usdc.balanceOf(user.address);
-      const usdcIn = tokenBalanceBefore-(tokenBalanceAfter);
+      const usdcIn = tokenBalanceBefore - tokenBalanceAfter;
       console.log(`usdcIn: ${formatUnits(usdcIn, await usdc.decimals())} ${await usdc.symbol()}`);
-      expect(tokenBalanceBefore-(tokenBalanceAfter)).to.be.lessThanOrEqual(usdcSwapAmount);
+      expect(tokenBalanceBefore - tokenBalanceAfter).to.be.lessThanOrEqual(usdcSwapAmount);
     });
 
     it.only('USDC to pt-sUSDe exact output', async () => {
@@ -176,12 +176,12 @@ describe('Pendle PT-sUSDe - USDC', () => {
       await showGasUsage(tx);
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
-      const ptOut = ptBalanceAfter-(ptBalanceBefore);
+      const ptOut = ptBalanceAfter - ptBalanceBefore;
       console.log(`ptOut: ${formatUnits(ptOut, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceAfter-(ptBalanceBefore)).to.be.eq(exactPtOut);
+      expect(ptBalanceAfter - ptBalanceBefore).to.be.eq(exactPtOut);
 
       const usdcBalanceAfter = await usdc.balanceOf(user.address);
-      const usdcIn = usdcBalanceBefore-(usdcBalanceAfter);
+      const usdcIn = usdcBalanceBefore - usdcBalanceAfter;
       console.log(`usdcIn: ${formatUnits(usdcIn, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(usdcBalanceBefore).to.be.greaterThan(usdcBalanceAfter);
 
@@ -198,8 +198,8 @@ describe('Pendle PT-sUSDe - USDC', () => {
           isExactInput: false,
           tokenIn: usdc.address,
           tokenOut: ptToken.address,
-          amountIn: usdcBalanceBefore-(usdcBalanceAfter),
-          amountOut: ptBalanceAfter-(ptBalanceBefore),
+          amountIn: usdcBalanceBefore - usdcBalanceAfter,
+          amountOut: ptBalanceAfter - ptBalanceBefore,
         },
         router,
         tx
@@ -226,12 +226,12 @@ describe('Pendle PT-sUSDe - USDC', () => {
       await showGasUsage(tx);
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
-      const ptOut = ptBalanceAfter-(ptBalanceBefore);
+      const ptOut = ptBalanceAfter - ptBalanceBefore;
       console.log(`ptOut: ${formatUnits(ptOut, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceAfter-(ptBalanceBefore)).to.be.eq(exactPtOut);
+      expect(ptBalanceAfter - ptBalanceBefore).to.be.eq(exactPtOut);
 
       const usdcBalanceAfter = await usdc.balanceOf(user.address);
-      const usdcIn = usdcBalanceBefore-(usdcBalanceAfter);
+      const usdcIn = usdcBalanceBefore - usdcBalanceAfter;
       console.log(`usdcIn: ${formatUnits(usdcIn, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(usdcBalanceBefore).to.be.greaterThan(usdcBalanceAfter);
 
@@ -248,8 +248,8 @@ describe('Pendle PT-sUSDe - USDC', () => {
           isExactInput: false,
           tokenIn: usdc.address,
           tokenOut: ptToken.address,
-          amountIn: usdcBalanceBefore-(usdcBalanceAfter),
-          amountOut: ptBalanceAfter-(ptBalanceBefore),
+          amountIn: usdcBalanceBefore - usdcBalanceAfter,
+          amountOut: ptBalanceAfter - ptBalanceBefore,
         },
         router,
         tx
@@ -271,7 +271,7 @@ describe('Pendle PT-sUSDe - USDC', () => {
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceBefore-(ptBalanceAfter)).to.be.eq(ptIn);
+      expect(ptBalanceBefore - ptBalanceAfter).to.be.eq(ptIn);
       const usdcBalanceAfter = await usdc.balanceOf(user.address);
       console.log(`usdcBalanceAfter: ${formatUnits(usdcBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(usdcBalanceAfter).to.be.greaterThan(usdcBalanceBefore);
@@ -281,8 +281,8 @@ describe('Pendle PT-sUSDe - USDC', () => {
           isExactInput: true,
           tokenIn: ptToken.address,
           tokenOut: usdc.address,
-          amountIn: ptBalanceBefore-(ptBalanceAfter),
-          amountOut: usdcBalanceAfter-(usdcBalanceBefore),
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: usdcBalanceAfter - usdcBalanceBefore,
         },
         router,
         tx
@@ -303,15 +303,15 @@ describe('Pendle PT-sUSDe - USDC', () => {
       await showGasUsage(tx);
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
-      const ptIn = ptBalanceBefore-(ptBalanceAfter);
+      const ptIn = ptBalanceBefore - ptBalanceAfter;
       console.log(`ptIn: ${formatUnits(ptIn, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
 
       const usdcBalanceAfter = await usdc.balanceOf(user.address);
       console.log(
-        `usdcOut: ${formatUnits(usdcBalanceAfter-(usdcBalanceBefore), await usdc.decimals())} ${await usdc.symbol()}`
+        `usdcOut: ${formatUnits(usdcBalanceAfter - usdcBalanceBefore, await usdc.decimals())} ${await usdc.symbol()}`
       );
-      expect(usdcBalanceAfter-(usdcBalanceBefore)).to.be.eq(usdcOut);
+      expect(usdcBalanceAfter - usdcBalanceBefore).to.be.eq(usdcOut);
 
       const usdcBalanceOnAdapter = await usdc.balanceOf(pendleCurveAdapter.address);
       console.log(
@@ -323,8 +323,8 @@ describe('Pendle PT-sUSDe - USDC', () => {
           isExactInput: false,
           tokenIn: ptToken.address,
           tokenOut: usdc.address,
-          amountIn: ptBalanceBefore-(ptBalanceAfter),
-          amountOut: usdcBalanceAfter-(usdcBalanceBefore),
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: usdcBalanceAfter - usdcBalanceBefore,
         },
         router,
         tx

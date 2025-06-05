@@ -9,7 +9,7 @@ import {
 } from '../../typechain-types';
 import { constructSwap, Dex, showGasUsage, SWAP_ONE, resetFork, assertSwapEvent } from '../shared/utils';
 import { EthAddress } from '@marginly/common';
-import { formatUnits, parseUnits } from 'ethers'
+import { formatUnits, parseUnits } from 'ethers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { EthereumMainnetERC20BalanceOfSlot, setTokenBalance } from '../shared/tokens';
 
@@ -114,7 +114,7 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
       expect(ptBalanceAfter).to.be.greaterThan(ptBalanceBefore);
       const USDCBalanceAfter = await usdc.balanceOf(user.address);
       console.log(`USDCBalanceAfter: ${formatUnits(USDCBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
-      expect(USDCBalanceBefore-(USDCBalanceAfter)).to.be.lessThanOrEqual(USDCSwapAmount);
+      expect(USDCBalanceBefore - USDCBalanceAfter).to.be.lessThanOrEqual(USDCSwapAmount);
 
       await assertSwapEvent(
         {
@@ -122,7 +122,7 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
           tokenIn: usdc.address,
           tokenOut: ptToken.address,
           amountIn: USDCSwapAmount,
-          amountOut: ptBalanceAfter-(ptBalanceBefore),
+          amountOut: ptBalanceAfter - ptBalanceBefore,
         },
         router,
         tx
@@ -150,7 +150,7 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceAfter-(ptBalanceBefore)).to.be.eq(exactPtOut);
+      expect(ptBalanceAfter - ptBalanceBefore).to.be.eq(exactPtOut);
       const USDCBalanceAfter = await usdc.balanceOf(user.address);
       console.log(`USDCBalanceAfter: ${formatUnits(USDCBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(USDCBalanceBefore).to.be.greaterThan(USDCBalanceAfter);
@@ -160,8 +160,8 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
           isExactInput: false,
           tokenIn: usdc.address,
           tokenOut: ptToken.address,
-          amountIn: USDCBalanceBefore-(USDCBalanceAfter),
-          amountOut: ptBalanceAfter-(ptBalanceBefore),
+          amountIn: USDCBalanceBefore - USDCBalanceAfter,
+          amountOut: ptBalanceAfter - ptBalanceBefore,
         },
         router,
         tx
@@ -192,7 +192,7 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceAfter-(ptBalanceBefore)).to.be.eq(exactPtOut);
+      expect(ptBalanceAfter - ptBalanceBefore).to.be.eq(exactPtOut);
       const USDCBalanceAfter = await usdc.balanceOf(user.address);
       console.log(`USDCBalanceAfter: ${formatUnits(USDCBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(USDCBalanceBefore).to.be.greaterThan(USDCBalanceAfter);
@@ -202,8 +202,8 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
           isExactInput: false,
           tokenIn: usdc.address,
           tokenOut: ptToken.address,
-          amountIn: USDCBalanceBefore-(USDCBalanceAfter),
-          amountOut: ptBalanceAfter-(ptBalanceBefore),
+          amountIn: USDCBalanceBefore - USDCBalanceAfter,
+          amountOut: ptBalanceAfter - ptBalanceBefore,
         },
         router,
         tx
@@ -228,7 +228,7 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceBefore-(ptBalanceAfter)).to.be.eq(ptIn);
+      expect(ptBalanceBefore - ptBalanceAfter).to.be.eq(ptIn);
       const USDCBalanceAfter = await usdc.balanceOf(user.address);
       console.log(`USDCBalanceAfter: ${formatUnits(USDCBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(USDCBalanceAfter).to.be.greaterThan(USDCBalanceBefore);
@@ -238,8 +238,8 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
           isExactInput: true,
           tokenIn: ptToken.address,
           tokenOut: usdc.address,
-          amountIn: ptBalanceBefore-(ptBalanceAfter),
-          amountOut: USDCBalanceAfter-(USDCBalanceBefore),
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: USDCBalanceAfter - USDCBalanceBefore,
         },
         router,
         tx
@@ -267,7 +267,7 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
       const USDCBalanceAfter = await usdc.balanceOf(user.address);
       console.log(`USDCBalanceAfter: ${formatUnits(USDCBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
-      expect(USDCBalanceAfter-(USDCBalanceBefore)).to.be.eq(USDCOut);
+      expect(USDCBalanceAfter - USDCBalanceBefore).to.be.eq(USDCOut);
 
       const USDCBalanceOnAdapter = await usdc.balanceOf(pendleCurveAdapter.address);
       console.log(
@@ -279,8 +279,8 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
           isExactInput: false,
           tokenIn: ptToken.address,
           tokenOut: usdc.address,
-          amountIn: ptBalanceBefore-(ptBalanceAfter),
-          amountOut: USDCBalanceAfter-(USDCBalanceBefore),
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: USDCBalanceAfter - USDCBalanceBefore,
         },
         router,
         tx
@@ -327,13 +327,7 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
       await USDC.connect(user).approve(router.address, sUsdeBalanceBefore);
       const tx = router
         .connect(user)
-        .swapExactInput(
-          swapCalldata,
-          USDC.address,
-          ptToken.address,
-          sUsdeBalanceBefore,
-          sUsdeBalanceBefore*(9)/(10)
-        );
+        .swapExactInput(swapCalldata, USDC.address, ptToken.address, sUsdeBalanceBefore, (sUsdeBalanceBefore * 9) / 10);
 
       await expect(tx).to.be.revertedWithCustomError(pendleCurveAdapter, 'NotSupported');
 
@@ -357,7 +351,7 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
       );
 
       const swapCalldata = constructSwap([Dex.PendleCurve], [SWAP_ONE]);
-      const ptOut = USDCBalanceBefore/(2);
+      const ptOut = USDCBalanceBefore / 2;
       await USDC.connect(user).approve(router.address, USDCBalanceBefore);
       const tx = router
         .connect(user)
@@ -389,7 +383,7 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceBefore-(ptBalanceAfter)).to.be.eq(ptIn);
+      expect(ptBalanceBefore - ptBalanceAfter).to.be.eq(ptIn);
       const USDCBalanceAfter = await USDC.balanceOf(user.address);
       console.log(`USDCBalanceAfter: ${formatUnits(USDCBalanceAfter, await USDC.decimals())} ${await USDC.symbol()}`);
       expect(USDCBalanceAfter).to.be.greaterThan(USDCBalanceBefore);
@@ -399,8 +393,8 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
           isExactInput: true,
           tokenIn: ptToken.address,
           tokenOut: USDC.address,
-          amountIn: ptBalanceBefore-(ptBalanceAfter),
-          amountOut: USDCBalanceAfter-(USDCBalanceBefore),
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: USDCBalanceAfter - USDCBalanceBefore,
         },
         router,
         tx
@@ -429,15 +423,15 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
       const USDCBalanceAfter = await USDC.balanceOf(user.address);
       console.log(`sUsdeBalanceAfter: ${formatUnits(USDCBalanceAfter, await USDC.decimals())} ${await USDC.symbol()}`);
-      expect(USDCBalanceAfter-(USDCBalanceBefore)).to.be.eq(USDCOut);
+      expect(USDCBalanceAfter - USDCBalanceBefore).to.be.eq(USDCOut);
 
       await assertSwapEvent(
         {
           isExactInput: false,
           tokenIn: ptToken.address,
           tokenOut: USDC.address,
-          amountIn: ptBalanceBefore-(ptBalanceAfter),
-          amountOut: USDCBalanceAfter-(USDCBalanceBefore),
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: USDCBalanceAfter - USDCBalanceBefore,
         },
         router,
         tx

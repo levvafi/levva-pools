@@ -10,7 +10,7 @@ import {
 } from '../../typechain-types';
 import { constructSwap, Dex, resetFork, showGasUsage, SWAP_ONE, assertSwapEvent } from '../shared/utils';
 import { EthAddress } from '@marginly/common';
-import { formatUnits, parseUnits } from 'ethers'
+import { formatUnits, parseUnits } from 'ethers';
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { EthereumMainnetERC20BalanceOfSlot, setTokenBalance } from '../shared/tokens';
 import { BigNumberish } from 'ethers';
@@ -217,16 +217,16 @@ describe('Pendle PT-USDS - sUSDe', () => {
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       expect(ptBalanceAfter).to.be.greaterThan(ptBalanceBefore);
       const tokenBalanceAfter = await quoteToken.balanceOf(user.address);
-      expect(tokenBalanceBefore-(tokenBalanceAfter)).to.be.lessThanOrEqual(quoteTokenIn);
+      expect(tokenBalanceBefore - tokenBalanceAfter).to.be.lessThanOrEqual(quoteTokenIn);
 
       console.log(
         `${await quoteToken.symbol()} In: ${formatUnits(
-          tokenBalanceBefore-(tokenBalanceAfter),
+          tokenBalanceBefore - tokenBalanceAfter,
           await quoteToken.decimals()
         )}`
       );
       console.log(
-        `${await ptToken.symbol()} Out: ${formatUnits(ptBalanceAfter-(ptBalanceBefore), await ptToken.decimals())}`
+        `${await ptToken.symbol()} Out: ${formatUnits(ptBalanceAfter - ptBalanceBefore, await ptToken.decimals())}`
       );
     });
 
@@ -245,7 +245,7 @@ describe('Pendle PT-USDS - sUSDe', () => {
       await showGasUsage(tx);
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
-      expect(ptBalanceAfter-(ptBalanceBefore)).to.be.eq(exactPtOut);
+      expect(ptBalanceAfter - ptBalanceBefore).to.be.eq(exactPtOut);
       const tokenBalanceAfter = await quoteToken.balanceOf(user.address);
 
       expect(tokenBalanceBefore).to.be.greaterThan(tokenBalanceAfter);
@@ -254,12 +254,12 @@ describe('Pendle PT-USDS - sUSDe', () => {
 
       console.log(
         `${await quoteToken.symbol()} In: ${formatUnits(
-          tokenBalanceBefore-(tokenBalanceAfter),
+          tokenBalanceBefore - tokenBalanceAfter,
           await quoteToken.decimals()
         )}`
       );
       console.log(
-        `${await ptToken.symbol()} Out: ${formatUnits(ptBalanceAfter-(ptBalanceBefore), await ptToken.decimals())}`
+        `${await ptToken.symbol()} Out: ${formatUnits(ptBalanceAfter - ptBalanceBefore, await ptToken.decimals())}`
       );
       console.log(
         `${await IbToken.symbol()} stays on adapter: ${formatUnits(
@@ -273,8 +273,8 @@ describe('Pendle PT-USDS - sUSDe', () => {
           isExactInput: false,
           tokenIn: quoteToken.address,
           tokenOut: ptToken.address,
-          amountIn: tokenBalanceBefore-(tokenBalanceAfter),
-          amountOut: ptBalanceAfter-(ptBalanceBefore),
+          amountIn: tokenBalanceBefore - tokenBalanceAfter,
+          amountOut: ptBalanceAfter - ptBalanceBefore,
         },
         router,
         tx
@@ -295,19 +295,19 @@ describe('Pendle PT-USDS - sUSDe', () => {
       await showGasUsage(tx);
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
-      expect(ptBalanceAfter-(ptBalanceBefore)).to.be.eq(exactPtOut);
+      expect(ptBalanceAfter - ptBalanceBefore).to.be.eq(exactPtOut);
       const tokenBalanceAfter = await quoteToken.balanceOf(user.address);
       expect(tokenBalanceBefore).to.be.greaterThan(tokenBalanceAfter);
 
       const IbTokenOnAdapter = await IbToken.balanceOf(pendleCurveAdapter.address);
       console.log(
         `${await quoteToken.symbol()} In: ${formatUnits(
-          tokenBalanceBefore-(tokenBalanceAfter),
+          tokenBalanceBefore - tokenBalanceAfter,
           await quoteToken.decimals()
         )}`
       );
       console.log(
-        `${await ptToken.symbol()} Out: ${formatUnits(ptBalanceAfter-(ptBalanceBefore), await ptToken.decimals())}`
+        `${await ptToken.symbol()} Out: ${formatUnits(ptBalanceAfter - ptBalanceBefore, await ptToken.decimals())}`
       );
       console.log(
         `${await IbToken.symbol()} stays on adapter: ${formatUnits(
@@ -321,8 +321,8 @@ describe('Pendle PT-USDS - sUSDe', () => {
           isExactInput: false,
           tokenIn: quoteToken.address,
           tokenOut: ptToken.address,
-          amountIn: tokenBalanceBefore-(tokenBalanceAfter),
-          amountOut: ptBalanceAfter-(ptBalanceBefore),
+          amountIn: tokenBalanceBefore - tokenBalanceAfter,
+          amountOut: ptBalanceAfter - ptBalanceBefore,
         },
         router,
         tx
@@ -340,16 +340,16 @@ describe('Pendle PT-USDS - sUSDe', () => {
       await showGasUsage(tx);
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
-      expect(ptBalanceBefore-(ptBalanceAfter)).to.be.eq(ptIn);
+      expect(ptBalanceBefore - ptBalanceAfter).to.be.eq(ptIn);
       const tokenBalanceAfter = await quoteToken.balanceOf(user.address);
       expect(tokenBalanceAfter).to.be.greaterThan(tokenBalanceBefore);
 
       console.log(
-        `${await ptToken.symbol()} In: ${formatUnits(ptBalanceBefore-(ptBalanceAfter), await ptToken.decimals())}`
+        `${await ptToken.symbol()} In: ${formatUnits(ptBalanceBefore - ptBalanceAfter, await ptToken.decimals())}`
       );
       console.log(
         `${await quoteToken.symbol()} Out: ${formatUnits(
-          tokenBalanceAfter-(tokenBalanceBefore),
+          tokenBalanceAfter - tokenBalanceBefore,
           await quoteToken.decimals()
         )}`
       );
@@ -359,8 +359,8 @@ describe('Pendle PT-USDS - sUSDe', () => {
           isExactInput: true,
           tokenIn: ptToken.address,
           tokenOut: quoteToken.address,
-          amountIn: ptBalanceBefore-(ptBalanceAfter),
-          amountOut: tokenBalanceAfter-(tokenBalanceBefore),
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: tokenBalanceAfter - tokenBalanceBefore,
         },
         router,
         tx
@@ -383,15 +383,15 @@ describe('Pendle PT-USDS - sUSDe', () => {
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
       const tokenBalanceAfter = await quoteToken.balanceOf(user.address);
-      expect(tokenBalanceAfter-(tokenBalanceBefore)).to.be.eq(sUSDeOut);
+      expect(tokenBalanceAfter - tokenBalanceBefore).to.be.eq(sUSDeOut);
 
       const tokenBalanceOnAdapter = await quoteToken.balanceOf(pendleCurveAdapter.address);
       console.log(
-        `${await ptToken.symbol()} In: ${formatUnits(ptBalanceBefore-(ptBalanceAfter), await ptToken.decimals())}`
+        `${await ptToken.symbol()} In: ${formatUnits(ptBalanceBefore - ptBalanceAfter, await ptToken.decimals())}`
       );
       console.log(
         `${await quoteToken.symbol()} Out: ${formatUnits(
-          tokenBalanceAfter-(tokenBalanceBefore),
+          tokenBalanceAfter - tokenBalanceBefore,
           await quoteToken.decimals()
         )}`
       );
@@ -407,8 +407,8 @@ describe('Pendle PT-USDS - sUSDe', () => {
           isExactInput: false,
           tokenIn: ptToken.address,
           tokenOut: quoteToken.address,
-          amountIn: ptBalanceBefore-(ptBalanceAfter),
-          amountOut: tokenBalanceAfter-(tokenBalanceBefore),
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: tokenBalanceAfter - tokenBalanceBefore,
         },
         router,
         tx
@@ -481,16 +481,16 @@ describe('Pendle PT-USDS - sUSDe', () => {
       await showGasUsage(tx);
 
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
-      expect(ptBalanceBefore-(ptBalanceAfter)).to.be.eq(ptIn);
+      expect(ptBalanceBefore - ptBalanceAfter).to.be.eq(ptIn);
       const tokenBalanceAfter = await quoteToken.balanceOf(user.address);
       expect(tokenBalanceAfter).to.be.greaterThan(tokenBalanceBefore);
 
       console.log(
-        `${await ptToken.symbol()} In: ${formatUnits(ptBalanceBefore-(ptBalanceAfter), await ptToken.decimals())}`
+        `${await ptToken.symbol()} In: ${formatUnits(ptBalanceBefore - ptBalanceAfter, await ptToken.decimals())}`
       );
       console.log(
         `${await quoteToken.symbol()} Out: ${formatUnits(
-          tokenBalanceAfter-(tokenBalanceBefore),
+          tokenBalanceAfter - tokenBalanceBefore,
           await quoteToken.decimals()
         )}`
       );
@@ -500,8 +500,8 @@ describe('Pendle PT-USDS - sUSDe', () => {
           isExactInput: true,
           tokenIn: ptToken.address,
           tokenOut: quoteToken.address,
-          amountIn: ptBalanceBefore-(ptBalanceAfter),
-          amountOut: tokenBalanceAfter-(tokenBalanceBefore),
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: tokenBalanceAfter - tokenBalanceBefore,
         },
         router,
         tx
@@ -524,15 +524,15 @@ describe('Pendle PT-USDS - sUSDe', () => {
       const ptBalanceAfter = await ptToken.balanceOf(user.address);
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
       const tokenBalanceAfter = await quoteToken.balanceOf(user.address);
-      expect(tokenBalanceAfter-(tokenBalanceBefore)).to.be.eq(tokenOut);
+      expect(tokenBalanceAfter - tokenBalanceBefore).to.be.eq(tokenOut);
 
       const tokenBalanceOnAdapter = await quoteToken.balanceOf(pendleCurveAdapter.address);
       console.log(
-        `${await ptToken.symbol()} In: ${formatUnits(ptBalanceBefore-(ptBalanceAfter), await ptToken.decimals())}`
+        `${await ptToken.symbol()} In: ${formatUnits(ptBalanceBefore - ptBalanceAfter, await ptToken.decimals())}`
       );
       console.log(
         `${await quoteToken.symbol()} Out: ${formatUnits(
-          tokenBalanceAfter-(tokenBalanceBefore),
+          tokenBalanceAfter - tokenBalanceBefore,
           await quoteToken.decimals()
         )}`
       );
@@ -548,8 +548,8 @@ describe('Pendle PT-USDS - sUSDe', () => {
           isExactInput: false,
           tokenIn: ptToken.address,
           tokenOut: quoteToken.address,
-          amountIn: ptBalanceBefore-(ptBalanceAfter),
-          amountOut: tokenBalanceAfter-(tokenBalanceBefore),
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: tokenBalanceAfter - tokenBalanceBefore,
         },
         router,
         tx

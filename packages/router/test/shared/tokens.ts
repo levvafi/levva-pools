@@ -1,10 +1,9 @@
 // Addresses of tokens `balanceOf` storage slot.
 // Used to set ERC20 account balance on fork
 // internal details: https://docs.soliditylang.org/en/latest/internals/layout_in_storage.html#mappings-and-dynamic-arrays
-import { EthAddress } from '@marginly/common';
-import { keccak256 } from 'ethers'
-import { BigNumber, utils } from 'ethers';
+import { AbiCoder, keccak256 } from 'ethers';
 import { ethers } from 'hardhat';
+import { EthAddress } from '../../../common/src';
 
 export enum ArbMainnetERC20BalanceOfSlot {
   USDC = '0000000000000000000000000000000000000000000000000000000000000009',
@@ -45,7 +44,7 @@ export async function setTokenBalance(
   tokenAddress: string,
   balanceOfSlotAddress: string,
   account: EthAddress,
-  newBalance: BigNumber
+  newBalance: bigint
 ) {
   const balanceOfStorageSlot = getAccountBalanceStorageSlot(account, balanceOfSlotAddress);
 
@@ -56,9 +55,9 @@ export async function setTokenBalance(
   ]);
 }
 
-export async function setTokenBalanceSonic(tokenAddress: string, i: number, account: string, newBalance: BigNumber) {
-  const userBalanceSlot = utils.hexStripZeros(
-    utils.keccak256(utils.defaultAbiCoder.encode(['address', 'uint'], [account, i]))
+export async function setTokenBalanceSonic(tokenAddress: string, i: number, account: string, newBalance: bigint) {
+  const userBalanceSlot = hexStripZeros(
+    keccak256(AbiCoder.defaultAbiCoder().encode(['address', 'uint'], [account, i]))
   );
   await ethers.provider.send('hardhat_setStorageAt', [
     tokenAddress.toString(),
