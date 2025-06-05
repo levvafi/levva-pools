@@ -18,26 +18,24 @@ import {
   showGasUsage,
   SWAP_ONE,
 } from '../shared/utils';
-import { EthAddress } from '@marginly/common';
 import { parseUnits } from 'ethers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { EthereumMainnetERC20BalanceOfSlot, setTokenBalance } from '../shared/tokens';
-import { BigNumber } from 'ethers';
 
-const swapCallData = constructSwap([Dex.Spectra], [SWAP_ONE]);
+const swapCallData = constructSwap([Dex.Spectra], [BigInt(SWAP_ONE)]);
 
 interface TokenInfo {
   address: string;
   symbol: string;
   balanceSlot: EthereumMainnetERC20BalanceOfSlot;
-  initialBalance: BigNumber;
+  initialBalance: bigint;
 }
 
 // For testing case when somebody make direct IBT transfer to sw-IBT and change rate IBT/sw-IBT
 interface SWToken {
   address: string;
   symbol: string;
-  ibtTransferAmount: BigNumber;
+  ibtTransferAmount: bigint;
 }
 
 interface TestCase {
@@ -52,30 +50,30 @@ interface TestCase {
   timeToMaturity: number;
   preMaturity: {
     swapExactIbtToPt: {
-      ibtIn: BigNumber;
-      minPtOut: BigNumber;
+      ibtIn: bigint;
+      minPtOut: bigint;
     };
     swapExactPtToIbt: {
-      ptIn: BigNumber;
-      minIbtOut: BigNumber;
+      ptIn: bigint;
+      minIbtOut: bigint;
     };
     swapIbtToExactPt: {
-      maxIbtIn: BigNumber;
-      ptOut: BigNumber;
+      maxIbtIn: bigint;
+      ptOut: bigint;
     };
     swapPtToExactIbt: {
-      maxPtIn: BigNumber;
-      ibtOut: BigNumber;
+      maxPtIn: bigint;
+      ibtOut: bigint;
     };
   };
   postMaturity: {
     swapPtToExactIbt: {
-      maxPtIn: BigNumber;
-      ibtOut: BigNumber;
+      maxPtIn: bigint;
+      ibtOut: bigint;
     };
     swapExactPtToIbt: {
-      ptIn: BigNumber;
-      minIbtOut: BigNumber;
+      ptIn: bigint;
+      minIbtOut: bigint;
     };
   };
 }
@@ -364,8 +362,8 @@ async function initializeRouter(testCase: TestCase): Promise<{
   const spectraPool = testCase.spectraPool;
 
   const poolInput: SpectraAdapter.PoolInputStruct = {
-    pt: ptToken.address,
-    quoteToken: ibtToken.address,
+    pt: ptToken,
+    quoteToken: ibtToken,
     pool: spectraPool,
   };
 
@@ -373,39 +371,34 @@ async function initializeRouter(testCase: TestCase): Promise<{
 
   const routerInput = {
     dexIndex: Dex.Spectra,
-    adapter: spectraAdapter.address,
+    adapter: spectraAdapter,
   };
   const router = await new MarginlyRouter__factory().connect(owner).deploy([routerInput]);
 
   await setTokenBalance(
-    ibtToken.address,
+    ibtToken.target,
     testCase.quoteToken.balanceSlot,
-    EthAddress.parse(user.address),
+    user.address,
     testCase.quoteToken.initialBalance
   );
 
-  await setTokenBalance(
-    ptToken.address,
-    testCase.ptToken.balanceSlot,
-    EthAddress.parse(user.address),
-    testCase.ptToken.initialBalance
-  );
+  await setTokenBalance(ptToken.target, testCase.ptToken.balanceSlot, user.address, testCase.ptToken.initialBalance);
 
-  expect(await ptToken.balanceOf(user.address)).to.be.eq(
+  expect(await ptToken.balanceOf(user)).to.be.eq(
     testCase.ptToken.initialBalance,
     `Wrong initial ${testCase.ptToken.symbol} balance`
   );
-  expect(await ibtToken.balanceOf(user.address)).to.be.eq(
+  expect(await ibtToken.balanceOf(user)).to.be.eq(
     testCase.quoteToken.initialBalance,
     `Wrong initial ${testCase.quoteToken.symbol} balance`
   );
 
   if (testCase.swIbt) {
     await setTokenBalance(
-      ibtToken.address,
+      ibtToken,
       testCase.quoteToken.balanceSlot,
-      EthAddress.parse(user.address),
-      testCase.quoteToken.initialBalance.add(testCase.swIbt.ibtTransferAmount)
+      user.address,
+      testCase.quoteToken.initialBalance + testCase.swIbt.ibtTransferAmount
     );
 
     await ibtToken.connect(user).transfer(testCase.swIbt.address, testCase.swIbt.ibtTransferAmount);
@@ -445,13 +438,13 @@ describe('SpectraAdapter', async () => {
           const ibtBalanceBefore = await showBalance(ibtToken, user.address, 'balance before:');
 
           const ibtTokenAmount = testCase.preMaturity.swapExactIbtToPt.ibtIn;
-          await ibtToken.connect(user).approve(router.address, ibtTokenAmount);
+          await ibtToken.connect(user).approve(router, ibtTokenAmount);
 
           const minPTAmount = testCase.preMaturity.swapExactIbtToPt.minPtOut;
 
           const tx = await router
             .connect(user)
-            .swapExactInput(swapCallData, ibtToken.address, ptToken.address, ibtTokenAmount, minPTAmount);
+            .swapExactInput(swapCallData, ibtToken, ptToken, ibtTokenAmount, minPTAmount);
           await showGasUsage(tx);
 
           const ptBalanceAfter = await showBalance(ptToken, user.address, 'pt balance After:');
@@ -465,8 +458,8 @@ describe('SpectraAdapter', async () => {
               amountIn: ibtBalanceBefore - ibtBalanceAfter,
               amountOut: ptBalanceAfter - ptBalanceBefore,
               isExactInput: true,
-              tokenIn: ibtToken.address,
-              tokenOut: ptToken.address,
+              tokenIn: ibtToken.target,
+              tokenOut: ptToken.target,
             },
             router,
             tx
@@ -482,10 +475,10 @@ describe('SpectraAdapter', async () => {
 
           const exactPtOut = testCase.preMaturity.swapIbtToExactPt.ptOut;
           const ibtMaxAmountIn = testCase.preMaturity.swapIbtToExactPt.maxIbtIn;
-          await ibtToken.connect(user).approve(router.address, ibtMaxAmountIn);
+          await ibtToken.connect(user).approve(router, ibtMaxAmountIn);
           const tx = await router
             .connect(user)
-            .swapExactOutput(swapCallData, ibtToken.address, ptToken.address, ibtMaxAmountIn, exactPtOut);
+            .swapExactOutput(swapCallData, ibtToken, ptToken, ibtMaxAmountIn, exactPtOut);
           await showGasUsage(tx);
 
           const ptBalanceAfter = await showBalance(ptToken, user.address, 'pt balance After:');
@@ -499,8 +492,8 @@ describe('SpectraAdapter', async () => {
               amountIn: ibtBalanceBefore - ibtBalanceAfter,
               amountOut: ptBalanceAfter - ptBalanceBefore,
               isExactInput: false,
-              tokenIn: ibtToken.address,
-              tokenOut: ptToken.address,
+              tokenIn: ibtToken.target,
+              tokenOut: ptToken.target,
             },
             router,
             tx
@@ -516,10 +509,8 @@ describe('SpectraAdapter', async () => {
 
           const ptIn = testCase.preMaturity.swapExactPtToIbt.ptIn;
           const minIbtOut = testCase.preMaturity.swapExactPtToIbt.minIbtOut;
-          await ptToken.connect(user).approve(router.address, ptIn);
-          const tx = await router
-            .connect(user)
-            .swapExactInput(swapCallData, ptToken.address, ibtToken.address, ptIn, minIbtOut);
+          await ptToken.connect(user).approve(router, ptIn);
+          const tx = await router.connect(user).swapExactInput(swapCallData, ptToken, ibtToken, ptIn, minIbtOut);
           await showGasUsage(tx);
 
           const ptBalanceAfter = await showBalance(ptToken, user.address, 'pt BalanceAfter:');
@@ -533,8 +524,8 @@ describe('SpectraAdapter', async () => {
               amountIn: ptBalanceBefore - ptBalanceAfter,
               amountOut: ibtBalanceAfter - ibtBalanceBefore,
               isExactInput: true,
-              tokenIn: ptToken.address,
-              tokenOut: ibtToken.address,
+              tokenIn: ptToken.target,
+              tokenOut: ibtToken.target,
             },
             router,
             tx
@@ -550,10 +541,8 @@ describe('SpectraAdapter', async () => {
 
           const ibtMinOut = testCase.preMaturity.swapPtToExactIbt.ibtOut;
           const maxPtIn = testCase.preMaturity.swapPtToExactIbt.maxPtIn;
-          await ptToken.connect(user).approve(router.address, maxPtIn);
-          const tx = await router
-            .connect(user)
-            .swapExactOutput(swapCallData, ptToken.address, ibtToken.address, maxPtIn, ibtMinOut);
+          await ptToken.connect(user).approve(router, maxPtIn);
+          const tx = await router.connect(user).swapExactOutput(swapCallData, ptToken, ibtToken, maxPtIn, ibtMinOut);
           await showGasUsage(tx);
 
           const ptBalanceAfter = await showBalance(ptToken, user.address, 'pt balanceAfter:');
@@ -567,8 +556,8 @@ describe('SpectraAdapter', async () => {
               amountIn: ptBalanceBefore - ptBalanceAfter,
               amountOut: ibtBalanceAfter - ibtBalanceBefore,
               isExactInput: false,
-              tokenIn: ptToken.address,
-              tokenOut: ibtToken.address,
+              tokenIn: ptToken.target,
+              tokenOut: ibtToken.target,
             },
             router,
             tx
@@ -598,10 +587,8 @@ describe('SpectraAdapter', async () => {
           const ptBalanceBefore = await showBalance(ptToken, user.address, 'balance Before:');
           const ibtBalanceBefore = await showBalance(ibtToken, user.address, 'balance before:');
 
-          await ibtToken.connect(user).approve(router.address, ibtBalanceBefore);
-          const tx = router
-            .connect(user)
-            .swapExactInput(swapCallData, ibtToken.address, ptToken.address, ibtBalanceBefore, 0);
+          await ibtToken.connect(user).approve(router, ibtBalanceBefore);
+          const tx = router.connect(user).swapExactInput(swapCallData, ibtToken, ptToken, ibtBalanceBefore, 0);
 
           await expect(tx).to.be.revertedWithCustomError(spectraAdapter, 'NotSupported');
 
@@ -618,10 +605,8 @@ describe('SpectraAdapter', async () => {
           const ptBalanceBefore = await showBalance(ptToken, user.address, 'balance Before:');
           const ibtBalanceBefore = await showBalance(ibtToken, user.address, 'balance before:');
 
-          await ibtToken.connect(user).approve(router.address, ibtBalanceBefore);
-          const tx = router
-            .connect(user)
-            .swapExactOutput(swapCallData, ibtToken.address, ptToken.address, ibtBalanceBefore, 1);
+          await ibtToken.connect(user).approve(router, ibtBalanceBefore);
+          const tx = router.connect(user).swapExactOutput(swapCallData, ibtToken, ptToken, ibtBalanceBefore, 1);
           await expect(tx).to.be.revertedWithCustomError(spectraAdapter, 'NotSupported');
 
           console.log('This swap is forbidden after maturity');
@@ -639,10 +624,8 @@ describe('SpectraAdapter', async () => {
 
           const ptIn = testCase.postMaturity.swapExactPtToIbt.ptIn;
           const minIbtOut = testCase.postMaturity.swapExactPtToIbt.minIbtOut;
-          await ptToken.connect(user).approve(router.address, ptIn);
-          const tx = await router
-            .connect(user)
-            .swapExactInput(swapCallData, ptToken.address, ibtToken.address, ptIn, minIbtOut);
+          await ptToken.connect(user).approve(router, ptIn);
+          const tx = await router.connect(user).swapExactInput(swapCallData, ptToken, ibtToken, ptIn, minIbtOut);
           await showGasUsage(tx);
 
           const ptBalanceAfter = await showBalance(ptToken, user.address, 'ptBalanceAfter:');
@@ -656,8 +639,8 @@ describe('SpectraAdapter', async () => {
               amountIn: ptBalanceBefore - ptBalanceAfter,
               amountOut: ibtBalanceAfter - ibtBalanceBefore,
               isExactInput: true,
-              tokenIn: ptToken.address,
-              tokenOut: ibtToken.address,
+              tokenIn: ptToken.target,
+              tokenOut: ibtToken.target,
             },
             router,
             tx
@@ -672,11 +655,9 @@ describe('SpectraAdapter', async () => {
           const ibtBalanceBefore = await showBalance(ibtToken, user.address, 'ibt balance before:');
 
           const ibtOut = testCase.postMaturity.swapPtToExactIbt.ibtOut;
-          await ptToken.connect(user).approve(router.address, ptBalanceBefore);
+          await ptToken.connect(user).approve(router, ptBalanceBefore);
           const maxPtIn = testCase.postMaturity.swapPtToExactIbt.maxPtIn;
-          const tx = await router
-            .connect(user)
-            .swapExactOutput(swapCallData, ptToken.address, ibtToken.address, maxPtIn, ibtOut);
+          const tx = await router.connect(user).swapExactOutput(swapCallData, ptToken, ibtToken, maxPtIn, ibtOut);
           await showGasUsage(tx);
 
           const ptBalanceAfter = await showBalance(ptToken, user.address, 'pt Balance After:');
@@ -690,8 +671,8 @@ describe('SpectraAdapter', async () => {
               amountIn: ptBalanceBefore - ptBalanceAfter,
               amountOut: ibtBalanceAfter - ibtBalanceBefore,
               isExactInput: false,
-              tokenIn: ptToken.address,
-              tokenOut: ibtToken.address,
+              tokenIn: ptToken.target,
+              tokenOut: ibtToken.target,
             },
             router,
             tx

@@ -1,4 +1,4 @@
-import { ContractTransaction } from 'ethers';
+import { Addressable, ContractTransaction, ContractTransactionResponse } from 'ethers';
 import { ERC20, MarginlyRouter } from '../../typechain-types';
 import { formatUnits } from 'ethers';
 import { reset } from '@nomicfoundation/hardhat-network-helpers';
@@ -44,12 +44,17 @@ export function constructSwap(dex: bigint[], ratios: bigint[]): bigint {
   return swap;
 }
 
-export async function showGasUsage(tx: ContractTransaction) {
+export async function showGasUsage(tx: ContractTransactionResponse) {
+  const txReceipt = await tx.wait();
   const warningLimit = 1_000_000;
-  console.log(`⛽ gas used ${txReceipt.gasUsed} ${txReceipt.gasUsed.gt(warningLimit) ? '!!! WARNING' : ''}`);
+  if (txReceipt === null) {
+    console.log('⛽ FAILED TO OBTAIN TX RECEIPT');
+    return;
+  }
+  console.log(`⛽ gas used ${txReceipt?.gasUsed} ${txReceipt?.gasUsed > warningLimit ? '!!! WARNING' : ''}`);
 }
 
-export async function showBalance(token: ERC20, account: string, startPhrase = ''): Promise<bigint> {
+export async function showBalance(token: ERC20, account: string | Addressable, startPhrase = ''): Promise<bigint> {
   const [balance, symbol, decimals] = await Promise.all([token.balanceOf(account), token.symbol(), token.decimals()]);
 
   console.log(`${startPhrase.replace('$symbol', symbol)} ${formatUnits(balance, decimals)} ${symbol}`);
@@ -81,8 +86,8 @@ export async function assertSwapEvent(
     isExactInput: boolean;
     amountIn: bigint;
     amountOut: bigint;
-    tokenIn: string;
-    tokenOut: string;
+    tokenIn: string | Addressable;
+    tokenOut: string | Addressable;
   },
   router: MarginlyRouter,
   tx: any
@@ -91,8 +96,8 @@ export async function assertSwapEvent(
   expect(swapEvent.args.isExactInput).to.be.eq(expectedValues.isExactInput);
   expect(swapEvent.args.amountIn).to.be.eq(expectedValues.amountIn);
   expect(swapEvent.args.amountOut).to.be.eq(expectedValues.amountOut);
-  expect(swapEvent.args.tokenIn.toLocaleLowerCase()).to.be.eq(expectedValues.tokenIn.toLocaleLowerCase());
-  expect(swapEvent.args.tokenOut.toLocaleLowerCase()).to.be.eq(expectedValues.tokenOut.toLocaleLowerCase());
+  expect(swapEvent.args.tokenIn.toLocaleLowerCase()).to.be.eq(expectedValues.tokenIn.toString().toLocaleLowerCase());
+  expect(swapEvent.args.tokenOut.toLocaleLowerCase()).to.be.eq(expectedValues.tokenOut.toString().toLocaleLowerCase());
 }
 
 async function getSwapEvent(router: MarginlyRouter, tx: any): Promise<any> {

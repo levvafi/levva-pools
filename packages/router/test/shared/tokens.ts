@@ -1,9 +1,8 @@
 // Addresses of tokens `balanceOf` storage slot.
 // Used to set ERC20 account balance on fork
 // internal details: https://docs.soliditylang.org/en/latest/internals/layout_in_storage.html#mappings-and-dynamic-arrays
-import { AbiCoder, keccak256 } from 'ethers';
+import { AbiCoder, Addressable, keccak256, toBeHex } from 'ethers';
 import { ethers } from 'hardhat';
-import { EthAddress } from '../../../common/src';
 
 export enum ArbMainnetERC20BalanceOfSlot {
   USDC = '0000000000000000000000000000000000000000000000000000000000000009',
@@ -36,32 +35,38 @@ export enum SonicERC20BalanceOfSlot {
   USDC = '0000000000000000000000000000000000000000000000000000000000000009',
 }
 
-function getAccountBalanceStorageSlot(account: EthAddress, tokenMappingSlot: string): string {
-  return keccak256('0x' + account.toString().slice(2).padStart(64, '0') + tokenMappingSlot);
+function getAccountBalanceStorageSlot(account: string, tokenMappingSlot: string): string {
+  return keccak256('0x' + account.slice(2).padStart(64, '0') + tokenMappingSlot);
 }
 
 export async function setTokenBalance(
-  tokenAddress: string,
+  tokenAddress: string | Addressable,
   balanceOfSlotAddress: string,
-  account: EthAddress,
+  account: string,
   newBalance: bigint
 ) {
   const balanceOfStorageSlot = getAccountBalanceStorageSlot(account, balanceOfSlotAddress);
 
   await ethers.provider.send('hardhat_setStorageAt', [
-    tokenAddress,
+    tokenAddress.toString(),
     balanceOfStorageSlot,
-    ethers.utils.hexlify(ethers.utils.zeroPad(newBalance.toHexString(), 32)),
+    toBeHex(newBalance, 32),
   ]);
 }
 
-export async function setTokenBalanceSonic(tokenAddress: string, i: number, account: string, newBalance: bigint) {
-  const userBalanceSlot = hexStripZeros(
-    keccak256(AbiCoder.defaultAbiCoder().encode(['address', 'uint'], [account, i]))
+export async function setTokenBalanceSonic(
+  tokenAddress: string | Addressable,
+  i: number,
+  account: string,
+  newBalance: bigint
+) {
+  const userBalanceSlot = toBeHex(
+    BigInt(keccak256(AbiCoder.defaultAbiCoder().encode(['address', 'uint'], [account, i]))),
+    32
   );
   await ethers.provider.send('hardhat_setStorageAt', [
     tokenAddress.toString(),
     userBalanceSlot,
-    ethers.utils.hexlify(ethers.utils.zeroPad(newBalance.toHexString(), 32)),
+    toBeHex(newBalance, 32),
   ]);
 }

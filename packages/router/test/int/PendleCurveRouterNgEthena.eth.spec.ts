@@ -8,9 +8,8 @@ import {
   PendleCurveRouterNgAdapter__factory,
 } from '../../typechain-types';
 import { constructSwap, Dex, resetFork, showGasUsage, SWAP_ONE, assertSwapEvent } from '../shared/utils';
-import { EthAddress } from '@marginly/common';
 import { formatUnits, parseUnits } from 'ethers';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { EthereumMainnetERC20BalanceOfSlot, setTokenBalance } from '../shared/tokens';
 
 async function initializeRouter(): Promise<{
@@ -68,20 +67,15 @@ async function initializeRouter(): Promise<{
 
   const routerInput = {
     dexIndex: Dex.PendleCurveRouter,
-    adapter: pendleCurveAdapter.address,
+    adapter: pendleCurveAdapter,
   };
   const router = await new MarginlyRouter__factory().connect(owner).deploy([routerInput]);
 
+  await setTokenBalance(usdcToken.target, EthereumMainnetERC20BalanceOfSlot.USDC, user.address, parseUnits('1000', 6));
   await setTokenBalance(
-    usdcToken.address,
-    EthereumMainnetERC20BalanceOfSlot.USDC,
-    EthAddress.parse(user.address),
-    parseUnits('1000', 6)
-  );
-  await setTokenBalance(
-    ptToken.address,
+    ptToken.target,
     EthereumMainnetERC20BalanceOfSlot.PTSUSDE,
-    EthAddress.parse(user.address),
+    user.address,
     parseUnits('1000', 18)
   );
 
@@ -124,38 +118,36 @@ describe('PendleCurveRouter PT-usde - usdc', () => {
     });
 
     it('USDC to pt-USDe exact input', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `pt-usde balance Before: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const usdcBalanceBefore = await usdc.balanceOf(user.address);
+      const usdcBalanceBefore = await usdc.balanceOf(user);
       console.log(
         `USDC balance before: ${formatUnits(usdcBalanceBefore, await usdc.decimals())} ${await usdc.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [BigInt(SWAP_ONE)]);
       const usdcSwapAmount = parseUnits('100', 6);
-      await usdc.connect(user).approve(router.address, usdcSwapAmount);
+      await usdc.connect(user).approve(router, usdcSwapAmount);
 
       const minPtAmountOut = parseUnits('90', 18); //parseUnits('900', 18);
 
-      const tx = await router
-        .connect(user)
-        .swapExactInput(swapCalldata, usdc.address, ptToken.address, usdcSwapAmount, minPtAmountOut);
+      const tx = await router.connect(user).swapExactInput(swapCalldata, usdc, ptToken, usdcSwapAmount, minPtAmountOut);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceAfter).to.be.greaterThan(ptBalanceBefore);
-      const usdcBalanceAfter = await usdc.balanceOf(user.address);
+      const usdcBalanceAfter = await usdc.balanceOf(user);
       console.log(`usdcBalanceAfter: ${formatUnits(usdcBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(usdcBalanceBefore - usdcBalanceAfter).to.be.lessThanOrEqual(usdcSwapAmount);
 
       await assertSwapEvent(
         {
           isExactInput: true,
-          tokenIn: usdc.address,
-          tokenOut: ptToken.address,
+          tokenIn: usdc.target,
+          tokenOut: ptToken.target,
           amountIn: usdcBalanceBefore - usdcBalanceAfter,
           amountOut: ptBalanceAfter - ptBalanceBefore,
         },
@@ -165,32 +157,30 @@ describe('PendleCurveRouter PT-usde - usdc', () => {
     });
 
     it('USDC to pt-USDe exact output', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `pt-USDe balance Before: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const usdcBalanceBefore = await usdc.balanceOf(user.address);
+      const usdcBalanceBefore = await usdc.balanceOf(user);
       console.log(
         `USDC balance before: ${formatUnits(usdcBalanceBefore, await usdc.decimals())} ${await usdc.symbol()}`
       );
-      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [BigInt(SWAP_ONE)]);
 
       const exactPtOut = parseUnits('500', 18);
       const usdcMaxIn = parseUnits('600', 6);
-      await usdc.connect(user).approve(router.address, usdcMaxIn);
-      const tx = await router
-        .connect(user)
-        .swapExactOutput(swapCalldata, usdc.address, ptToken.address, usdcMaxIn, exactPtOut);
+      await usdc.connect(user).approve(router, usdcMaxIn);
+      const tx = await router.connect(user).swapExactOutput(swapCalldata, usdc, ptToken, usdcMaxIn, exactPtOut);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceAfter - ptBalanceBefore).to.be.eq(exactPtOut);
-      const usdcBalanceAfter = await usdc.balanceOf(user.address);
+      const usdcBalanceAfter = await usdc.balanceOf(user);
       console.log(`usdcBalanceAfter: ${formatUnits(usdcBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(usdcBalanceBefore).to.be.greaterThan(usdcBalanceAfter);
 
-      const usd0PlusPlusOnAdapter = await usde.balanceOf(pendleCurveAdapter.address);
+      const usd0PlusPlusOnAdapter = await usde.balanceOf(pendleCurveAdapter);
       console.log(
         `usde stays on adapter: ${formatUnits(usd0PlusPlusOnAdapter, await usde.decimals())} ${await usde.symbol()}`
       );
@@ -198,8 +188,8 @@ describe('PendleCurveRouter PT-usde - usdc', () => {
       await assertSwapEvent(
         {
           isExactInput: false,
-          tokenIn: usdc.address,
-          tokenOut: ptToken.address,
+          tokenIn: usdc.target,
+          tokenOut: ptToken.target,
           amountIn: usdcBalanceBefore - usdcBalanceAfter,
           amountOut: ptBalanceAfter - ptBalanceBefore,
         },
@@ -209,30 +199,30 @@ describe('PendleCurveRouter PT-usde - usdc', () => {
     });
 
     it('pt-USDe to USDC exact input', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const usdcBalanceBefore = await usdc.balanceOf(user.address);
+      const usdcBalanceBefore = await usdc.balanceOf(user);
       console.log(`usdcBalanceBefore: ${formatUnits(usdcBalanceBefore, await usdc.decimals())} ${await usdc.symbol()}`);
-      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [BigInt(SWAP_ONE)]);
       const ptIn = ptBalanceBefore;
-      await ptToken.connect(user).approve(router.address, ptIn);
-      const tx = await router.connect(user).swapExactInput(swapCalldata, ptToken.address, usdc.address, ptIn, 0);
+      await ptToken.connect(user).approve(router, ptIn);
+      const tx = await router.connect(user).swapExactInput(swapCalldata, ptToken, usdc, ptIn, 0);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceBefore - ptBalanceAfter).to.be.eq(ptIn);
-      const usdcBalanceAfter = await usdc.balanceOf(user.address);
+      const usdcBalanceAfter = await usdc.balanceOf(user);
       console.log(`usdcBalanceAfter: ${formatUnits(usdcBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(usdcBalanceAfter).to.be.greaterThan(usdcBalanceBefore);
 
       await assertSwapEvent(
         {
           isExactInput: true,
-          tokenIn: ptToken.address,
-          tokenOut: usdc.address,
+          tokenIn: ptToken.target,
+          tokenOut: usdc.target,
           amountIn: ptBalanceBefore - ptBalanceAfter,
           amountOut: usdcBalanceAfter - usdcBalanceBefore,
         },
@@ -242,29 +232,27 @@ describe('PendleCurveRouter PT-usde - usdc', () => {
     });
 
     it('pt-USDe to USDC exact output', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const usdcBalanceBefore = await usdc.balanceOf(user.address);
+      const usdcBalanceBefore = await usdc.balanceOf(user);
       console.log(`usdcBalanceBefore: ${formatUnits(usdcBalanceBefore, await usdc.decimals())} ${await usdc.symbol()}`);
-      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [BigInt(SWAP_ONE)]);
       const usdcOut = parseUnits('500', 6);
       const maxPtIn = parseUnits('600', 18);
-      await ptToken.connect(user).approve(router.address, maxPtIn);
-      const tx = await router
-        .connect(user)
-        .swapExactOutput(swapCalldata, ptToken.address, usdc.address, maxPtIn, usdcOut);
+      await ptToken.connect(user).approve(router, maxPtIn);
+      const tx = await router.connect(user).swapExactOutput(swapCalldata, ptToken, usdc, maxPtIn, usdcOut);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
-      const usdcBalanceAfter = await usdc.balanceOf(user.address);
+      const usdcBalanceAfter = await usdc.balanceOf(user);
       console.log(`usdcBalanceAfter: ${formatUnits(usdcBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(usdcBalanceAfter - usdcBalanceBefore).to.be.eq(usdcOut);
 
-      const usdcBalanceOnAdapter = await usdc.balanceOf(pendleCurveAdapter.address);
+      const usdcBalanceOnAdapter = await usdc.balanceOf(pendleCurveAdapter);
       console.log(
         `usdcBalanceOnAdapter: ${formatUnits(usdcBalanceOnAdapter, await usdc.decimals())} ${await usdc.symbol()}`
       );
@@ -272,8 +260,8 @@ describe('PendleCurveRouter PT-usde - usdc', () => {
       await assertSwapEvent(
         {
           isExactInput: false,
-          tokenIn: ptToken.address,
-          tokenOut: usdc.address,
+          tokenIn: ptToken.target,
+          tokenOut: usdc.target,
           amountIn: ptBalanceBefore - ptBalanceAfter,
           amountOut: usdcBalanceAfter - usdcBalanceBefore,
         },
@@ -309,85 +297,83 @@ describe('PendleCurveRouter PT-usde - usdc', () => {
     });
 
     it('USDC to pt-USDe exact input, forbidden', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const sUsdeBalanceBefore = await usdc.balanceOf(user.address);
+      const sUsdeBalanceBefore = await usdc.balanceOf(user);
       console.log(
         `usdcBalanceBefore: ${formatUnits(sUsdeBalanceBefore, await usdc.decimals())} ${await usdc.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [SWAP_ONE]);
-      await usdc.connect(user).approve(router.address, sUsdeBalanceBefore);
+      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [BigInt(SWAP_ONE)]);
+      await usdc.connect(user).approve(router, sUsdeBalanceBefore);
       const tx = router
         .connect(user)
-        .swapExactInput(swapCalldata, usdc.address, ptToken.address, sUsdeBalanceBefore, (sUsdeBalanceBefore * 9) / 10);
+        .swapExactInput(swapCalldata, usdc, ptToken, sUsdeBalanceBefore, (sUsdeBalanceBefore * 9n) / 10n);
 
       await expect(tx).to.be.revertedWithCustomError(pendleCurveAdapter, 'NotSupported');
 
       console.log('This swap is forbidden after maturity');
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceAfter).to.be.eq(ptBalanceBefore);
-      const sUsdeBalanceAfter = await usdc.balanceOf(user.address);
+      const sUsdeBalanceAfter = await usdc.balanceOf(user);
       console.log(`usdcBalanceAfter: ${formatUnits(sUsdeBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(sUsdeBalanceAfter).to.be.eq(sUsdeBalanceBefore);
     });
 
     it('USDC to pt-USDe exact output, forbidden', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const usdcBalanceBefore = await usdc.balanceOf(user.address);
+      const usdcBalanceBefore = await usdc.balanceOf(user);
       console.log(
         `sUsdeBalanceBefore: ${formatUnits(usdcBalanceBefore, await usdc.decimals())} ${await usdc.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [SWAP_ONE]);
-      const ptOut = usdcBalanceBefore / 2;
-      await usdc.connect(user).approve(router.address, usdcBalanceBefore);
-      const tx = router
-        .connect(user)
-        .swapExactOutput(swapCalldata, usdc.address, ptToken.address, usdcBalanceBefore, ptOut);
+      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [BigInt(SWAP_ONE)]);
+      const ptOut = usdcBalanceBefore / 2n;
+      await usdc.connect(user).approve(router, usdcBalanceBefore);
+      const tx = router.connect(user).swapExactOutput(swapCalldata, usdc, ptToken, usdcBalanceBefore, ptOut);
       await expect(tx).to.be.revertedWithCustomError(pendleCurveAdapter, 'NotSupported');
 
       console.log('This swap is forbidden after maturity');
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceAfter).to.be.eq(ptBalanceBefore);
-      const usdcBalanceAfter = await usdc.balanceOf(user.address);
+      const usdcBalanceAfter = await usdc.balanceOf(user);
       console.log(`usdcBalanceAfter: ${formatUnits(usdcBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(usdcBalanceAfter).to.be.eq(usdcBalanceBefore);
     });
 
     it('pt-USDe to USDC exact input', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const usdcBalanceBefore = await usdc.balanceOf(user.address);
+      const usdcBalanceBefore = await usdc.balanceOf(user);
       console.log(`usdcBalanceBefore: ${formatUnits(usdcBalanceBefore, await usdc.decimals())} ${await usdc.symbol()}`);
 
-      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [BigInt(SWAP_ONE)]);
       const ptIn = ptBalanceBefore;
-      await ptToken.connect(user).approve(router.address, ptIn);
-      const tx = await router.connect(user).swapExactInput(swapCalldata, ptToken.address, usdc.address, ptIn, 0);
+      await ptToken.connect(user).approve(router, ptIn);
+      const tx = await router.connect(user).swapExactInput(swapCalldata, ptToken, usdc, ptIn, 0);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceBefore - ptBalanceAfter).to.be.eq(ptIn);
-      const usdcBalanceAfter = await usdc.balanceOf(user.address);
+      const usdcBalanceAfter = await usdc.balanceOf(user);
       console.log(`usdcBalanceAfter: ${formatUnits(usdcBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(usdcBalanceAfter).to.be.greaterThan(usdcBalanceBefore);
 
       await assertSwapEvent(
         {
           isExactInput: true,
-          tokenIn: ptToken.address,
-          tokenOut: usdc.address,
+          tokenIn: ptToken.target,
+          tokenOut: usdc.target,
           amountIn: ptBalanceBefore - ptBalanceAfter,
           amountOut: usdcBalanceAfter - usdcBalanceBefore,
         },
@@ -397,34 +383,32 @@ describe('PendleCurveRouter PT-usde - usdc', () => {
     });
 
     it('pt-USDe to USDC exact output', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const usdcBalanceBefore = await usdc.balanceOf(user.address);
+      const usdcBalanceBefore = await usdc.balanceOf(user);
       console.log(`usdcBalanceBefore: ${formatUnits(usdcBalanceBefore, await usdc.decimals())} ${await usdc.symbol()}`);
 
-      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurveRouter], [BigInt(SWAP_ONE)]);
       const usdcOut = parseUnits('900', 6);
-      await ptToken.connect(user).approve(router.address, ptBalanceBefore);
+      await ptToken.connect(user).approve(router, ptBalanceBefore);
       const maxPtIn = parseUnits('1000', 18);
-      const tx = await router
-        .connect(user)
-        .swapExactOutput(swapCalldata, ptToken.address, usdc.address, maxPtIn, usdcOut);
+      const tx = await router.connect(user).swapExactOutput(swapCalldata, ptToken, usdc, maxPtIn, usdcOut);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
-      const usdcBalanceAfter = await usdc.balanceOf(user.address);
+      const usdcBalanceAfter = await usdc.balanceOf(user);
       console.log(`usdcBalanceAfter: ${formatUnits(usdcBalanceAfter, await usdc.decimals())} ${await usdc.symbol()}`);
       expect(usdcBalanceAfter - usdcBalanceBefore).to.be.eq(usdcOut);
 
       await assertSwapEvent(
         {
           isExactInput: false,
-          tokenIn: ptToken.address,
-          tokenOut: usdc.address,
+          tokenIn: ptToken.target,
+          tokenOut: usdc.target,
           amountIn: ptBalanceBefore - ptBalanceAfter,
           amountOut: usdcBalanceAfter - usdcBalanceBefore,
         },
