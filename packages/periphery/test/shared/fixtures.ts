@@ -1,7 +1,6 @@
 import { ethers } from 'hardhat';
 import { time } from '@nomicfoundation/hardhat-network-helpers';
 import {
-  SwapPoolRegistry,
   TestUniswapPool,
   TestUniswapFactory,
   TestUniswapV3Factory,
@@ -114,25 +113,6 @@ export const PythIds = {
   BTC: '0xe62df6c8b4a85fe1a67db44dc12de5db330f7ac66b72dc658afedf0f4a415b43',
   ETH: '0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace',
 };
-
-export async function createUniswapV3Factory(): Promise<TestUniswapV3Factory> {
-  const contractFactory = await ethers.getContractFactory('TestUniswapV3Factory');
-  return await contractFactory.deploy(initialPools);
-}
-
-export async function createSwapPoolRegistry(): Promise<{
-  canonicalFactory: TestUniswapV3Factory;
-  swapPoolRegistry: SwapPoolRegistry;
-}> {
-  const canonicalFactory = await createUniswapV3Factory();
-  const contractFactory = await ethers.getContractFactory('SwapPoolRegistry');
-  const swapPoolRegistry = await contractFactory.deploy(canonicalFactory, []);
-
-  return {
-    canonicalFactory,
-    swapPoolRegistry,
-  };
-}
 
 export type OracleData = {
   oracle: UniswapV3TickOracle;
