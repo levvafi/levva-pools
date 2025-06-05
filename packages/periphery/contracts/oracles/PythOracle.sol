@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
-import '@openzeppelin/contracts/security/Pausable.sol';
+import '@openzeppelin/contracts/utils/Pausable.sol';
 import '@pythnetwork/pyth-sdk-solidity/IPyth.sol';
 import '@pythnetwork/pyth-sdk-solidity/PythStructs.sol';
 
@@ -21,7 +21,7 @@ contract PythOracle is IPriceOracle, CompositeOracle, Ownable2Step, Pausable {
   IPyth public immutable pyth;
   mapping(address => mapping(address => OracleParams)) public getParams;
 
-  constructor(address _pyth) {
+  constructor(address _pyth) Ownable(msg.sender) {
     pyth = IPyth(_pyth);
   }
 

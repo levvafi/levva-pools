@@ -29,7 +29,7 @@ contract UniswapV3TickOracleDouble is IPriceOracle, Ownable2Step {
   mapping(address => mapping(address => OracleParams)) public getParams;
   address public immutable factory;
 
-  constructor(address _factory) {
+  constructor(address _factory) Ownable(msg.sender) {
     factory = _factory;
   }
 

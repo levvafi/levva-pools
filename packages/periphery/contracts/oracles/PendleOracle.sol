@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
-import '@pendle/core-v2/contracts/oracles/PendlePtLpOracle.sol';
+import '@pendle/core-v2/contracts/interfaces/IPPYLpOracle.sol';
 import '@pendle/core-v2/contracts/core/Market/v3/PendleMarketV3.sol';
 import '@marginly/contracts/contracts/interfaces/IPriceOracle.sol';
 
@@ -22,7 +22,7 @@ contract PendleOracle is IPriceOracle, Ownable2Step {
   uint8 private constant PRICE_DECIMALS = 18;
   uint256 private constant PRICE_ONE = 10 ** PRICE_DECIMALS;
 
-  IPPtLpOracle public immutable pendle;
+  IPPYLpOracle public immutable pendle;
   mapping(address => mapping(address => OracleParams)) public getParams;
 
   error ZeroPrice();
@@ -33,9 +33,9 @@ contract PendleOracle is IPriceOracle, Ownable2Step {
   error UnknownPair();
   error PendlePtLpOracleIsNotInitialized(uint16);
 
-  constructor(address _pendle) {
+  constructor(address _pendle) Ownable(msg.sender) {
     if (_pendle == address(0)) revert ZeroAddress();
-    pendle = IPPtLpOracle(_pendle);
+    pendle = IPPYLpOracle(_pendle);
   }
 
   /// @notice Create token pair oracle price params. Can be called only once per pair.

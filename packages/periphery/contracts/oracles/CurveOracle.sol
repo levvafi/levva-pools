@@ -48,6 +48,8 @@ contract CurveOracle is IPriceOracle, Ownable2Step {
   uint256 private constant PRICE_DECIMALS = 18;
   mapping(address => mapping(address => OracleParams)) public getParams;
 
+  constructor() Ownable(msg.sender) {}
+
   function addPool(
     address pool,
     address quoteToken,

@@ -20,6 +20,8 @@ contract PriceOracleProxy is IPriceOracle, Ownable2Step {
 
   mapping(address => mapping(address => OracleParams)) public getParams;
 
+  constructor() Ownable(msg.sender) {}
+
   function setPair(
     address quoteToken,
     address baseToken,

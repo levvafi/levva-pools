@@ -27,6 +27,8 @@ contract EulerPriceOracle is IPriceOracle, Ownable2Step {
     error EulerPriceOracle__ZeroPrice();
     error EulerPriceOracle__NotInitialized(address quoteToken, address baseToken);
 
+    constructor() Ownable(msg.sender) {}
+
     //@dev eulerPriceOracle must be bidirectional
     function addPair(address quoteToken, address baseToken, address eulerPriceOracle) public onlyOwner {
         uint256 priceX96 = IEulerPriceOracle(eulerPriceOracle).getQuote(X96ONE, baseToken, quoteToken);

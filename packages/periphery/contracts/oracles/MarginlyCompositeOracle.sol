@@ -25,6 +25,8 @@ contract MarginlyCompositeOracle is IPriceOracle, Ownable2Step {
 
   mapping(address => mapping(address => OracleParams)) public getParams;
 
+  constructor() Ownable(msg.sender) {}
+
   function _validatePriceOracle(IPriceOracle priceOracle, address quoteToken, address baseToken) private view {
     if (priceOracle.getBalancePrice(quoteToken, baseToken) == 0) revert ZeroPrice();
     if (priceOracle.getBalancePrice(baseToken, quoteToken) == 0) revert ZeroPrice();

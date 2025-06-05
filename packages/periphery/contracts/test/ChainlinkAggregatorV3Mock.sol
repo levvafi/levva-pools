@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import '@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol';
+import '@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol';
 import '@openzeppelin/contracts/access/AccessControl.sol';
 
 contract ChainlinkAggregatorV3Mock is AggregatorV3Interface, AccessControl {
@@ -14,8 +14,8 @@ contract ChainlinkAggregatorV3Mock is AggregatorV3Interface, AccessControl {
   event SetPrice(uint256 price);
 
   constructor(address oracle, uint8 _decimals) {
-    _setupRole(ORACLE_ROLE, oracle);
-    _setupRole(ORACLE_ROLE, msg.sender);
+    _grantRole(ORACLE_ROLE, oracle);
+    _grantRole(ORACLE_ROLE, msg.sender);
     decimals = _decimals;
     priceDenominator = 10 ** _decimals;
   }

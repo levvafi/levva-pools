@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.28;
 
-import '@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol';
+import '@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol';
 
 contract MockChainlink is AggregatorV3Interface {
   error NotImplemented();

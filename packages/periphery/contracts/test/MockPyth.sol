@@ -17,15 +17,15 @@ contract MockPyth is IPyth {
     return prices[id];
   }
 
-  function getValidTimePeriod() external view returns (uint validTimePeriod) {
+  function getValidTimePeriod() external pure returns (uint) {
     revert NotImplemented();
   }
 
-  function getEmaPrice(bytes32 id) external view returns (PythStructs.Price memory price) {
+  function getEmaPrice(bytes32) external pure returns (PythStructs.Price memory) {
     revert NotImplemented();
   }
 
-  function getPriceUnsafe(bytes32 id) external view returns (PythStructs.Price memory price) {
+  function getPriceUnsafe(bytes32) external pure returns (PythStructs.Price memory) {
     revert NotImplemented();
   }
 
@@ -34,45 +34,57 @@ contract MockPyth is IPyth {
     if (price.publishTime < block.timestamp - age) revert StalePrice();
   }
 
-  function getEmaPriceUnsafe(bytes32 id) external view returns (PythStructs.Price memory price) {
+  function getEmaPriceUnsafe(bytes32) external pure returns (PythStructs.Price memory) {
     revert NotImplemented();
   }
 
-  function getEmaPriceNoOlderThan(bytes32 id, uint age) external view returns (PythStructs.Price memory price) {
+  function getEmaPriceNoOlderThan(bytes32, uint) external pure returns (PythStructs.Price memory) {
     revert NotImplemented();
   }
 
-  function updatePriceFeeds(bytes[] calldata updateData) external payable {
+  function updatePriceFeeds(bytes[] calldata) external payable {
     revert NotImplemented();
   }
 
-  function updatePriceFeedsIfNecessary(
-    bytes[] calldata updateData,
-    bytes32[] calldata priceIds,
-    uint64[] calldata publishTimes
-  ) external payable {
+  function updatePriceFeedsIfNecessary(bytes[] calldata, bytes32[] calldata, uint64[] calldata) external payable {
     revert NotImplemented();
   }
 
-  function getUpdateFee(bytes[] calldata updateData) external view returns (uint feeAmount) {
+  function getUpdateFee(bytes[] calldata) external pure returns (uint) {
     revert NotImplemented();
   }
 
   function parsePriceFeedUpdates(
-    bytes[] calldata updateData,
-    bytes32[] calldata priceIds,
-    uint64 minPublishTime,
-    uint64 maxPublishTime
-  ) external payable returns (PythStructs.PriceFeed[] memory priceFeeds) {
+    bytes[] calldata,
+    bytes32[] calldata,
+    uint64,
+    uint64
+  ) external payable returns (PythStructs.PriceFeed[] memory) {
     revert NotImplemented();
   }
 
   function parsePriceFeedUpdatesUnique(
-    bytes[] calldata updateData,
-    bytes32[] calldata priceIds,
-    uint64 minPublishTime,
-    uint64 maxPublishTime
-  ) external payable returns (PythStructs.PriceFeed[] memory priceFeeds) {
+    bytes[] calldata,
+    bytes32[] calldata,
+    uint64,
+    uint64
+  ) external payable returns (PythStructs.PriceFeed[] memory) {
+    revert NotImplemented();
+  }
+
+  function parseTwapPriceFeedUpdates(
+    bytes[] calldata,
+    bytes32[] calldata
+  ) external payable override returns (PythStructs.TwapPriceFeed[] memory) {
+    revert NotImplemented();
+  }
+
+  function parsePriceFeedUpdatesWithSlots(
+    bytes[] calldata,
+    bytes32[] calldata,
+    uint64,
+    uint64
+  ) external payable override returns (PythStructs.PriceFeed[] memory, uint64[] memory) {
     revert NotImplemented();
   }
 }

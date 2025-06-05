@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import '@pendle/core-v2/contracts/interfaces/IPPtLpOracle.sol';
+import '@pendle/core-v2/contracts/interfaces/IPPYLpOracle.sol';
 
-contract TestPendlePtLpOracle is IPPtLpOracle {
+contract TestPendlePtLpOracle is IPPYLpOracle {
+  error NotImplemented();
+
   uint256 ptToAssetRate;
   uint256 lpToAssetRate;
   uint256 ptToSyRate;
@@ -43,5 +45,17 @@ contract TestPendlePtLpOracle is IPPtLpOracle {
     increaseCardinalityRequired = false;
     cardinalityRequired = 0;
     oldestObservationSatisfied = true;
+  }
+
+  function getYtToAssetRate(address, uint32) external pure override returns (uint256) {
+    revert NotImplemented();
+  }
+
+  function getYtToSyRate(address, uint32) external pure override returns (uint256) {
+    revert NotImplemented();
+  }
+
+  function blockCycleNumerator() external pure override returns (uint16) {
+    revert NotImplemented();
   }
 }
