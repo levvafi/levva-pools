@@ -1,10 +1,9 @@
 import assert = require('assert');
-import { formatUnits, parseUnits } from 'ethers'
+import { parseUnits, ZeroAddress } from 'ethers';
 import { SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
-import { ZERO_ADDRESS } from '../utils/const';
 import { constructSwap, Dex, SWAP_ONE } from '../utils/chain-ops';
-import { BigNumber, ethers } from 'ethers';
+import { ethers } from 'ethers';
 
 export async function routerSwaps(sut: SystemUnderTest) {
   logger.info(`Starting routerSwaps test suite`);
@@ -13,11 +12,11 @@ export async function routerSwaps(sut: SystemUnderTest) {
   let currentWethBalance = await weth.balanceOf(treasury.address);
   let currentUsdcBalance = await usdc.balanceOf(treasury.address);
 
-  const dexShouldFail = new Set<number>([Dex.DodoV1]);
+  const dexShouldFail = new Set<bigint>([Dex.DodoV1]);
 
   for (const dexInfo of Object.entries(Dex)) {
     const adapterAddress = await swapRouter.adapters(dexInfo[1]);
-    if (adapterAddress == ZERO_ADDRESS) continue;
+    if (adapterAddress == ZeroAddress) continue;
 
     // balancer adapter abi is used since it has both getPool and balancerVault methods
     const adapter = new ethers.Contract(
@@ -25,10 +24,9 @@ export async function routerSwaps(sut: SystemUnderTest) {
       require(`@marginly/router/artifacts/contracts/adapters/BalancerAdapter.sol/BalancerAdapter.json`).abi,
       provider.provider
     );
-    const dexPoolAddress =
-      dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth.address, usdc.address);
+    const dexPoolAddress = dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth, usdc);
 
-    if (dexPoolAddress == ZERO_ADDRESS) continue;
+    if (dexPoolAddress == ZeroAddress) continue;
     logger.info(`Testing ${dexInfo[0]} dex`);
 
     const dex = constructSwap([dexInfo[1]], [SWAP_ONE]);
@@ -44,12 +42,12 @@ export async function routerSwaps(sut: SystemUnderTest) {
       const oldPoolWethBalance = await weth.balanceOf(dexPoolAddress);
       const oldPoolUsdcBalance = await usdc.balanceOf(dexPoolAddress);
 
-      await weth.connect(treasury).approve(swapRouter.address, wethAmount);
+      await weth.connect(treasury).approve(swapRouter, wethAmount);
       if (dexShouldFail.has(dexInfo[1])) {
         let failed = false;
         try {
           await (
-            await swapRouter.swapExactOutput(dex, weth.address, usdc.address, wethAmount, usdcAmount, {
+            await swapRouter.swapExactOutput(dex, weth, usdc.address, wethAmount, usdcAmount, {
               gasLimit: 1_000_000,
             })
           ).wait();
@@ -60,29 +58,29 @@ export async function routerSwaps(sut: SystemUnderTest) {
         assert(failed);
       } else {
         await (
-          await swapRouter.swapExactOutput(dex, weth.address, usdc.address, wethAmount, usdcAmount, {
+          await swapRouter.swapExactOutput(dex, weth, usdc.address, wethAmount, usdcAmount, {
             gasLimit: 1_000_000,
           })
         ).wait();
-  
+
         currentWethBalance = await weth.balanceOf(treasury.address);
         currentUsdcBalance = await usdc.balanceOf(treasury.address);
-  
+
         const currentPoolWethBalance = await weth.balanceOf(dexPoolAddress);
         const currentPoolUsdcBalance = await usdc.balanceOf(dexPoolAddress);
-  
+
         logger.info(`    Checking weth balances`);
-        const poolWethDelta = currentPoolWethBalance-(oldPoolWethBalance);
-        const wethDelta = oldWethBalance-(currentWethBalance);
-        assert(wethDelta.gte(poolWethDelta));
-        assert(!wethDelta.eq(0));
-        assert(wethDelta.lte(wethAmount));
-  
+        const poolWethDelta = currentPoolWethBalance - oldPoolWethBalance;
+        const wethDelta = oldWethBalance - currentWethBalance;
+        assert(wethDelta >= poolWethDelta);
+        assert(wethDelta != 0n);
+        assert(wethDelta <= wethAmount);
+
         logger.info(`    Checking usdc balances`);
-        const poolUsdcDelta = oldPoolUsdcBalance-(currentPoolUsdcBalance);
-        const usdcDelta = currentUsdcBalance-(oldUsdcBalance);
-        assert(usdcDelta.gte(poolUsdcDelta));
-        assert(usdcDelta.eq(usdcAmount));
+        const poolUsdcDelta = oldPoolUsdcBalance - currentPoolUsdcBalance;
+        const usdcDelta = currentUsdcBalance - oldUsdcBalance;
+        assert(usdcDelta >= poolUsdcDelta);
+        assert(usdcDelta == usdcAmount);
       }
     }
 
@@ -97,40 +95,40 @@ export async function routerSwaps(sut: SystemUnderTest) {
       const oldPoolWethBalance = await weth.balanceOf(dexPoolAddress);
       const oldPoolUsdcBalance = await usdc.balanceOf(dexPoolAddress);
 
-      await usdc.connect(treasury).approve(swapRouter.address, usdcAmount);
+      await usdc.connect(treasury).approve(swapRouter, usdcAmount);
       await (
-        await swapRouter.swapExactInput(dex, usdc.address, weth.address, usdcAmount, wethAmount, {
+        await swapRouter.swapExactInput(dex, usdc, weth, usdcAmount, wethAmount, {
           gasLimit: 1_000_000,
         })
       ).wait();
 
-      currentWethBalance = await weth.balanceOf(treasury.address);
-      currentUsdcBalance = await usdc.balanceOf(treasury.address);
+      currentWethBalance = await weth.balanceOf(treasury);
+      currentUsdcBalance = await usdc.balanceOf(treasury);
 
       const currentPoolWethBalance = await weth.balanceOf(dexPoolAddress);
       const currentPoolUsdcBalance = await usdc.balanceOf(dexPoolAddress);
 
       logger.info(`    Checking weth balances`);
-      const poolWethDelta = oldPoolWethBalance-(currentPoolWethBalance);
-      const wethDelta = currentWethBalance-(oldWethBalance);
+      const poolWethDelta = oldPoolWethBalance - currentPoolWethBalance;
+      const wethDelta = currentWethBalance - oldWethBalance;
 
       if (dexInfo[1] != Dex.DodoV2 && dexInfo[1] != Dex.DodoV1) {
         // DODO transfer fee out from the pool, so poolWethDelta > wethDelta
-        assert(wethDelta.eq(poolWethDelta));
+        assert(wethDelta == poolWethDelta);
       }
-      assert(wethDelta.gte(wethAmount));
+      assert(wethDelta >= wethAmount);
 
       logger.info(`    Checking usdc balances`);
-      const poolUsdcDelta = currentPoolUsdcBalance-(oldPoolUsdcBalance);
-      const usdcDelta = oldUsdcBalance-(currentUsdcBalance);
-     
+      const poolUsdcDelta = currentPoolUsdcBalance - oldPoolUsdcBalance;
+      const usdcDelta = oldUsdcBalance - currentUsdcBalance;
+
       if (dexInfo[1] == Dex.DodoV1) {
         // In case of Dodo V1 exactInput swap usdcDelta = poolUsdcDelta + uniswapV3UsdcDelta
-        assert(usdcDelta.gte(poolUsdcDelta));
+        assert(usdcDelta >= poolUsdcDelta);
       } else {
-        assert(usdcDelta.eq(poolUsdcDelta));
+        assert(usdcDelta == poolUsdcDelta);
       }
-      assert(usdcDelta.eq(usdcAmount));
+      assert(usdcDelta == usdcAmount);
     }
   }
 }
@@ -146,7 +144,7 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
 
   for (const dexInfo of Object.entries(Dex)) {
     const adapterAddress = await swapRouter.adapters(dexInfo[1]);
-    if (adapterAddress == ZERO_ADDRESS || dexInfo[1] == Dex.DodoV1) continue;
+    if (adapterAddress == ZeroAddress || dexInfo[1] == Dex.DodoV1) continue;
 
     // balancer adapter abi is used since it has both getPool and balancerVault methods
     const adapter = new ethers.Contract(
@@ -158,7 +156,7 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
       dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth.address, usdc.address);
 
     const element =
-      dexPoolAddress != ZERO_ADDRESS
+      dexPoolAddress != ZeroAddress
         ? { dexName: dexInfo[0], dexIndex: dexInfo[1], address: dexPoolAddress }
         : undefined;
     dexs.push(element);
@@ -219,22 +217,22 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
     const currentSecondPoolUsdcBalance = await usdc.balanceOf(dexs[secondDex]!.address);
 
     logger.info(`    Checking weth balances`);
-    const firstPoolWethDelta = currentFirstPoolWethBalance-(oldFirstPoolWethBalance);
-    const secondPoolWethDelta = currentSecondPoolWethBalance-(oldSecondPoolWethBalance);
-    const wethDelta = oldWethBalance-(currentWethBalance);
+    const firstPoolWethDelta = currentFirstPoolWethBalance - oldFirstPoolWethBalance;
+    const secondPoolWethDelta = currentSecondPoolWethBalance - oldSecondPoolWethBalance;
+    const wethDelta = oldWethBalance - currentWethBalance;
     assert(wethDelta.gte(firstPoolWethDelta.add(secondPoolWethDelta)));
-    assert(!wethDelta.eq(0));
+    assert(!wethDelta == 0);
     assert(wethDelta.lte(wethAmount));
 
     logger.info(`    Checking usdc balances`);
-    const firstPoolUsdcDelta = oldFirstPoolUsdcBalance-(currentFirstPoolUsdcBalance);
-    const secondPoolUsdcDelta = oldSecondPoolUsdcBalance-(currentSecondPoolUsdcBalance);
-    const usdcDelta = currentUsdcBalance-(oldUsdcBalance);
+    const firstPoolUsdcDelta = oldFirstPoolUsdcBalance - currentFirstPoolUsdcBalance;
+    const secondPoolUsdcDelta = oldSecondPoolUsdcBalance - currentSecondPoolUsdcBalance;
+    const usdcDelta = currentUsdcBalance - oldUsdcBalance;
     if (dexs[firstDex]?.dexIndex! != Dex.DodoV2 && dexs[secondDex]?.dexIndex! != Dex.DodoV2) {
       // DODO v2 transfer fee out from the pool, so poolUsdcDelta > usdcDelta
-      assert(usdcDelta.eq(firstPoolUsdcDelta.add(secondPoolUsdcDelta)));
+      assert(usdcDelta == firstPoolUsdcDelta.add(secondPoolUsdcDelta));
     }
-    assert(usdcDelta.eq(usdcAmount));
+    assert(usdcDelta == usdcAmount);
   }
 
   {
@@ -268,21 +266,21 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
     const currentSecondPoolUsdcBalance = await usdc.balanceOf(dexs[secondDex]!.address);
 
     logger.info(`    Checking weth balances`);
-    const firstPoolWethDelta = oldFirstPoolWethBalance-(currentFirstPoolWethBalance);
-    const secondPoolWethDelta = oldSecondPoolWethBalance-(currentSecondPoolWethBalance);
-    const wethDelta = currentWethBalance-(oldWethBalance);
+    const firstPoolWethDelta = oldFirstPoolWethBalance - currentFirstPoolWethBalance;
+    const secondPoolWethDelta = oldSecondPoolWethBalance - currentSecondPoolWethBalance;
+    const wethDelta = currentWethBalance - oldWethBalance;
     if (dexs[firstDex]?.dexIndex! != Dex.DodoV2 && dexs[secondDex]?.dexIndex! != Dex.DodoV2) {
       // DODO v2 transfer fee out from the pool, so poolWethDelta > wethDelta
-      assert(wethDelta.eq(firstPoolWethDelta.add(secondPoolWethDelta)));
+      assert(wethDelta == firstPoolWethDelta.add(secondPoolWethDelta));
     }
     assert(wethDelta.gte(wethAmount));
 
     logger.info(`    Checking usdc balances`);
-    const firstPoolUsdcDelta = currentFirstPoolUsdcBalance-(oldFirstPoolUsdcBalance);
-    const secondPoolUsdcDelta = currentSecondPoolUsdcBalance-(oldSecondPoolUsdcBalance);
-    const usdcDelta = oldUsdcBalance-(currentUsdcBalance);
+    const firstPoolUsdcDelta = currentFirstPoolUsdcBalance - oldFirstPoolUsdcBalance;
+    const secondPoolUsdcDelta = currentSecondPoolUsdcBalance - oldSecondPoolUsdcBalance;
+    const usdcDelta = oldUsdcBalance - currentUsdcBalance;
 
-    assert(usdcDelta.eq(firstPoolUsdcDelta.add(secondPoolUsdcDelta)));
-    assert(usdcDelta.eq(usdcAmount));
+    assert(usdcDelta == firstPoolUsdcDelta.add(secondPoolUsdcDelta));
+    assert(usdcDelta == usdcAmount);
   }
 }

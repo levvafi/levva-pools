@@ -1,46 +1,40 @@
-import { BigNumber, BigNumberish } from 'ethers';
-import { formatUnits, parseUnits } from 'ethers'
+import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { SystemUnderTest } from '.';
-import { MarginlyPoolContract } from '../contract-api/MarginlyPool';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
-import { ZERO_ADDRESS } from '../utils/const';
 import { logger } from '../utils/logger';
 import { encodeLiquidationParamsAave } from '@marginly/common';
+import { MarginlyPool } from '../../../contracts/typechain-types';
 
 type PoolCoeffs = {
-  baseCollateralCoeffX96: BigNumber;
-  baseDebtCoeffX96: BigNumber;
-  quoteCollateralCoeffX96: BigNumber;
-  quoteDebtCoeffX96: BigNumber;
+  baseCollateralCoeffX96: bigint;
+  baseDebtCoeffX96: bigint;
+  quoteCollateralCoeffX96: bigint;
+  quoteDebtCoeffX96: bigint;
 };
 
 async function getDebtAmount(
-  marginlyPool: MarginlyPoolContract,
+  marginlyPool: MarginlyPool,
   positionAddress: string,
-  basePriceX96: BigNumber,
+  basePriceX96: bigint,
   poolCoeffs: PoolCoeffs
-): Promise<BigNumber> {
-  const Fp96One = BigNumber.from(2).pow(96);
+): Promise<bigint> {
+  const Fp96One = 2n ** 96n;
   const position = await marginlyPool.positions(positionAddress);
 
-  if (position._type == 2) {
-    const debt = BigNumber.from(position.discountedBaseAmount)*(poolCoeffs.baseDebtCoeffX96)/(Fp96One);
-    const debtInQuote = debt*(basePriceX96)/(Fp96One);
-    const collateral = BigNumber.from(position.discountedQuoteAmount)
-      *(poolCoeffs.quoteCollateralCoeffX96)
-      /(Fp96One);
+  if (position._type == 2n) {
+    const debt = (position.discountedBaseAmount * poolCoeffs.baseDebtCoeffX96) / Fp96One;
+    const debtInQuote = (debt * basePriceX96) / Fp96One;
+    const collateral = (position.discountedQuoteAmount * poolCoeffs.quoteCollateralCoeffX96) / Fp96One;
 
-    const leverage = collateral/(collateral-(debtInQuote));
+    const leverage = collateral / (collateral - debtInQuote);
     console.log(`Position ${positionAddress} leverage is ${leverage}`);
     return debt;
-  } else if (position._type == 3) {
-    const debt = BigNumber.from(position.discountedQuoteAmount)*(poolCoeffs.quoteDebtCoeffX96)/(Fp96One);
-    const collateral = BigNumber.from(position.discountedBaseAmount)
-      *(poolCoeffs.baseCollateralCoeffX96)
-      /(Fp96One);
-    const collateralInQuote = collateral*(basePriceX96)/(Fp96One);
+  } else if (position._type == 3n) {
+    const debt = (position.discountedQuoteAmount * poolCoeffs.quoteDebtCoeffX96) / Fp96One;
+    const collateral = (position.discountedBaseAmount * poolCoeffs.baseCollateralCoeffX96) / Fp96One;
+    const collateralInQuote = (collateral * basePriceX96) / Fp96One;
 
-    const leverage = collateralInQuote/(collateralInQuote-(debt));
+    const leverage = collateralInQuote / (collateralInQuote - debt);
     console.log(`Position ${positionAddress} leverage is ${leverage}`);
     return debt;
   } else {
@@ -60,18 +54,18 @@ export async function keeperAave(sut: SystemUnderTest) {
     const quoteAmount = parseUnits('1000000', 6); // 1_000_000 USDC
     const baseAmount = parseUnits('20', 18); // 20 WETH
 
-    await (await usdc.connect(treasury).transfer(lender.address, quoteAmount)).wait();
-    await (await usdc.connect(lender).approve(marginlyPool.address, quoteAmount)).wait();
+    await (await usdc.connect(treasury).transfer(lender, quoteAmount)).wait();
+    await (await usdc.connect(lender).approve(marginlyPool, quoteAmount)).wait();
 
-    await (await weth.connect(treasury).transfer(lender.address, baseAmount)).wait();
-    await (await weth.connect(lender).approve(marginlyPool.address, baseAmount)).wait();
+    await (await weth.connect(treasury).transfer(lender, baseAmount)).wait();
+    await (await weth.connect(lender).approve(marginlyPool, baseAmount)).wait();
 
     await marginlyPool
       .connect(lender)
-      .execute(CallType.DepositBase, baseAmount, 0, 0, false, ZERO_ADDRESS, uniswapV3Swapdata(), ethArgs);
+      .execute(CallType.DepositBase, baseAmount, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), ethArgs);
     await marginlyPool
       .connect(lender)
-      .execute(CallType.DepositQuote, quoteAmount, 0, 0, false, ZERO_ADDRESS, uniswapV3Swapdata(), ethArgs);
+      .execute(CallType.DepositQuote, quoteAmount, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), ethArgs);
   }
 
   const longer = accounts[1];
@@ -80,19 +74,19 @@ export async function keeperAave(sut: SystemUnderTest) {
     const baseAmount = parseUnits('1', 18); // 0.1 WETH
     const longAmount = parseUnits('17', 18); //1.7 WETH
 
-    await (await weth.connect(treasury).transfer(longer.address, baseAmount)).wait();
-    await (await weth.connect(longer).approve(marginlyPool.address, baseAmount)).wait();
+    await (await weth.connect(treasury).transfer(longer, baseAmount)).wait();
+    await (await weth.connect(longer).approve(marginlyPool, baseAmount)).wait();
 
     await (
       await marginlyPool
         .connect(longer)
-        .execute(CallType.DepositBase, baseAmount, 0, 0, false, ZERO_ADDRESS, uniswapV3Swapdata(), ethArgs)
+        .execute(CallType.DepositBase, baseAmount, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), ethArgs)
     ).wait();
-    const maxPrice = (await marginlyPool.getBasePrice()).inner*(2);
+    const maxPrice = (await marginlyPool.getBasePrice()).inner * 2n;
     await (
       await marginlyPool
         .connect(longer)
-        .execute(CallType.Long, longAmount, 0, maxPrice, false, ZERO_ADDRESS, uniswapV3Swapdata(), ethArgs)
+        .execute(CallType.Long, longAmount, 0, maxPrice, false, ZeroAddress, uniswapV3Swapdata(), ethArgs)
     ).wait();
   }
 
@@ -101,19 +95,19 @@ export async function keeperAave(sut: SystemUnderTest) {
   {
     const quoteAmount = parseUnits('200', 6); // 200 USDC
     const shortAmount = parseUnits('1.7', 18); // 1.7 WETH
-    await (await usdc.connect(treasury).transfer(shorter.address, quoteAmount)).wait();
-    await (await usdc.connect(shorter).approve(marginlyPool.address, quoteAmount)).wait();
+    await (await usdc.connect(treasury).transfer(shorter, quoteAmount)).wait();
+    await (await usdc.connect(shorter).approve(marginlyPool, quoteAmount)).wait();
 
     await (
       await marginlyPool
         .connect(shorter)
-        .execute(CallType.DepositQuote, quoteAmount, 0, 0, false, ZERO_ADDRESS, uniswapV3Swapdata(), ethArgs)
+        .execute(CallType.DepositQuote, quoteAmount, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), ethArgs)
     ).wait();
-    const minPrice = (await marginlyPool.getBasePrice()).inner/(2);
+    const minPrice = (await marginlyPool.getBasePrice()).inner / 2n;
     await (
       await marginlyPool
         .connect(shorter)
-        .execute(CallType.Short, shortAmount, 0, minPrice, false, ZERO_ADDRESS, uniswapV3Swapdata(), ethArgs)
+        .execute(CallType.Short, shortAmount, 0, minPrice, false, ZeroAddress, uniswapV3Swapdata(), ethArgs)
     ).wait();
   }
 
@@ -126,10 +120,10 @@ export async function keeperAave(sut: SystemUnderTest) {
   const [basePrice, params, baseCollateralCoeff, baseDebtCoeff, quoteCollateralCoeff, quoteDebtCoeff]: [
     any,
     any,
-    BigNumberish,
-    BigNumberish,
-    BigNumberish,
-    BigNumberish
+    bigint,
+    bigint,
+    bigint,
+    bigint,
   ] = await Promise.all([
     marginlyPool.getBasePrice(),
     marginlyPool.params(),
@@ -139,29 +133,27 @@ export async function keeperAave(sut: SystemUnderTest) {
     marginlyPool.quoteDebtCoeff(),
   ]);
 
-  const basePriceX96 = BigNumber.from(basePrice.inner);
-  const maxLeverage = BigNumber.from(params.maxLeverage);
+  const basePriceX96 = basePrice.inner;
+  const maxLeverage = params.maxLeverage;
 
   console.log(`Max leverage is ${maxLeverage}`);
 
   const poolCoeffs: PoolCoeffs = {
-    baseCollateralCoeffX96: BigNumber.from(baseCollateralCoeff),
-    baseDebtCoeffX96: BigNumber.from(baseDebtCoeff),
-    quoteCollateralCoeffX96: BigNumber.from(quoteCollateralCoeff),
-    quoteDebtCoeffX96: BigNumber.from(quoteDebtCoeff),
+    baseCollateralCoeffX96: baseCollateralCoeff,
+    baseDebtCoeffX96: baseDebtCoeff,
+    quoteCollateralCoeffX96: quoteCollateralCoeff,
+    quoteDebtCoeffX96: quoteDebtCoeff,
   };
 
   // get 1% more than calculated debt value
-  const longerDebtAmount = (await getDebtAmount(marginlyPool, longer.address, basePriceX96, poolCoeffs))
-    *(101)
-    /(100);
-  const shorterDebtAmount = (await getDebtAmount(marginlyPool, shorter.address, basePriceX96, poolCoeffs))
-    *(101)
-    /(100);
+  const longerDebtAmount =
+    ((await getDebtAmount(marginlyPool, longer.address, basePriceX96, poolCoeffs)) * 101n) / 100n;
+  const shorterDebtAmount =
+    ((await getDebtAmount(marginlyPool, shorter.address, basePriceX96, poolCoeffs)) * 101n) / 100n;
 
   const liquidator = accounts[4];
 
-  let balanceBefore = BigNumber.from(await usdc.balanceOf(liquidator.address));
+  let balanceBefore = await usdc.balanceOf(liquidator);
 
   const swapCallData = 0n;
   const minProfit = 0n;
@@ -180,12 +172,12 @@ export async function keeperAave(sut: SystemUnderTest) {
 
   await gasReporter.saveGasUsage(
     'keeperAave.liquidatePosition',
-    keeperAave.connect(liquidator).liquidatePosition(usdc.address, longerDebtAmount, longerLiqParams, ethOptions)
+    keeperAave.connect(liquidator).liquidatePosition(usdc, longerDebtAmount, longerLiqParams, ethOptions)
   );
 
-  let balanceAfter = BigNumber.from(await usdc.balanceOf(liquidator.address));
+  let balanceAfter = await usdc.balanceOf(liquidator);
 
-  let profit = formatUnits(balanceAfter-(balanceBefore), await usdc.decimals());
+  let profit = formatUnits(balanceAfter - balanceBefore, await usdc.decimals());
   console.log(`Profit after long position liquidation is ${profit} USDC`);
 
   const shorterLiqParams = encodeLiquidationParamsAave(
@@ -196,13 +188,13 @@ export async function keeperAave(sut: SystemUnderTest) {
     swapCallData
   );
 
-  balanceBefore = BigNumber.from(await weth.balanceOf(liquidator.address));
+  balanceBefore = await weth.balanceOf(liquidator.address);
   await gasReporter.saveGasUsage(
     'keeperAave.liquidatePosition',
-    keeperAave.connect(liquidator).liquidatePosition(weth.address, shorterDebtAmount, shorterLiqParams, ethOptions)
+    keeperAave.connect(liquidator).liquidatePosition(weth, shorterDebtAmount, shorterLiqParams, ethOptions)
   );
 
-  balanceAfter = BigNumber.from(await weth.balanceOf(liquidator.address));
-  profit = formatUnits(balanceAfter-(balanceBefore), await weth.decimals());
+  balanceAfter = await weth.balanceOf(liquidator);
+  profit = formatUnits(balanceAfter - balanceBefore, await weth.decimals());
   console.log(`Profit after short position liquidation is ${profit} WETH`);
 }

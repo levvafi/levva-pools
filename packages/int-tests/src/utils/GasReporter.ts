@@ -1,36 +1,33 @@
-import { ContractReceipt, ContractTransaction } from 'ethers';
+import { ContractTransaction, ContractTransactionReceipt, ContractTransactionResponse } from 'ethers';
 import { logger } from './logger';
 import { promises as fsPromises, existsSync } from 'fs';
 import { join } from 'path';
 
 type GasUsage = {
-  max: number;
-  min: number;
-  avg: number;
-  count: number;
+  max: bigint;
+  min: bigint;
+  avg: bigint;
+  count: bigint;
 };
 
 export class GasReporter {
   private gasUsageStatistics: { [key: string]: GasUsage } = {};
-  private gasUsage: { [key: string]: [number, number][] } = {};
+  private gasUsage: { [key: string]: [number, bigint][] } = {};
 
   constructor(private suiteName: string) {}
 
   public async saveGasUsage(
     txName: string,
-    x: ContractReceipt | Promise<ContractReceipt> | ContractTransaction | Promise<ContractTransaction>
-  ) {
+    x: ContractTransactionResponse | Promise<ContractTransactionResponse> // | ContractTransaction | Promise<ContractTransaction>
+  ): Promise<ContractTransactionReceipt> {
     const resolved = await x;
-    let txReceipt: ContractReceipt;
-    if ('wait' in resolved) {
-      txReceipt = await resolved.wait();
-    } else if ('gasUsed' in resolved) {
-      txReceipt = resolved;
-    } else {
-      throw Error('Unknown argument');
+    let txReceipt = await resolved.wait();
+
+    if (txReceipt === null) {
+      throw new Error('Failed to obtain tx receipt');
     }
 
-    const gasUsed = txReceipt.gasUsed.toNumber();
+    const gasUsed = txReceipt.gasUsed;
     const blockNumber = txReceipt.blockNumber;
 
     logger.debug(`⛽ Gas used: ${txName}    ${gasUsed}`);
@@ -39,16 +36,14 @@ export class GasReporter {
     if (existedStatistic) {
       existedStatistic.max = existedStatistic.max < gasUsed ? gasUsed : existedStatistic.max;
       existedStatistic.min = existedStatistic.min > gasUsed ? gasUsed : existedStatistic.min;
-      existedStatistic.avg = Math.floor(
-        (existedStatistic.avg * existedStatistic.count + gasUsed) / (existedStatistic.count + 1)
-      );
+      existedStatistic.avg = (existedStatistic.avg * existedStatistic.count + gasUsed) / (existedStatistic.count + 1n);
       existedStatistic.count++;
     } else {
       this.gasUsageStatistics[txName] = {
         max: gasUsed,
         min: gasUsed,
         avg: gasUsed,
-        count: 1,
+        count: 1n,
       };
     }
 

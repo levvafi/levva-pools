@@ -1,51 +1,45 @@
-import { BigNumber } from 'ethers';
-import { formatUnits } from 'ethers'
-import bn from 'bignumber.js';
+import { formatUnits } from 'ethers';
 import { FP96, toHumanString } from '../utils/fixed-point';
 import { logger } from '../utils/logger';
 import { SystemUnderTest, TechnicalPositionOwner } from '../suites';
 
 export async function showSystemAggregates(sut: SystemUnderTest) {
   const { marginlyPool, marginlyFactory, accounts, usdc, weth } = sut;
-  const discountedBaseCollateral = BigNumber.from(await marginlyPool.discountedBaseCollateral());
-  const discountedBaseDebt = BigNumber.from(await marginlyPool.discountedBaseDebt());
-  const discountedQuoteCollateral = BigNumber.from(await marginlyPool.discountedQuoteCollateral());
-  const discountedQuoteDebt = BigNumber.from(await marginlyPool.discountedQuoteDebt());
+  const discountedBaseCollateral = await marginlyPool.discountedBaseCollateral();
+  const discountedBaseDebt = await marginlyPool.discountedBaseDebt();
+  const discountedQuoteCollateral = await marginlyPool.discountedQuoteCollateral();
+  const discountedQuoteDebt = await marginlyPool.discountedQuoteDebt();
 
-  const usdcBalance = BigNumber.from(await usdc.balanceOf(marginlyPool.address));
-  const wethBalance = BigNumber.from(await weth.balanceOf(marginlyPool.address));
+  const usdcBalance = await usdc.balanceOf(marginlyPool);
+  const wethBalance = await weth.balanceOf(marginlyPool);
 
   const lastReinit = await marginlyPool.lastReinitTimestampSeconds();
 
-  const baseCollateralCoeff = BigNumber.from(await marginlyPool.baseCollateralCoeff());
-  const baseDebtCoeff = BigNumber.from(await marginlyPool.baseDebtCoeff());
-  const quoteCollateralCoeff = BigNumber.from(await marginlyPool.quoteCollateralCoeff());
-  const quoteDebtCoeff = BigNumber.from(await marginlyPool.quoteDebtCoeff());
+  const baseCollateralCoeff = await marginlyPool.baseCollateralCoeff();
+  const baseDebtCoeff = await marginlyPool.baseDebtCoeff();
+  const quoteCollateralCoeff = await marginlyPool.quoteCollateralCoeff();
+  const quoteDebtCoeff = await marginlyPool.quoteDebtCoeff();
 
   const systemLeverage = await marginlyPool.systemLeverage();
-  const shortX96 = BigNumber.from(systemLeverage.shortX96);
-  const longX96 = BigNumber.from(systemLeverage.longX96);
-  const basePriceX96 = BigNumber.from((await marginlyPool.getBasePrice()).inner)*(10 ** 12);
+  const shortX96 = systemLeverage.shortX96;
+  const longX96 = systemLeverage.longX96;
+  const basePriceX96 = (await marginlyPool.getBasePrice()).inner * 10n ** 12n;
 
   // calc aggregates
-  const realQuoteCollateral = quoteCollateralCoeff*(discountedQuoteCollateral)/(FP96.one);
-  const realQuoteDebt = quoteDebtCoeff*(discountedQuoteDebt)/(FP96.one);
-  const realBaseCollateral = baseCollateralCoeff*(discountedBaseCollateral)/(FP96.one);
-  const realBaseDebt = baseDebtCoeff*(discountedBaseDebt)/(FP96.one);
+  const realQuoteCollateral = (quoteCollateralCoeff * discountedQuoteCollateral) / FP96.one;
+  const realQuoteDebt = (quoteDebtCoeff * discountedQuoteDebt) / FP96.one;
+  const realBaseCollateral = (baseCollateralCoeff * discountedBaseCollateral) / FP96.one;
+  const realBaseDebt = (baseDebtCoeff * discountedBaseDebt) / FP96.one;
 
   const feeBalance = await usdc.balanceOf(await marginlyFactory.feeHolder());
 
   const techPosition = await marginlyPool.positions(TechnicalPositionOwner);
-  const techRealBaseAmount = baseCollateralCoeff*(techPosition.discountedBaseAmount)/(FP96.one);
-  const techRealQuoteAmount = quoteCollateralCoeff*(techPosition.discountedQuoteAmount)/(FP96.one);
+  const techRealBaseAmount = (baseCollateralCoeff * techPosition.discountedBaseAmount) / FP96.one;
+  const techRealQuoteAmount = (quoteCollateralCoeff * techPosition.discountedQuoteAmount) / FP96.one;
 
   //totalCollateral - totalDebt
-  const systemBalance = realBaseCollateral
-    -(realBaseDebt)
-    *(basePriceX96/(10 ** 12))
-    /(FP96.one)
-    .add(realQuoteCollateral)
-    -(realQuoteDebt);
+  const systemBalance =
+    realBaseCollateral - (realBaseDebt * (basePriceX96 / 10n ** 12n)) / FP96.one + realQuoteCollateral - realQuoteDebt;
 
   logger.info(`📜 Marginly state: `);
   logger.info(`     discountedBaseCollateral = ${formatUnits(discountedBaseCollateral, 18)}  WETH`);
@@ -83,41 +77,34 @@ export async function showSystemAggregates(sut: SystemUnderTest) {
   logger.info(`  Positions:`);
   for (let i = 0; i < 4; i++) {
     const position = await marginlyPool.positions(accounts[i].address);
-    const type = BigNumber.from(position._type).toNumber();
     let typeStr;
-    if (type == 0) {
+    if (position._type == 0n) {
       typeStr = 'Uninitialized';
-    } else if (type == 1) {
+    } else if (position._type == 1n) {
       typeStr = 'Lend';
-    } else if (type == 2) {
+    } else if (position._type == 2n) {
       typeStr = 'Short (Base in debt)';
-    } else if (type == 3) {
+    } else if (position._type == 3n) {
       typeStr = 'Long (Quote in debt)';
     }
 
-    const discountedBaseAmount = BigNumber.from(position.discountedBaseAmount);
-    const discountedQuoteAmount = BigNumber.from(position.discountedQuoteAmount);
-    let realBaseAmount = discountedBaseAmount*(baseCollateralCoeff)/(FP96.one);
-    let realQuoteAmount = discountedQuoteAmount*(quoteCollateralCoeff)/(FP96.one);
-    let leverage = bn(1);
-    if (type === 2) {
+    const discountedBaseAmount = position.discountedBaseAmount;
+    const discountedQuoteAmount = position.discountedQuoteAmount;
+    let realBaseAmount = (discountedBaseAmount * baseCollateralCoeff) / FP96.one;
+    let realQuoteAmount = (discountedQuoteAmount * quoteCollateralCoeff) / FP96.one;
+    let leverage = 1;
+    if (position._type === 2n) {
       // Short
-      realBaseAmount = discountedBaseAmount*(baseDebtCoeff)/(FP96.one);
+      realBaseAmount = (discountedBaseAmount * baseDebtCoeff) / FP96.one;
       const collateral = realQuoteAmount;
-      const debt = basePriceX96
-        /(10 ** 12)
-        *(realBaseAmount)
-        /(FP96.one);
-      leverage = bn(collateral.toString())/(collateral-(debt).toString());
-    } else if (type === 3) {
+      const debt = ((basePriceX96 / 10n ** 12n) * realBaseAmount) / FP96.one;
+      leverage = Number(collateral) / Number(collateral - debt);
+    } else if (position._type === 3n) {
       //Long
-      realQuoteAmount = discountedQuoteAmount*(quoteDebtCoeff)/(FP96.one);
-      const collateral = basePriceX96
-        /(10 ** 12)
-        *(realBaseAmount)
-        /(FP96.one);
+      realQuoteAmount = (discountedQuoteAmount * quoteDebtCoeff) / FP96.one;
+      const collateral = ((basePriceX96 / 10n ** 12n) * realBaseAmount) / FP96.one;
       const debt = realQuoteAmount;
-      leverage = bn(collateral.toString())/(collateral-(debt).toString());
+      leverage = Number(collateral) / Number(collateral - debt);
     }
 
     logger.info(` `);

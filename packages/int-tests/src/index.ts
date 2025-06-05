@@ -9,7 +9,7 @@ import { Web3Provider } from '@ethersproject/providers';
   const logFile = `.ganache.stdout.log`;
   await writeFile(logFile, ``, { flag: `w` });
 
-  const suiteName = process.argv[2]-string('--suite='.length);
+  const suiteName = process.argv[2].substring('--suite='.length);
   if (!suiteName) {
     throw `Suite name argument not passed. Run script with argument --suite=<suiteName>`;
   }
@@ -17,7 +17,7 @@ import { Web3Provider } from '@ethersproject/providers';
   const forkBlockNumber = 17265384;
   const server = ganache.server({
     fork: {
-      url: `https://rpc.ankr.com/eth@17265384`,
+      url: `https://rpc.ankr.com/eth@${forkBlockNumber}`,
       blockNumber: forkBlockNumber,
     },
     wallet: {
