@@ -1,14 +1,13 @@
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
 import { createPendleCaseUSDe29Aug2024, createPendleCaseWeETH27Jun2024 } from '../../shared/fixtures';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { ethers } from 'hardhat';
-import { MarginlyRouter__factory } from '../../../typechain-types';
+import { MarginlyRouter__factory } from '@marginly/router/typechain-types';
 import { PendleAdapter__factory } from '@marginly/router/typechain-types';
-import { EthAddress, PositionType } from '@marginly/common';
-import { formatUnits, keccak256, parseUnits } from 'ethers'
+import { Addressable, formatUnits, keccak256, parseUnits, toBeHex } from 'ethers';
 import { MarginlyFactory__factory, MarginlyPool__factory } from '@marginly/contracts/typechain-types';
 import { MarginlyParamsStruct } from '@marginly/contracts/typechain-types/contracts/MarginlyPool';
+import { ZeroAddress } from 'ethers';
 
 export const CallType = {
   DepositBase: 0,
@@ -23,24 +22,29 @@ export const CallType = {
   EmergencyWithdraw: 9,
 };
 
-// TODO remove me after all the merges are resolved
-function getAccountBalanceStorageSlot(account: EthAddress, tokenMappingSlot: string): string {
-  return keccak256('0x' + account.toString().slice(2).padStart(64, '0') + tokenMappingSlot);
+export const PositionType = {
+  Uninitialized: 0,
+  Lend: 1,
+  Short: 2,
+  Long: 3,
+};
+
+function getAccountBalanceStorageSlot(account: string, tokenMappingSlot: string): string {
+  return keccak256('0x' + account.slice(2).padStart(64, '0') + tokenMappingSlot);
 }
 
-// TODO remove me after all the merges are resolved
 export async function setTokenBalance(
-  tokenAddress: string,
+  tokenAddress: string | Addressable,
   balanceOfSlotAddress: string,
-  account: EthAddress,
-  newBalance: BigNumber
+  account: string,
+  newBalance: bigint
 ) {
   const balanceOfStorageSlot = getAccountBalanceStorageSlot(account, balanceOfSlotAddress);
 
   await ethers.provider.send('hardhat_setStorageAt', [
-    tokenAddress,
+    tokenAddress.toString(),
     balanceOfStorageSlot,
-    ethers.utils.hexlify(ethers.utils.zeroPad(newBalance.toHexString(), 32)),
+    toBeHex(newBalance, 32),
   ]);
 }
 
@@ -68,19 +72,19 @@ describe('Pendle farming marginly pool', () => {
         ib: '0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe',
         slippage: 20,
       },
-      tokenA: ptToken.address,
-      tokenB: weth.address,
+      tokenA: ptToken,
+      tokenB: weth,
     };
     const pendleAdapter = await new PendleAdapter__factory().connect(owner).deploy([poolInput]);
     const routerInput = {
       dexIndex: 0,
-      adapter: pendleAdapter.address,
+      adapter: pendleAdapter,
     };
     const router = await new MarginlyRouter__factory().connect(owner).deploy([routerInput]);
     const marginlyPoolImpl = await new MarginlyPool__factory().connect(owner).deploy();
     const marginlyFactory = await new MarginlyFactory__factory()
       .connect(owner)
-      .deploy(marginlyPoolImpl.address, router.address, owner.address, weth.address, owner.address);
+      .deploy(marginlyPoolImpl, router, owner.address, weth, owner.address);
     let params: MarginlyParamsStruct = {
       interestRate: 30000,
       fee: 20000,
@@ -91,115 +95,48 @@ describe('Pendle farming marginly pool', () => {
       quoteLimit: parseUnits('200', 18),
     };
 
-    const poolAddress = await marginlyFactory.callStatic.createPool(
-      weth.address,
-      ptToken.address,
-      oracle.address,
-      0,
-      params
-    );
-    await (
-      await marginlyFactory.connect(owner).createPool(weth.address, ptToken.address, oracle.address, 0, params)
-    ).wait();
-    const marginly = new MarginlyPool__factory().attach(poolAddress);
+    const poolAddress = await marginlyFactory.createPool.staticCall(weth, ptToken, oracle, 0, params);
+    await (await marginlyFactory.connect(owner).createPool(weth, ptToken, oracle, 0, params)).wait();
+    const marginly = MarginlyPool__factory.connect(poolAddress);
     console.log('Setup finished');
 
     console.log('Lender deposits weth');
     const lenderDepositAmount = parseUnits('30', 18);
-    await setTokenBalance(
-      weth.address,
-      ArbMainnetERC20BalanceOfSlot.WETH,
-      EthAddress.parse(lender.address),
-      lenderDepositAmount
-    );
-    await weth.connect(lender).approve(marginly.address, lenderDepositAmount);
-    await marginly
-      .connect(lender)
-      .execute(CallType.DepositQuote, lenderDepositAmount, 0, 0, false, ethers.constants.AddressZero, 0);
+    await setTokenBalance(weth, ArbMainnetERC20BalanceOfSlot.WETH, lender.address, lenderDepositAmount);
+    await weth.connect(lender).approve(marginly, lenderDepositAmount);
+    await marginly.connect(lender).execute(CallType.DepositQuote, lenderDepositAmount, 0, 0, false, ZeroAddress, 0);
 
     const longerDepositAmount = parseUnits('1', 18);
     const longAmount = parseUnits('10', 18);
     let price = (await marginly.connect(owner).getBasePrice()).inner;
     console.log('Longer1 deposits pt and longs');
-    await setTokenBalance(
-      ptToken.address,
-      ArbMainnetERC20BalanceOfSlot.PTWEETH,
-      EthAddress.parse(longer1.address),
-      longerDepositAmount
-    );
-    await ptToken.connect(longer1).approve(marginly.address, longerDepositAmount);
+    await setTokenBalance(ptToken.target, ArbMainnetERC20BalanceOfSlot.PTWEETH, longer1.address, longerDepositAmount);
+    await ptToken.connect(longer1).approve(marginly, longerDepositAmount);
     await marginly
       .connect(longer1)
-      .execute(
-        CallType.DepositBase,
-        longerDepositAmount,
-        longAmount,
-        price*(11)/(10),
-        false,
-        ethers.constants.AddressZero,
-        0
-      );
+      .execute(CallType.DepositBase, longerDepositAmount, longAmount, (price * 11n) / 10n, false, ZeroAddress, 0);
 
     console.log('Longer2 deposits pt and longs');
-    await setTokenBalance(
-      ptToken.address,
-      ArbMainnetERC20BalanceOfSlot.PTWEETH,
-      EthAddress.parse(longer2.address),
-      longerDepositAmount
-    );
-    await ptToken.connect(longer2).approve(marginly.address, longerDepositAmount);
+    await setTokenBalance(ptToken.target, ArbMainnetERC20BalanceOfSlot.PTWEETH, longer2.address, longerDepositAmount);
+    await ptToken.connect(longer2).approve(marginly, longerDepositAmount);
     await marginly
       .connect(longer2)
-      .execute(
-        CallType.DepositBase,
-        longerDepositAmount,
-        longAmount,
-        price*(11)/(10),
-        false,
-        ethers.constants.AddressZero,
-        0
-      );
+      .execute(CallType.DepositBase, longerDepositAmount, longAmount, (price * 11n) / 10n, false, ZeroAddress, 0);
 
     console.log('Longer3 deposits weth and longs');
-    await setTokenBalance(
-      weth.address,
-      ArbMainnetERC20BalanceOfSlot.WETH,
-      EthAddress.parse(longer3.address),
-      longerDepositAmount
-    );
-    await weth.connect(longer3).approve(marginly.address, longerDepositAmount);
+    await setTokenBalance(weth.target, ArbMainnetERC20BalanceOfSlot.WETH, longer3.address, longerDepositAmount);
+    await weth.connect(longer3).approve(marginly, longerDepositAmount);
     await marginly
       .connect(longer3)
-      .execute(
-        CallType.DepositQuote,
-        longerDepositAmount,
-        longAmount*(-1),
-        price*(11)/(10),
-        false,
-        ethers.constants.AddressZero,
-        0
-      );
+      .execute(CallType.DepositQuote, longerDepositAmount, -longAmount, (price * 11n) / 10n, false, ZeroAddress, 0);
 
     console.log('Shorter fails');
-    await setTokenBalance(
-      weth.address,
-      ArbMainnetERC20BalanceOfSlot.WETH,
-      EthAddress.parse(shorter.address),
-      longerDepositAmount
-    );
-    await weth.connect(shorter).approve(marginly.address, longerDepositAmount);
+    await setTokenBalance(weth.target, ArbMainnetERC20BalanceOfSlot.WETH, shorter.address, longerDepositAmount);
+    await weth.connect(shorter).approve(marginly, longerDepositAmount);
     await expect(
       marginly
         .connect(shorter)
-        .execute(
-          CallType.DepositQuote,
-          longerDepositAmount,
-          longAmount,
-          price*(2),
-          false,
-          ethers.constants.AddressZero,
-          0
-        )
+        .execute(CallType.DepositQuote, longerDepositAmount, longAmount, price * 2n, false, ZeroAddress, 0)
     ).to.be.revertedWithCustomError(marginly, 'Forbidden');
 
     console.log('Time shift');
@@ -208,12 +145,8 @@ describe('Pendle farming marginly pool', () => {
 
     console.log('Longer1 closes');
     price = (await marginly.connect(owner).getBasePrice()).inner;
-    await marginly
-      .connect(longer1)
-      .execute(CallType.ClosePosition, 0, 0, price*(90)/(100), false, ethers.constants.AddressZero, 0);
-    await marginly
-      .connect(longer1)
-      .execute(CallType.WithdrawBase, parseUnits('100', 18), 0, 0, false, ethers.constants.AddressZero, 0);
+    await marginly.connect(longer1).execute(CallType.ClosePosition, 0, 0, (price * 90n) / 100n, false, ZeroAddress, 0);
+    await marginly.connect(longer1).execute(CallType.WithdrawBase, parseUnits('100', 18), 0, 0, false, ZeroAddress, 0);
     console.log(`longer1 pt balance: ${formatUnits(await ptToken.balanceOf(longer1.address), 18)}`);
 
     console.log("It's too late, time for liquidations: setting maxLeverage as 1");
@@ -222,26 +155,17 @@ describe('Pendle farming marginly pool', () => {
 
     console.log(`Longer2 gets margin called`);
     expect((await marginly.connect(owner).positions(longer2.address))._type).to.be.eq(PositionType.Long);
-    await marginly.connect(owner).execute(CallType.Reinit, 0, 0, 0, false, ethers.constants.AddressZero, 0);
+    await marginly.connect(owner).execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, 0);
     expect((await marginly.connect(owner).positions(longer2.address))._type).to.be.eq(PositionType.Uninitialized);
 
     console.log(`Liquidator receives longer3 position`);
     const wethDeposit = parseUnits('20', 18);
-    await setTokenBalance(
-      weth.address,
-      ArbMainnetERC20BalanceOfSlot.WETH,
-      EthAddress.parse(liquidator.address),
-      wethDeposit
-    );
-    await weth.connect(liquidator).approve(marginly.address, wethDeposit);
+    await setTokenBalance(weth.target, ArbMainnetERC20BalanceOfSlot.WETH, liquidator.address, wethDeposit);
+    await weth.connect(liquidator).approve(marginly, wethDeposit);
     await marginly.connect(liquidator).execute(CallType.ReceivePosition, wethDeposit, 0, 0, false, longer3.address, 0);
     expect((await marginly.connect(owner).positions(longer3.address))._type).to.be.eq(PositionType.Uninitialized);
-    await marginly
-      .connect(liquidator)
-      .execute(CallType.WithdrawQuote, wethDeposit, 0, 0, false, ethers.constants.AddressZero, 0);
-    await marginly
-      .connect(liquidator)
-      .execute(CallType.WithdrawBase, wethDeposit, 0, 0, false, ethers.constants.AddressZero, 0);
+    await marginly.connect(liquidator).execute(CallType.WithdrawQuote, wethDeposit, 0, 0, false, ZeroAddress, 0);
+    await marginly.connect(liquidator).execute(CallType.WithdrawBase, wethDeposit, 0, 0, false, ZeroAddress, 0);
   });
 
   it('PT-USDe-29AUG2024 / USDC', async () => {
@@ -260,19 +184,19 @@ describe('Pendle farming marginly pool', () => {
         ib: '0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34',
         slippage: 20,
       },
-      tokenA: ptToken.address,
-      tokenB: usdc.address,
+      tokenA: ptToken,
+      tokenB: usdc,
     };
     const pendleAdapter = await new PendleAdapter__factory().connect(owner).deploy([poolInput]);
     const routerInput = {
       dexIndex: 0,
-      adapter: pendleAdapter.address,
+      adapter: pendleAdapter,
     };
     const router = await new MarginlyRouter__factory().connect(owner).deploy([routerInput]);
     const marginlyPoolImpl = await new MarginlyPool__factory().connect(owner).deploy();
     const marginlyFactory = await new MarginlyFactory__factory()
       .connect(owner)
-      .deploy(marginlyPoolImpl.address, router.address, owner.address, usdc.address, owner.address);
+      .deploy(marginlyPoolImpl, router, owner.address, usdc, owner.address);
     let params: MarginlyParamsStruct = {
       interestRate: 30000,
       fee: 20000,
@@ -283,124 +207,59 @@ describe('Pendle farming marginly pool', () => {
       quoteLimit: parseUnits('100000', 6),
     };
 
-    const poolAddress = await marginlyFactory.callStatic.createPool(
-      usdc.address,
-      ptToken.address,
-      oracle.address,
-      0,
-      params
-    );
-    await (
-      await marginlyFactory.connect(owner).createPool(usdc.address, ptToken.address, oracle.address, 0, params)
-    ).wait();
-    const marginly = new MarginlyPool__factory().attach(poolAddress);
+    const poolAddress = await marginlyFactory.createPool.staticCall(usdc, ptToken, oracle, 0, params);
+    await (await marginlyFactory.connect(owner).createPool(usdc, ptToken, oracle, 0, params)).wait();
+    const marginly = MarginlyPool__factory.connect(poolAddress);
     console.log('Setup finished');
 
     console.log('Lender deposits usdc');
     const lenderDepositAmount = parseUnits('10000', 6);
-    await setTokenBalance(
-      usdc.address,
-      ArbMainnetERC20BalanceOfSlot.USDC,
-      EthAddress.parse(lender.address),
-      lenderDepositAmount
-    );
-    await usdc.connect(lender).approve(marginly.address, lenderDepositAmount);
+    await setTokenBalance(usdc.target, ArbMainnetERC20BalanceOfSlot.USDC, lender.address, lenderDepositAmount);
+    await usdc.connect(lender).approve(marginly, lenderDepositAmount);
     let tx = await marginly
       .connect(lender)
-      .execute(CallType.DepositQuote, lenderDepositAmount, 0, 0, false, ethers.constants.AddressZero, 0);
-    console.log(`Lender deposit gas used: ${(await tx.wait()).gasUsed}`);
+      .execute(CallType.DepositQuote, lenderDepositAmount, 0, 0, false, ZeroAddress, 0);
+    console.log(`Lender deposit gas used: ${(await tx.wait())?.gasUsed}`);
 
     const longerDepositAmount = parseUnits('100', 18);
     const longAmount = parseUnits('1000', 18);
     let price = (await marginly.connect(owner).getBasePrice()).inner;
     console.log('Longer1 deposits pt and longs');
-    await setTokenBalance(
-      ptToken.address,
-      ArbMainnetERC20BalanceOfSlot.PTWEETH,
-      EthAddress.parse(longer1.address),
-      longerDepositAmount
-    );
-    await ptToken.connect(longer1).approve(marginly.address, longerDepositAmount);
+    await setTokenBalance(ptToken.target, ArbMainnetERC20BalanceOfSlot.PTWEETH, longer1.address, longerDepositAmount);
+    await ptToken.connect(longer1).approve(marginly, longerDepositAmount);
     tx = await marginly
       .connect(longer1)
-      .execute(
-        CallType.DepositBase,
-        longerDepositAmount,
-        longAmount,
-        price*(11)/(10),
-        false,
-        ethers.constants.AddressZero,
-        0
-      );
+      .execute(CallType.DepositBase, longerDepositAmount, longAmount, (price * 11n) / 10n, false, ZeroAddress, 0);
 
-    console.log(`Longer1 depositBase and long gas used: ${(await tx.wait()).gasUsed}`);
+    console.log(`Longer1 depositBase and long gas used: ${(await tx.wait())?.gasUsed}`);
 
     console.log('Longer2 deposits pt and longs');
-    await setTokenBalance(
-      ptToken.address,
-      ArbMainnetERC20BalanceOfSlot.PTWEETH,
-      EthAddress.parse(longer2.address),
-      longerDepositAmount
-    );
-    await ptToken.connect(longer2).approve(marginly.address, longerDepositAmount);
+    await setTokenBalance(ptToken.target, ArbMainnetERC20BalanceOfSlot.PTWEETH, longer2.address, longerDepositAmount);
+    await ptToken.connect(longer2).approve(marginly, longerDepositAmount);
     tx = await marginly
       .connect(longer2)
-      .execute(
-        CallType.DepositBase,
-        longerDepositAmount,
-        longAmount,
-        price*(11)/(10),
-        false,
-        ethers.constants.AddressZero,
-        0
-      );
+      .execute(CallType.DepositBase, longerDepositAmount, longAmount, (price * 11n) / 10n, false, ZeroAddress, 0);
 
-    console.log(`Longer2 depositBase and long gas used: ${(await tx.wait()).gasUsed}`);
+    console.log(`Longer2 depositBase and long gas used: ${(await tx.wait())?.gasUsed}`);
 
     const longer3DepositAmount = parseUnits('100', 6);
     console.log('Longer3 deposits usdc and longs');
-    await setTokenBalance(
-      usdc.address,
-      ArbMainnetERC20BalanceOfSlot.USDC,
-      EthAddress.parse(longer3.address),
-      longer3DepositAmount
-    );
-    await usdc.connect(longer3).approve(marginly.address, longer3DepositAmount);
+    await setTokenBalance(usdc.target, ArbMainnetERC20BalanceOfSlot.USDC, longer3.address, longer3DepositAmount);
+    await usdc.connect(longer3).approve(marginly, longer3DepositAmount);
     tx = await marginly
       .connect(longer3)
-      .execute(
-        CallType.DepositQuote,
-        longer3DepositAmount,
-        longAmount*(-1),
-        price*(12)/(10),
-        false,
-        ethers.constants.AddressZero,
-        0
-      );
+      .execute(CallType.DepositQuote, longer3DepositAmount, -longAmount, (price * 12n) / 10n, false, ZeroAddress, 0);
 
-    console.log(`Longer3 depositQuote and long gas used: ${(await tx.wait()).gasUsed}`);
+    console.log(`Longer3 depositQuote and long gas used: ${(await tx.wait())?.gasUsed}`);
 
     console.log('Shorter fails');
     const shortDepositAmount = parseUnits('100', 6);
-    await setTokenBalance(
-      usdc.address,
-      ArbMainnetERC20BalanceOfSlot.USDC,
-      EthAddress.parse(shorter.address),
-      shortDepositAmount
-    );
-    await usdc.connect(shorter).approve(marginly.address, shortDepositAmount);
+    await setTokenBalance(usdc, ArbMainnetERC20BalanceOfSlot.USDC, shorter.address, shortDepositAmount);
+    await usdc.connect(shorter).approve(marginly, shortDepositAmount);
     await expect(
       marginly
         .connect(shorter)
-        .execute(
-          CallType.DepositQuote,
-          shortDepositAmount,
-          longAmount,
-          price*(2),
-          false,
-          ethers.constants.AddressZero,
-          0
-        )
+        .execute(CallType.DepositQuote, shortDepositAmount, longAmount, price * 2n, false, ZeroAddress, 0)
     ).to.be.revertedWithCustomError(marginly, 'Forbidden');
 
     console.log('Time shift');
@@ -409,12 +268,8 @@ describe('Pendle farming marginly pool', () => {
 
     console.log('Longer1 closes');
     price = (await marginly.connect(owner).getBasePrice()).inner;
-    await marginly
-      .connect(longer1)
-      .execute(CallType.ClosePosition, 0, 0, price*(90)/(100), false, ethers.constants.AddressZero, 0);
-    await marginly
-      .connect(longer1)
-      .execute(CallType.WithdrawBase, parseUnits('100', 18), 0, 0, false, ethers.constants.AddressZero, 0);
+    await marginly.connect(longer1).execute(CallType.ClosePosition, 0, 0, (price * 90n) / 100n, false, ZeroAddress, 0);
+    await marginly.connect(longer1).execute(CallType.WithdrawBase, parseUnits('100', 18), 0, 0, false, ZeroAddress, 0);
     console.log(`longer1 pt balance: ${formatUnits(await ptToken.balanceOf(longer1.address), 18)}`);
 
     console.log("It's too late, time for liquidations: setting maxLeverage as 1");
@@ -423,27 +278,22 @@ describe('Pendle farming marginly pool', () => {
 
     console.log(`Longer2 gets margin called`);
     expect((await marginly.connect(owner).positions(longer2.address))._type).to.be.eq(PositionType.Long);
-    await marginly.connect(owner).execute(CallType.Reinit, 0, 0, 0, false, ethers.constants.AddressZero, 0);
+    await marginly.connect(owner).execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, 0);
     expect((await marginly.connect(owner).positions(longer2.address))._type).to.be.eq(PositionType.Uninitialized);
 
     console.log(`Liquidator receives longer3 position`);
     const liquidatorDeposit = parseUnits('2000', 6);
-    await setTokenBalance(
-      usdc.address,
-      ArbMainnetERC20BalanceOfSlot.USDC,
-      EthAddress.parse(liquidator.address),
-      liquidatorDeposit
-    );
-    await usdc.connect(liquidator).approve(marginly.address, liquidatorDeposit);
+    await setTokenBalance(usdc.target, ArbMainnetERC20BalanceOfSlot.USDC, liquidator.address, liquidatorDeposit);
+    await usdc.connect(liquidator).approve(marginly, liquidatorDeposit);
     await marginly
       .connect(liquidator)
       .execute(CallType.ReceivePosition, liquidatorDeposit, 0, 0, false, longer3.address, 0);
     expect((await marginly.connect(owner).positions(longer3.address))._type).to.be.eq(PositionType.Uninitialized);
     await marginly
       .connect(liquidator)
-      .execute(CallType.WithdrawQuote, parseUnits('1000', 18), 0, 0, false, ethers.constants.AddressZero, 0);
+      .execute(CallType.WithdrawQuote, parseUnits('1000', 18), 0, 0, false, ZeroAddress, 0);
     await marginly
       .connect(liquidator)
-      .execute(CallType.WithdrawBase, parseUnits('1000', 18), 0, 0, false, ethers.constants.AddressZero, 0);
+      .execute(CallType.WithdrawBase, parseUnits('1000', 18), 0, 0, false, ZeroAddress, 0);
   });
 });

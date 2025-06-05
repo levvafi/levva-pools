@@ -1,9 +1,9 @@
 import { ethers } from 'hardhat';
-import { AaveATokenPriceOracle } from '../../../typechain-types/contracts/oracles';
+import { AavePriceOracle } from '../../../typechain-types/contracts/oracles';
 import { getDecimalsDiff, printPrices } from '../../shared/common';
 
 describe('AaveATokenPriceOracle', () => {
-  let oracle: AaveATokenPriceOracle;
+  let oracle: AavePriceOracle;
   before(async () => {
     const poolAddressProvider = '0x5C2e738F6E27bCE0F7558051Bf90605dD6176900';
     const factory = await ethers.getContractFactory('AavePriceOracle');

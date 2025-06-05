@@ -8,10 +8,10 @@ import {
   calcLeverageShort,
   CallType,
   FP96,
-  ZERO_ADDRESS,
   uniswapV3Swapdata,
   getMarginlyPoolState,
 } from './shared/utils';
+import { ZeroAddress } from 'ethers';
 
 describe('MarginlyPool.Liquidation', () => {
   it('should revert when existing position trying to make liquidation', async () => {
@@ -23,7 +23,7 @@ describe('MarginlyPool.Liquidation', () => {
     const amountToDeposit = 100;
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositBase, amountToDeposit, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, amountToDeposit, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const quoteAmount = 2000;
     const baseAmount = 1000;
@@ -43,7 +43,7 @@ describe('MarginlyPool.Liquidation', () => {
     const amountToDeposit = 100;
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositBase, amountToDeposit, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, amountToDeposit, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const quoteAmount = 2000;
     const baseAmount = 1000;
@@ -63,16 +63,16 @@ describe('MarginlyPool.Liquidation', () => {
     const depositAmount = 20000;
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const shorterCollateral = 100;
     const shortAmount = 5000; // leverage 19.9
     await marginlyPool
       .connect(shorter)
-      .execute(CallType.DepositQuote, shorterCollateral, shortAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, shorterCollateral, shortAmount, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const quoteAmount = 0;
     const baseAmount = 7700; // the sum is enough to cover debt + accruedInterest
@@ -92,16 +92,16 @@ describe('MarginlyPool.Liquidation', () => {
     const depositAmount = 40000;
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const shorterCollateral = 100;
     const shortAmount = 7600; // leverage 19.9
     await marginlyPool
       .connect(shorter)
-      .execute(CallType.DepositQuote, shorterCollateral, shortAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, shorterCollateral, shortAmount, price, false, ZeroAddress, uniswapV3Swapdata());
 
     //wait for accrue interest
     const timeShift = 20 * 24 * 60 * 60;
@@ -125,16 +125,16 @@ describe('MarginlyPool.Liquidation', () => {
     const depositAmount = 40000;
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral = 100;
     const longAmount = 1980; // leverage 19.8
     await marginlyPool
       .connect(longer)
-      .execute(CallType.DepositBase, baseCollateral, longAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, baseCollateral, longAmount, price, false, ZeroAddress, uniswapV3Swapdata());
 
     //wait for accrue interest
     const timeShift = 60 * 24 * 60 * 60;
@@ -161,16 +161,16 @@ describe('MarginlyPool.Liquidation', () => {
     const depositAmount = 20000;
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const shorterCollateral = 100;
     const shortAmount = 7600; // leverage 19.9
     await marginlyPool
       .connect(shorter)
-      .execute(CallType.DepositQuote, shorterCollateral, shortAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, shorterCollateral, shortAmount, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const beforeLiquidationPosition = await marginlyPool.positions(shorter.address);
     const beforeDiscountedBaseCollateral = await marginlyPool.discountedBaseCollateral();
@@ -260,16 +260,16 @@ describe('MarginlyPool.Liquidation', () => {
     const depositAmount = 40000;
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral = 100;
     const longAmount = 1980; // leverage 19.8
     await marginlyPool
       .connect(longer)
-      .execute(CallType.DepositBase, baseCollateral, longAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, baseCollateral, longAmount, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const beforeLiquidationPosition = await marginlyPool.positions(longer.address);
     const beforeDiscountedBaseCollateral = await marginlyPool.discountedBaseCollateral();
@@ -352,16 +352,16 @@ describe('MarginlyPool.Liquidation', () => {
     const depositAmount = 20000n;
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const shorterCollateral = 100n;
     const shortAmount = 7600n; // leverage 19.9
     await marginlyPool
       .connect(shorter)
-      .execute(CallType.DepositQuote, shorterCollateral, shortAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, shorterCollateral, shortAmount, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const beforeLiquidationPosition = await marginlyPool.positions(shorter.address);
     const beforeDiscountedBaseCollateral = await marginlyPool.discountedBaseCollateral();
@@ -442,16 +442,16 @@ describe('MarginlyPool.Liquidation', () => {
     const depositAmount = 40000n;
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral = 100n;
     const longAmount = 1980n; // leverage 19.8
     await marginlyPool
       .connect(longer)
-      .execute(CallType.DepositBase, baseCollateral, longAmount, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, baseCollateral, longAmount, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const beforeLiquidationPosition = await marginlyPool.positions(longer.address);
     const beforeDiscountedQuoteCollateral = await marginlyPool.discountedQuoteCollateral();
@@ -530,38 +530,22 @@ describe('MarginlyPool.Liquidation', () => {
     const depositAmount = 20000;
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const shorterCollateral1 = 100;
     const shortAmount1 = 7600; // leverage 19.9
     await marginlyPool
       .connect(shorter1)
-      .execute(
-        CallType.DepositQuote,
-        shorterCollateral1,
-        shortAmount1,
-        price,
-        false,
-        ZERO_ADDRESS,
-        uniswapV3Swapdata()
-      );
+      .execute(CallType.DepositQuote, shorterCollateral1, shortAmount1, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const shorterCollateral2 = 100;
     const shortAmount2 = 7400;
     await marginlyPool
       .connect(shorter2)
-      .execute(
-        CallType.DepositQuote,
-        shorterCollateral2,
-        shortAmount2,
-        price,
-        false,
-        ZERO_ADDRESS,
-        uniswapV3Swapdata()
-      );
+      .execute(CallType.DepositQuote, shorterCollateral2, shortAmount2, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const beforeShorter2Position = await marginlyPool.positions(shorter2.address);
     expect(beforeShorter2Position.heapPosition).to.be.eq(2);
@@ -595,22 +579,22 @@ describe('MarginlyPool.Liquidation', () => {
     const depositAmount = 40000;
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral1 = 100;
     const longAmount1 = 1980; // leverage 19.8
     await marginlyPool
       .connect(longer1)
-      .execute(CallType.DepositBase, baseCollateral1, longAmount1, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, baseCollateral1, longAmount1, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral2 = 100;
     const longAmount2 = 1900;
     await marginlyPool
       .connect(longer2)
-      .execute(CallType.DepositBase, baseCollateral2, longAmount2, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, baseCollateral2, longAmount2, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const beforeLonger1Position = await marginlyPool.positions(longer1.address);
     expect(beforeLonger1Position.heapPosition).to.be.eq(1);
@@ -646,17 +630,17 @@ describe('mc heap tests', () => {
 
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositQuote, 1000 * depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, 1000 * depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     await marginlyPool
       .connect(longer1)
-      .execute(CallType.DepositBase, depositAmount, 18500, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, depositAmount, 18500, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(longer2)
-      .execute(CallType.DepositBase, depositAmount, 18400, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, depositAmount, 18400, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(longer3)
-      .execute(CallType.DepositBase, depositAmount, 18300, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, depositAmount, 18300, price, false, ZeroAddress, uniswapV3Swapdata());
 
     expect((await marginlyPool.getHeapPosition(0, false))[1].account).to.be.equal(longer1.address);
     expect((await marginlyPool.getHeapPosition(1, false))[1].account).to.be.equal(longer2.address);
@@ -665,10 +649,10 @@ describe('mc heap tests', () => {
     await time.increase(24 * 60 * 60);
 
     // should happen 2 MCs: longer1 as as the one with the worst leverage and longer3 as the caller with bad leverage
-    await marginlyPool.connect(longer3).execute(CallType.Reinit, 0, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+    await marginlyPool.connect(longer3).execute(CallType.Reinit, 0, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     expect((await marginlyPool.getHeapPosition(0, false))[1].account).to.be.equal(longer2.address);
-    expect((await marginlyPool.getHeapPosition(1, false))[1].account).to.be.equal(ZERO_ADDRESS);
+    expect((await marginlyPool.getHeapPosition(1, false))[1].account).to.be.equal(ZeroAddress);
   });
 
   it('remove short caller', async () => {
@@ -680,17 +664,17 @@ describe('mc heap tests', () => {
 
     await marginlyPool
       .connect(depositor)
-      .execute(CallType.DepositBase, 1000n * depositAmount, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositBase, 1000n * depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     await marginlyPool
       .connect(shorter1)
-      .execute(CallType.DepositQuote, depositAmount, 18500, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, depositAmount, 18500, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(shorter2)
-      .execute(CallType.DepositQuote, depositAmount, 18400, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, depositAmount, 18400, price, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(shorter3)
-      .execute(CallType.DepositQuote, depositAmount, 18300, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+      .execute(CallType.DepositQuote, depositAmount, 18300, price, false, ZeroAddress, uniswapV3Swapdata());
 
     expect((await marginlyPool.getHeapPosition(0, true))[1].account).to.be.equal(shorter1.address);
     expect((await marginlyPool.getHeapPosition(1, true))[1].account).to.be.equal(shorter2.address);
@@ -699,11 +683,9 @@ describe('mc heap tests', () => {
     await time.increase(24 * 60 * 60);
 
     // should happen 2 MCs: shorter1 as the one with the worst leverage and shorter3 as the caller with bad leverage
-    await marginlyPool
-      .connect(shorter3)
-      .execute(CallType.Reinit, 0, 0, price, false, ZERO_ADDRESS, uniswapV3Swapdata());
+    await marginlyPool.connect(shorter3).execute(CallType.Reinit, 0, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     expect((await marginlyPool.getHeapPosition(0, true))[1].account).to.be.equal(shorter2.address);
-    expect((await marginlyPool.getHeapPosition(1, true))[1].account).to.be.equal(ZERO_ADDRESS);
+    expect((await marginlyPool.getHeapPosition(1, true))[1].account).to.be.equal(ZeroAddress);
   });
 });

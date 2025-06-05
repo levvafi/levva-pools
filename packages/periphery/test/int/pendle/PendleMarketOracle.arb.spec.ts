@@ -7,13 +7,13 @@ describe('Pendle PT-ezETH-27JUN2024 / ezETH oracle before maturity (PendleOracle
     const pt = <TokenInfo>{
       address: '0x8EA5040d423410f1fdc363379Af88e1DB5eA1C34',
       symbol: 'PT-ezETH-27JUN2024',
-      decimals: 18,
+      decimals: 18n,
     };
 
     const ib = <TokenInfo>{
       address: '0x2416092f143378750bb29b79eD961ab195CcEea5',
       symbol: 'ezETH',
-      decimals: 18,
+      decimals: 18n,
     };
 
     const secondsAgo = 1000;

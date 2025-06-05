@@ -4,8 +4,6 @@ import { MarginlyPool } from '../../typechain-types';
 import { expect } from 'chai';
 import { TechnicalPositionOwner } from './fixtures';
 
-export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
-
 export async function generateWallets(count: number): Promise<HDNodeWallet[]> {
   const wallets = [];
   for (let i = 0; i < count; i++) {

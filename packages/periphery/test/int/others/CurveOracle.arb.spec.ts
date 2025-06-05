@@ -1,34 +1,31 @@
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
 import { createCurveCaseCrvUsdUsdc, createCurveCaseFrxEthWeth, CurveOracleCaseParams } from '../../shared/fixtures';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { oneX96 } from '../pendle/common';
-import { ethers } from 'hardhat';
+import { formatEther } from 'ethers';
 
 async function fetchCurvePrices(
   params: CurveOracleCaseParams,
   blockTag?: number
 ): Promise<{
-  actualBalancePrice: BigNumber;
-  actualMargincallPrice: BigNumber;
-  expectedBalancePrice: BigNumber;
-  expectedMargincallPrice: BigNumber;
+  actualBalancePrice: bigint;
+  actualMargincallPrice: bigint;
+  expectedBalancePrice: bigint;
+  expectedMargincallPrice: bigint;
 }> {
-  const multiplier = BigNumber.from(10).pow(18 + params.baseToken.decimals - params.quoteToken.decimals);
+  const multiplier = 10n ** (18n + params.baseToken.decimals - params.quoteToken.decimals);
 
-  let actualBalancePrice = (
-    await params.oracle.getBalancePrice(params.quoteToken.address, params.baseToken.address, { blockTag })
-  )
-    *(multiplier)
-    /(oneX96);
+  let actualBalancePrice =
+    ((await params.oracle.getBalancePrice(params.quoteToken.address, params.baseToken.address, { blockTag })) *
+      multiplier) /
+    oneX96;
 
-  const actualMargincallPrice = (
-    await params.oracle.getMargincallPrice(params.quoteToken.address, params.baseToken.address, { blockTag })
-  )
-    *(multiplier)
-    /(oneX96);
+  const actualMargincallPrice =
+    ((await params.oracle.getMargincallPrice(params.quoteToken.address, params.baseToken.address, { blockTag })) *
+      multiplier) /
+    oneX96;
 
-  let expectedBalancePrice: BigNumber;
+  let expectedBalancePrice: bigint;
 
   if (params.priceOracleMethodHasArg) {
     expectedBalancePrice = await params.pool['price_oracle(uint256)'](0, { blockTag });
@@ -37,8 +34,8 @@ async function fetchCurvePrices(
   }
 
   if (!params.isToken0QuoteToken) {
-    const one = BigNumber.from(10).pow(18);
-    expectedBalancePrice = one*(one)/(expectedBalancePrice);
+    const one = 10n ** 18n;
+    expectedBalancePrice = (one * one) / expectedBalancePrice;
   }
 
   return {
@@ -49,19 +46,17 @@ async function fetchCurvePrices(
   };
 }
 
-export function printCurvePrices(actualPrice: BigNumber, expectedPrice: BigNumber, caseParams: CurveOracleCaseParams) {
-  const priceDelta = actualPrice-(expectedPrice);
+export function printCurvePrices(actualPrice: bigint, expectedPrice: bigint, caseParams: CurveOracleCaseParams) {
+  const priceDelta = actualPrice - expectedPrice;
   console.log(
-    `  Expected price: 1.0 ${caseParams.baseToken.symbol} = ${ethers.utils.formatEther(expectedPrice)} ${
+    `  Expected price: 1.0 ${caseParams.baseToken.symbol} = ${formatEther(expectedPrice)} ${
       caseParams.quoteToken.symbol
     }`
   );
   console.log(
-    `  Actual price:   1.0 ${caseParams.baseToken.symbol} = ${ethers.utils.formatEther(actualPrice)} ${
-      caseParams.quoteToken.symbol
-    }`
+    `  Actual price:   1.0 ${caseParams.baseToken.symbol} = ${formatEther(actualPrice)} ${caseParams.quoteToken.symbol}`
   );
-  console.log(`  Delta: ${ethers.utils.formatEther(priceDelta)}`);
+  console.log(`  Delta: ${formatEther(priceDelta)}`);
 }
 
 describe('CurveOracle', () => {
@@ -76,8 +71,8 @@ describe('CurveOracle', () => {
     console.log(`\nMargincall price:`);
     printCurvePrices(actualMargincallPrice, expectedMargincallPrice, caseParams);
 
-    expect(actualBalancePrice).to.be.closeTo(expectedBalancePrice, BigNumber.from(1000));
-    expect(actualMargincallPrice).to.be.closeTo(expectedMargincallPrice, BigNumber.from(1000));
+    expect(actualBalancePrice).to.be.closeTo(expectedBalancePrice, 1000n);
+    expect(actualMargincallPrice).to.be.closeTo(expectedMargincallPrice, 1000n);
   });
 
   it('crvUSD/USDC: with arg in method', async () => {
@@ -91,7 +86,7 @@ describe('CurveOracle', () => {
     console.log(`\nMargincall price:`);
     printCurvePrices(actualMargincallPrice, expectedMargincallPrice, caseParams);
 
-    expect(actualBalancePrice).to.be.closeTo(expectedBalancePrice, BigNumber.from(1000));
-    expect(actualMargincallPrice).to.be.closeTo(expectedMargincallPrice, BigNumber.from(1000));
+    expect(actualBalancePrice).to.be.closeTo(expectedBalancePrice, 1000n);
+    expect(actualMargincallPrice).to.be.closeTo(expectedMargincallPrice, 1000n);
   });
 });

@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
-import { BigNumber } from 'ethers';
 import { createSomeChainlinkCompositeOracle, createSomeChainlinkOracle } from './shared/fixtures';
 import { ethers } from 'hardhat';
 
@@ -13,9 +12,7 @@ describe('ChainlinkOracle prices', () => {
       const quoteDecimals = await (await ethers.getContractAt('IERC20Metadata', quoteToken)).decimals();
       const baseDecimals = await (await ethers.getContractAt('IERC20Metadata', baseToken)).decimals();
 
-      const expectedPrice = BigNumber.from(1n << 95n)
-        *(BigNumber.from(10).pow(quoteDecimals))
-        /(BigNumber.from(10).pow(baseDecimals)); // 0.5
+      const expectedPrice = ((1n << 95n) * 10n ** quoteDecimals) / 10n ** baseDecimals; // 0.5
 
       const actualPrice = await (oracle as any)[getPrice](quoteToken, baseToken);
       expect(actualPrice).to.be.equal(expectedPrice);
@@ -28,9 +25,7 @@ describe('ChainlinkOracle prices', () => {
       const quoteDecimals = await (await ethers.getContractAt('IERC20Metadata', quoteToken)).decimals();
       const baseDecimals = await (await ethers.getContractAt('IERC20Metadata', baseToken)).decimals();
 
-      const expectedPrice = BigNumber.from(1n << 97n)
-        *(BigNumber.from(10).pow(baseDecimals))
-        /(BigNumber.from(10).pow(quoteDecimals)); // 2
+      const expectedPrice = ((1n << 97n) * 10n ** baseDecimals) / 10n ** quoteDecimals; // 2
 
       const actualPrice = await (oracle as any)[getPrice](baseToken, quoteToken);
       expect(actualPrice).to.be.equal(expectedPrice);
@@ -42,9 +37,7 @@ describe('ChainlinkOracle prices', () => {
       await quoteChainlink.setPrice(2000n * 10n ** BigInt(quoteDecimals));
       await baseChainlink.setPrice(40000n * 10n ** BigInt(baseDecimals));
 
-      const expectedPrice = BigNumber.from(20n << 96n)
-        *(BigNumber.from(10).pow(quoteDecimals))
-        /(BigNumber.from(10).pow(baseDecimals));
+      const expectedPrice = ((20n << 96n) * 10n ** quoteDecimals) / 10n ** baseDecimals;
 
       const actualPrice = await (oracle as any)[getPrice](quoteToken, baseToken);
       expect(actualPrice).to.be.equal(expectedPrice);
@@ -55,7 +48,10 @@ describe('ChainlinkOracle prices', () => {
       await chainlink.setPrice(5n * 10n ** (BigInt(decimals) - 1n)); // 0.5
 
       await oracle.pause();
-      await expect((oracle as any)[getPrice](quoteToken, baseToken)).to.be.revertedWith('Pausable: paused');
+      await expect((oracle as any)[getPrice](quoteToken, baseToken)).to.be.revertedWithCustomError(
+        oracle,
+        'EnforcedPause'
+      );
 
       await oracle.unpause();
       await (oracle as any)[getPrice](quoteToken, baseToken);
@@ -97,7 +93,7 @@ describe('ChainlinkOracle prices', () => {
     it(`${getPrice} should fail when sequencer grace period is not over`, async () => {
       const { oracle, quoteToken, baseToken, sequencerFeed, chainlink } = await loadFixture(createSomeChainlinkOracle);
       await chainlink.setPrice(5n * 10n ** (BigInt(18) - 1n)); // 0.5
-      const currentTimestamp = await time.latest();
+      const currentTimestamp = BigInt(await time.latest());
 
       await sequencerFeed.setAnswer(0, currentTimestamp);
       await expect((oracle as any)[getPrice](quoteToken, baseToken)).to.be.revertedWithCustomError(
@@ -105,7 +101,7 @@ describe('ChainlinkOracle prices', () => {
         'SequencerGracePeriodNotOver'
       );
 
-      await sequencerFeed.setAnswer(0, currentTimestamp - (await oracle.sequencerGracePeriod()).toNumber());
+      await sequencerFeed.setAnswer(0, currentTimestamp - (await oracle.sequencerGracePeriod()));
       await (oracle as any)[getPrice](quoteToken, baseToken);
     });
   }
@@ -126,11 +122,13 @@ describe('ChainlinkOracle prices', () => {
 
     await oracle.connect(owner).updateSequencerGracePeriod(0);
 
-    await expect(oracle.connect(notOwner).updateSequencerGracePeriod(1)).to.be.revertedWith(
-      'Ownable: caller is not the owner'
+    await expect(oracle.connect(notOwner).updateSequencerGracePeriod(1)).to.be.revertedWithCustomError(
+      oracle,
+      'OwnableUnauthorizedAccount'
     );
-    await expect(oracle.connect(notOwner).updateSequencerGracePeriod(1)).to.be.revertedWith(
-      'Ownable: caller is not the owner'
+    await expect(oracle.connect(notOwner).updateSequencerGracePeriod(1)).to.be.revertedWithCustomError(
+      oracle,
+      'OwnableUnauthorizedAccount'
     );
   });
 
@@ -141,7 +139,10 @@ describe('ChainlinkOracle prices', () => {
     await oracle.connect(owner).pause();
     await oracle.connect(owner).unpause();
 
-    await expect(oracle.connect(notOwner).pause()).to.be.revertedWith('Ownable: caller is not the owner');
-    await expect(oracle.connect(notOwner).unpause()).to.be.revertedWith('Ownable: caller is not the owner');
+    await expect(oracle.connect(notOwner).pause()).to.be.revertedWithCustomError(oracle, 'OwnableUnauthorizedAccount');
+    await expect(oracle.connect(notOwner).unpause()).to.be.revertedWithCustomError(
+      oracle,
+      'OwnableUnauthorizedAccount'
+    );
   });
 });

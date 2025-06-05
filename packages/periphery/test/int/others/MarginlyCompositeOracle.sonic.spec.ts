@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import {
-  AaveATokenPriceOracle,
+  AavePriceOracle,
   MarginlyCompositeOracle,
   PendleMarketOracle,
 } from '../../../typechain-types/contracts/oracles';
@@ -16,7 +16,7 @@ describe.only('Composite oracle PT-asonUSDC/USDC.e with Pendle for PT-asonUSDC/a
   const pendleMarketOracleSecondsAgo = 1800;
   const pendleMarketOracleSecondsAgoLiquidation = 15;
 
-  let aaveOracle: AaveATokenPriceOracle;
+  let aaveOracle: AavePriceOracle;
   let pendleMarketOracle: PendleMarketOracle;
   let compositeOracle: MarginlyCompositeOracle;
 
@@ -34,7 +34,7 @@ describe.only('Composite oracle PT-asonUSDC/USDC.e with Pendle for PT-asonUSDC/a
     );
 
     compositeOracle = await (await ethers.getContractFactory('MarginlyCompositeOracle')).deploy();
-    await compositeOracle.setPair(usdce, aSonUsdc, ptAsonUSDC14Aug2025, aaveOracle.address, pendleMarketOracle.address);
+    await compositeOracle.setPair(usdce, aSonUsdc, ptAsonUSDC14Aug2025, aaveOracle, pendleMarketOracle);
   });
 
   it('pt-aSonUsdc-14Aug2025/USDC.e price', async () => {

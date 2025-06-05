@@ -1,6 +1,4 @@
 import { ethers } from 'hardhat';
-import bn from 'bignumber.js';
-import { BigNumber } from 'ethers';
 import { ChainlinkOracle } from '../../../typechain-types/contracts/oracles';
 import { getDecimalsDiff, printPrices } from '../../shared/common';
 
@@ -61,11 +59,11 @@ describe('ChainlinkOracle', () => {
     const balancePrice = await oracle.getBalancePrice(usdFake, wbtc);
     const mcPrice = await oracle.getMargincallPrice(usdFake, wbtc);
 
-    printPrices(balancePrice, mcPrice, 8);
+    printPrices(balancePrice, mcPrice, 8n);
 
     const revBalancePrice = await oracle.getBalancePrice(wbtc, usdFake);
     const revMcPrice = await oracle.getMargincallPrice(wbtc, usdFake);
 
-    printPrices(revBalancePrice, revMcPrice, -8);
+    printPrices(revBalancePrice, revMcPrice, -8n);
   });
 });

@@ -1,12 +1,12 @@
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { ethers } from 'hardhat';
-import { Pool, Tokens, ZERO_ADDRESS, createSwapPoolRegistry } from './shared/fixtures';
+import { Pool, Tokens, ZeroAddress, createSwapPoolRegistry } from './shared/fixtures';
 
 describe('SwapPoolRegistry', () => {
   it('should be reverted when wrong constructor parameters', async () => {
     const contractFactory = await ethers.getContractFactory('SwapPoolRegistry');
-    const uniswapV3FactoryAddress = ZERO_ADDRESS;
+    const uniswapV3FactoryAddress = ZeroAddress;
 
     await expect(contractFactory.deploy(uniswapV3FactoryAddress, [])).to.be.revertedWithCustomError(
       contractFactory,
@@ -68,7 +68,7 @@ describe('SwapPoolRegistry', () => {
     };
 
     const existingPool = await canonicalFactory.getPool(swapPool.tokenA, swapPool.tokenB, swapPool.fee);
-    expect(existingPool).not.to.be.eq(swapPool.pool).and.not.to.be.eq(ZERO_ADDRESS);
+    expect(existingPool).not.to.be.eq(swapPool.pool).and.not.to.be.eq(ZeroAddress);
     expect(await swapPoolRegistry.getPool(swapPool.tokenA, swapPool.tokenB, swapPool.fee)).to.be.eq(existingPool);
 
     await swapPoolRegistry.addSwapPool([swapPool]);
@@ -86,7 +86,7 @@ describe('SwapPoolRegistry', () => {
     };
 
     expect(await canonicalFactory.getPool(overridePool.tokenA, overridePool.tokenB, overridePool.fee)).to.be.eq(
-      ZERO_ADDRESS
+      ZeroAddress
     );
 
     await swapPoolRegistry.addSwapPool([overridePool]);
@@ -123,7 +123,7 @@ describe('SwapPoolRegistry', () => {
 
   it('should be reverted when trying to call createPool', async () => {
     const { swapPoolRegistry } = await loadFixture(createSwapPoolRegistry);
-    await expect(swapPoolRegistry.createPool(ZERO_ADDRESS, ZERO_ADDRESS, 0)).to.be.revertedWithCustomError(
+    await expect(swapPoolRegistry.createPool(ZeroAddress, ZeroAddress, 0)).to.be.revertedWithCustomError(
       swapPoolRegistry,
       'Forbidden'
     );
@@ -142,12 +142,12 @@ describe('SwapPoolRegistry', () => {
       swapPoolRegistry.addSwapPool([{ ...swapPool, tokenB: swapPool.tokenA }])
     ).to.be.revertedWithCustomError(swapPoolRegistry, 'WrongParameters');
 
-    await expect(swapPoolRegistry.addSwapPool([{ ...swapPool, tokenA: ZERO_ADDRESS }])).to.be.revertedWithCustomError(
+    await expect(swapPoolRegistry.addSwapPool([{ ...swapPool, tokenA: ZeroAddress }])).to.be.revertedWithCustomError(
       swapPoolRegistry,
       'WrongParameters'
     );
 
-    await expect(swapPoolRegistry.addSwapPool([{ ...swapPool, tokenB: ZERO_ADDRESS }])).to.be.revertedWithCustomError(
+    await expect(swapPoolRegistry.addSwapPool([{ ...swapPool, tokenB: ZeroAddress }])).to.be.revertedWithCustomError(
       swapPoolRegistry,
       'WrongParameters'
     );

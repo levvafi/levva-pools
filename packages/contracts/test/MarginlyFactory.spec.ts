@@ -5,7 +5,7 @@ import { createMarginlyFactory } from './shared/fixtures';
 import snapshotGasCost from 'optifat-snapshot-gas-cost';
 import { MarginlyPool } from '../typechain-types';
 import { ethers } from 'hardhat';
-import { PositionType, ZERO_ADDRESS } from './shared/utils';
+import { PositionType, ZeroAddress } from './shared/utils';
 
 describe('MarginlyFactory', () => {
   function getPoolParams() {
@@ -90,7 +90,7 @@ describe('MarginlyFactory', () => {
     ];
 
     for (let i = 0; i < constructorArgs.length; i++) {
-      constructorArgs[i] = ZERO_ADDRESS;
+      constructorArgs[i] = ZeroAddress;
       await expect(factoryFactory.deploy.call(factoryFactory, ...constructorArgs)).to.be.revertedWithCustomError(
         factoryFactory,
         'WrongValue'

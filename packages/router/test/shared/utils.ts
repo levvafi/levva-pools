@@ -1,4 +1,4 @@
-import { Addressable, ContractTransaction, ContractTransactionResponse } from 'ethers';
+import { Addressable, ContractTransactionResponse } from 'ethers';
 import { ERC20, MarginlyRouter } from '../../typechain-types';
 import { formatUnits } from 'ethers';
 import { reset } from '@nomicfoundation/hardhat-network-helpers';

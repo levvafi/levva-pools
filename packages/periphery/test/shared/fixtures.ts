@@ -13,11 +13,12 @@ import {
   TestAlgebraFactory,
   PendleOracle,
   IPriceOracle,
-  IPPtLpOracle,
+  IPPYLpOracle,
   IPMarketV3,
   TestUniswapV2Factory,
   TestUniswapV2Pair,
   TestCurveEMAPool,
+  TestCurveEMAPool__factory,
   MintableERC20,
   MockSequencerFeed,
   PendleMarketOracle,
@@ -26,6 +27,8 @@ import {
   ICurve,
   MockPriceOracleV2,
   MarginlyCompositeOracle,
+  IPPYLpOracle__factory,
+  TestCurveStableSwapNGPool__factory,
 } from '../../typechain-types';
 import {
   AlgebraTickOracle,
@@ -35,9 +38,9 @@ import {
   UniswapV3TickOracleDouble,
 } from '../../typechain-types';
 import { one, oneX96 } from '../int/pendle/common';
-import { BigNumber, ContractFactory } from 'ethers';
+import { Addressable, ContractFactory, parseUnits } from 'ethers';
 
-export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+export const ZeroAddress = '0x0000000000000000000000000000000000000000';
 
 //Some random addresses for testing purposes
 export const Tokens = {
@@ -123,7 +126,7 @@ export async function createSwapPoolRegistry(): Promise<{
 }> {
   const canonicalFactory = await createUniswapV3Factory();
   const contractFactory = await ethers.getContractFactory('SwapPoolRegistry');
-  const swapPoolRegistry = await contractFactory.deploy(canonicalFactory.address, []);
+  const swapPoolRegistry = await contractFactory.deploy(canonicalFactory, []);
 
   return {
     canonicalFactory,
@@ -147,10 +150,10 @@ async function createUniswapV3TickOracle(quoteToken: string, baseToken: string):
 
   const factory = await ethers.getContractFactory('TestUniswapFactory');
   const uniswapFactory = await factory.deploy();
-  await uniswapFactory.addPool(pool.address);
+  await uniswapFactory.addPool(pool);
 
   const oracleFactory = await ethers.getContractFactory('UniswapV3TickOracle');
-  const oracle = await oracleFactory.deploy(uniswapFactory.address);
+  const oracle = await oracleFactory.deploy(uniswapFactory);
   await oracle.setOptions(quoteToken, baseToken, 900, 5, await pool.fee());
   return { oracle, pool, uniswapFactory, quoteToken, baseToken };
 }
@@ -189,11 +192,11 @@ async function createUniswapV3TickOracleDouble(
 
   const factory = await ethers.getContractFactory('TestUniswapFactory');
   const uniswapFactory = await factory.deploy();
-  await uniswapFactory.addPool(firstPool.address);
-  await uniswapFactory.addPool(secondPool.address);
+  await uniswapFactory.addPool(firstPool);
+  await uniswapFactory.addPool(secondPool);
 
   const oracleFactory = await ethers.getContractFactory('UniswapV3TickOracleDouble');
-  const oracle = await oracleFactory.deploy(uniswapFactory.address);
+  const oracle = await oracleFactory.deploy(uniswapFactory);
   await oracle.setOptions(
     quoteToken,
     baseToken,
@@ -241,17 +244,17 @@ export async function createUniswapV3TickOracleDoubleIBQ() {
 export type CurveOracleData = {
   oracle: CurveOracle;
   pool: TestCurveEMAPool | TestCurveStableSwapNGPool;
-  coin0: string;
-  coin1: string;
+  coin0: string | Addressable;
+  coin1: string | Addressable;
   quoteToken: MintableERC20;
   baseToken: MintableERC20;
   anotherToken: MintableERC20;
 };
 
 async function createCurveOracle(
-  poolFactory: ContractFactory,
-  coin0: string,
-  coin1: string,
+  poolFactory: TestCurveEMAPool__factory | TestCurveStableSwapNGPool__factory,
+  coin0: string | Addressable,
+  coin1: string | Addressable,
   baseToken: MintableERC20,
   quoteToken: MintableERC20,
   anotherToken: MintableERC20,
@@ -260,17 +263,17 @@ async function createCurveOracle(
 ): Promise<CurveOracleData> {
   const pool = await poolFactory.deploy(coin0, coin1);
 
-  const one = BigNumber.from(10).pow(18);
+  const one = parseUnits('1', 18);
   await pool.setPrices(
-    BigNumber.from(3000)*(one), // last_price
-    BigNumber.from(3100)*(one), // ema_price
-    BigNumber.from(3200)*(one) // price_oracle
+    3000n * one, // last_price
+    3100n * one, // ema_price
+    3200n * one // price_oracle
   );
 
   const oracleFactory = await ethers.getContractFactory('CurveOracle');
   const oracle = await oracleFactory.deploy();
   if (addPool) {
-    await oracle.addPool(pool.address, quoteToken.address, baseToken.address, priceOracleMethodHaveArg);
+    await oracle.addPool(pool, quoteToken, baseToken, priceOracleMethodHaveArg);
   }
 
   return { oracle, pool, coin0, coin1, quoteToken, baseToken, anotherToken };
@@ -282,15 +285,7 @@ export async function createCurveEMAOracleForward(): Promise<CurveOracleData> {
   const wethToken = await tokenFactory.deploy('WETH', 'Wrapped Ether', 18);
   const anotherToken = await tokenFactory.deploy('USDC', 'Circle USD', 6);
   const poolFactory = await ethers.getContractFactory('TestCurveEMAPool');
-  return createCurveOracle(
-    poolFactory,
-    wethToken.address,
-    usdtToken.address,
-    usdtToken,
-    wethToken,
-    anotherToken,
-    false
-  );
+  return createCurveOracle(poolFactory, wethToken.target, usdtToken.target, usdtToken, wethToken, anotherToken, false);
 }
 
 export async function createCurveEMAOracleBackward(): Promise<CurveOracleData> {
@@ -299,15 +294,7 @@ export async function createCurveEMAOracleBackward(): Promise<CurveOracleData> {
   const wethToken = await tokenFactory.deploy('WETH', 'Wrapped Ether', 18);
   const anotherToken = await tokenFactory.deploy('USDC', 'Circle USD', 6);
   const poolFactory = await ethers.getContractFactory('TestCurveEMAPool');
-  return createCurveOracle(
-    poolFactory,
-    wethToken.address,
-    usdtToken.address,
-    wethToken,
-    usdtToken,
-    anotherToken,
-    false
-  );
+  return createCurveOracle(poolFactory, wethToken.target, usdtToken.target, wethToken, usdtToken, anotherToken, false);
 }
 
 export async function createCurveEMAOracleWithoutAddingPool(): Promise<CurveOracleData> {
@@ -318,8 +305,8 @@ export async function createCurveEMAOracleWithoutAddingPool(): Promise<CurveOrac
   const poolFactory = await ethers.getContractFactory('TestCurveEMAPool');
   return createCurveOracle(
     poolFactory,
-    wethToken.address,
-    usdtToken.address,
+    wethToken.target,
+    usdtToken.target,
     wethToken,
     usdtToken,
     anotherToken,
@@ -334,7 +321,7 @@ export async function createCurveNGOracleForward(): Promise<CurveOracleData> {
   const wethToken = await tokenFactory.deploy('WETH', 'Wrapped Ether', 18);
   const anotherToken = await tokenFactory.deploy('USDC', 'Circle USD', 6);
   const poolFactory = await ethers.getContractFactory('TestCurveStableSwapNGPool');
-  return createCurveOracle(poolFactory, wethToken.address, usdtToken.address, usdtToken, wethToken, anotherToken, true);
+  return createCurveOracle(poolFactory, wethToken.target, usdtToken.target, usdtToken, wethToken, anotherToken, true);
 }
 
 export async function createCurveNGOracleBackward(): Promise<CurveOracleData> {
@@ -343,7 +330,7 @@ export async function createCurveNGOracleBackward(): Promise<CurveOracleData> {
   const wethToken = await tokenFactory.deploy('WETH', 'Wrapped Ether', 18);
   const anotherToken = await tokenFactory.deploy('USDC', 'Circle USD', 6);
   const poolFactory = await ethers.getContractFactory('TestCurveStableSwapNGPool');
-  return createCurveOracle(poolFactory, wethToken.address, usdtToken.address, wethToken, usdtToken, anotherToken, true);
+  return createCurveOracle(poolFactory, wethToken.target, usdtToken.target, wethToken, usdtToken, anotherToken, true);
 }
 
 export async function createCurveNGOracleWithoutAddingPool(): Promise<CurveOracleData> {
@@ -354,8 +341,8 @@ export async function createCurveNGOracleWithoutAddingPool(): Promise<CurveOracl
   const poolFactory = await ethers.getContractFactory('TestCurveStableSwapNGPool');
   return createCurveOracle(
     poolFactory,
-    wethToken.address,
-    usdtToken.address,
+    wethToken.target,
+    usdtToken.target,
     wethToken,
     usdtToken,
     anotherToken,
@@ -367,17 +354,21 @@ export async function createCurveNGOracleWithoutAddingPool(): Promise<CurveOracl
 export type PythOracleData = {
   oracle: PythOracle;
   pyth: MockPyth;
-  quoteToken: string;
-  baseToken: string;
+  quoteToken: string | Addressable;
+  baseToken: string | Addressable;
   pythId: string;
 };
 
-async function createPythOracle(quoteToken: string, baseToken: string, pythId: string): Promise<PythOracleData> {
+async function createPythOracle(
+  quoteToken: string | Addressable,
+  baseToken: string | Addressable,
+  pythId: string
+): Promise<PythOracleData> {
   const factory = await ethers.getContractFactory('MockPyth');
   const mockPyth = await factory.deploy();
 
   const oracleFactory = await ethers.getContractFactory('PythOracle');
-  const oracle = await oracleFactory.deploy(mockPyth.address);
+  const oracle = await oracleFactory.deploy(mockPyth);
   const maxPriceAge = 86400; // 1 day
   await oracle.setPair(quoteToken, baseToken, pythId, maxPriceAge);
   return {
@@ -392,23 +383,23 @@ async function createPythOracle(quoteToken: string, baseToken: string, pythId: s
 export async function createSomePythOracle() {
   const usdc = await (await ethers.getContractFactory('TestERC20')).deploy('USDC', 'USDC', 6);
   const tbtc = await (await ethers.getContractFactory('TestERC20')).deploy('TBTC', 'TBTC', 18);
-  return createPythOracle(usdc.address, tbtc.address, PythIds.TBTC);
+  return createPythOracle(usdc.target, tbtc.target, PythIds.TBTC);
 }
 
 export type PythCompositeOracleData = {
   oracle: PythOracle;
   pyth: MockPyth;
-  quoteToken: string;
-  intermediateToken: string;
-  baseToken: string;
+  quoteToken: string | Addressable;
+  intermediateToken: string | Addressable;
+  baseToken: string | Addressable;
   quotePythId: string;
   basePythId: string;
 };
 
 async function createPythCompositeOracle(
-  quoteToken: string,
-  intermediateToken: string,
-  baseToken: string,
+  quoteToken: string | Addressable,
+  intermediateToken: string | Addressable,
+  baseToken: string | Addressable,
   quotePythId: string,
   basePythId: string
 ): Promise<PythCompositeOracleData> {
@@ -416,7 +407,7 @@ async function createPythCompositeOracle(
   const mockPyth = await factory.deploy();
 
   const oracleFactory = await ethers.getContractFactory('PythOracle');
-  const oracle = await oracleFactory.deploy(mockPyth.address);
+  const oracle = await oracleFactory.deploy(mockPyth);
   const maxPriceAge = 86400; // 1 day
   await oracle.setPair(intermediateToken, quoteToken, quotePythId, maxPriceAge);
   await oracle.setPair(intermediateToken, baseToken, basePythId, maxPriceAge);
@@ -437,7 +428,7 @@ export async function createSomePythCompositeOracle() {
   const weth = await (await ethers.getContractFactory('TestERC20')).deploy('WETH', 'WETH', 18);
   const wbtc = await (await ethers.getContractFactory('TestERC20')).deploy('WBTC', 'WBTC', 8);
 
-  return createPythCompositeOracle(weth.address, usdc.address, wbtc.address, PythIds.ETH, PythIds.BTC);
+  return createPythCompositeOracle(weth.target, usdc.target, wbtc.target, PythIds.ETH, PythIds.BTC);
 }
 
 export type ChainlinkOracleData = {
@@ -445,13 +436,13 @@ export type ChainlinkOracleData = {
   chainlink: MockChainlink;
   sequencerFeed: MockSequencerFeed;
   decimals: number;
-  quoteToken: string;
-  baseToken: string;
+  quoteToken: string | Addressable;
+  baseToken: string | Addressable;
 };
 
 async function createChainlinkOracle(
-  quoteToken: string,
-  baseToken: string,
+  quoteToken: string | Addressable,
+  baseToken: string | Addressable,
   decimals: number
 ): Promise<ChainlinkOracleData> {
   const factory = await ethers.getContractFactory('MockChainlink');
@@ -461,10 +452,10 @@ async function createChainlinkOracle(
   const mockSequencerFeed = await (await ethers.getContractFactory('MockSequencerFeed')).deploy();
 
   const oracleFactory = await ethers.getContractFactory('ChainlinkOracle');
-  const oracle = await oracleFactory.deploy(mockSequencerFeed.address);
+  const oracle = await oracleFactory.deploy(mockSequencerFeed);
   const maxPriceAge = 86400; // 1 day
 
-  await oracle.setPair(quoteToken, baseToken, mockChainlink.address, maxPriceAge);
+  await oracle.setPair(quoteToken, baseToken, mockChainlink, maxPriceAge);
   return {
     oracle,
     chainlink: mockChainlink,
@@ -479,7 +470,7 @@ export async function createSomeChainlinkOracle() {
   const usdc = await (await ethers.getContractFactory('TestERC20')).deploy('USDC', 'USDC', 6);
   const tbtc = await (await ethers.getContractFactory('TestERC20')).deploy('TBTC', 'TBTC', 18);
 
-  return createChainlinkOracle(usdc.address, tbtc.address, 8);
+  return createChainlinkOracle(usdc.target, tbtc.target, 8);
 }
 
 export type ChainlinkCompositeOracleData = {
@@ -487,19 +478,19 @@ export type ChainlinkCompositeOracleData = {
   quoteChainlink: MockChainlink;
   baseChainlink: MockChainlink;
   sequencerFeed: MockSequencerFeed;
-  quoteDecimals: number;
-  baseDecimals: number;
-  quoteToken: string;
-  intermediateToken: string;
-  baseToken: string;
+  quoteDecimals: bigint;
+  baseDecimals: bigint;
+  quoteToken: string | Addressable;
+  intermediateToken: string | Addressable;
+  baseToken: string | Addressable;
 };
 
 async function createChainlinkCompositeOracle(
-  quoteToken: string,
-  intermediateToken: string,
-  baseToken: string,
-  quoteDecimals: number,
-  baseDecimals: number
+  quoteToken: string | Addressable,
+  intermediateToken: string | Addressable,
+  baseToken: string | Addressable,
+  quoteDecimals: bigint,
+  baseDecimals: bigint
 ): Promise<ChainlinkCompositeOracleData> {
   const factory = await ethers.getContractFactory('MockChainlink');
   const mockQuoteChainlink = await factory.deploy(quoteDecimals);
@@ -511,10 +502,10 @@ async function createChainlinkCompositeOracle(
   const mockSequencerFeed = await (await ethers.getContractFactory('MockSequencerFeed')).deploy();
 
   const oracleFactory = await ethers.getContractFactory('ChainlinkOracle');
-  const oracle = await oracleFactory.deploy(mockSequencerFeed.address);
+  const oracle = await oracleFactory.deploy(mockSequencerFeed);
   const maxPriceAge = 86400; // 1 day
-  await oracle.setPair(intermediateToken, quoteToken, mockQuoteChainlink.address, maxPriceAge);
-  await oracle.setPair(intermediateToken, baseToken, mockBaseChainlink.address, maxPriceAge);
+  await oracle.setPair(intermediateToken, quoteToken, mockQuoteChainlink, maxPriceAge);
+  await oracle.setPair(intermediateToken, baseToken, mockBaseChainlink, maxPriceAge);
   await oracle.setCompositePair(quoteToken, intermediateToken, baseToken);
   return {
     oracle,
@@ -534,7 +525,7 @@ export async function createSomeChainlinkCompositeOracle() {
   const weth = await (await ethers.getContractFactory('TestERC20')).deploy('WETH', 'WETH', 18);
   const wbtc = await (await ethers.getContractFactory('TestERC20')).deploy('WBTC', 'WBTC', 8);
 
-  return createChainlinkCompositeOracle(weth.address, usdc.address, wbtc.address, 18, 8);
+  return createChainlinkCompositeOracle(weth.target, usdc.target, wbtc.target, 18n, 8n);
 }
 
 export type AlgebraOracleData = {
@@ -553,10 +544,10 @@ async function createAlgebraTickOracle(quoteToken: string, baseToken: string): P
 
   const factory = await ethers.getContractFactory('TestAlgebraFactory');
   const algebraFactory = await factory.deploy();
-  await algebraFactory.addPool(pool.address);
+  await algebraFactory.addPool(pool);
 
   const oracleFactory = await ethers.getContractFactory('AlgebraTickOracle');
-  const oracle = await oracleFactory.deploy(algebraFactory.address);
+  const oracle = await oracleFactory.deploy(algebraFactory);
   await oracle.setOptions(quoteToken, baseToken, 900, 5);
   return { oracle, pool, algebraFactory, quoteToken, baseToken };
 }
@@ -595,11 +586,11 @@ async function createAlgebraTickOracleDouble(
 
   const factory = await ethers.getContractFactory('TestAlgebraFactory');
   const algebraFactory = await factory.deploy();
-  await algebraFactory.addPool(firstPool.address);
-  await algebraFactory.addPool(secondPool.address);
+  await algebraFactory.addPool(firstPool);
+  await algebraFactory.addPool(secondPool);
 
   const oracleFactory = await ethers.getContractFactory('AlgebraTickOracleDouble');
-  const oracle = await oracleFactory.deploy(algebraFactory.address);
+  const oracle = await oracleFactory.deploy(algebraFactory);
   await oracle.setOptions(quoteToken, baseToken, 900, 5, intermediateToken);
   return { oracle, firstPool, secondPool, algebraFactory, quoteToken, baseToken, intermediateToken };
 }
@@ -638,7 +629,7 @@ export async function createAlgebraTickOracleDoubleIBQ() {
 export interface TokenInfo {
   address: string;
   symbol: string;
-  decimals: number;
+  decimals: bigint;
 }
 
 export interface PendleOracleCaseParams {
@@ -649,7 +640,7 @@ export interface PendleOracleCaseParams {
   secondsAgo: number;
   secondsAgoLiquidation: number;
   oracle: PendleOracle;
-  pendlePtLpOracle: IPPtLpOracle;
+  pendlePtLpOracle: IPPYLpOracle;
   secondaryPoolOracle: IPriceOracle;
   pendleMarket: IPMarketV3;
 }
@@ -659,25 +650,25 @@ export async function createPendleCaseEzETH27Jun2024(): Promise<PendleOracleCase
   const pt = <TokenInfo>{
     address: '0x8EA5040d423410f1fdc363379Af88e1DB5eA1C34',
     symbol: 'PT-ezETH-27JUN2024',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const sy = <TokenInfo>{
     address: '0x0dE802e3D6Cc9145A150bBDc8da9F988a98c5202',
     symbol: 'SY-ezETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const yqt = <TokenInfo>{
     address: '0x2416092f143378750bb29b79eD961ab195CcEea5',
     symbol: 'ezETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const qt = <TokenInfo>{
     address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     symbol: 'WETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const secondsAgo = 1000;
@@ -693,7 +684,7 @@ export async function createPendleCaseEzETH27Jun2024(): Promise<PendleOracleCase
     qt.address,
     pt.address,
     pendleMarket,
-    secondaryPoolOracle.address,
+    secondaryPoolOracle,
     yqt.address,
     secondsAgo,
     secondsAgoLiquidation
@@ -709,7 +700,7 @@ export async function createPendleCaseEzETH27Jun2024(): Promise<PendleOracleCase
     sy,
     yqt,
     pendleMarket: await ethers.getContractAt('PendleMarketV3', pendleMarket),
-    pendlePtLpOracle: await ethers.getContractAt('PendlePtLpOracle', pendlePtLpOracle),
+    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle),
   };
 }
 
@@ -718,25 +709,25 @@ export async function createPendleCaseWeETH27Jun2024(): Promise<PendleOracleCase
   const pt = <TokenInfo>{
     address: '0x1c27Ad8a19Ba026ADaBD615F6Bc77158130cfBE4',
     symbol: 'PT-weETH-27JUN2024',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const sy = <TokenInfo>{
     address: '0xa6C895EB332E91c5b3D00B7baeEAae478cc502DA',
     symbol: 'SY-weETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const yqt = <TokenInfo>{
     address: '0x35751007a407ca6FEFfE80b3cB397736D2cf4dbe',
     symbol: 'weETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const qt = <TokenInfo>{
     address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     symbol: 'WETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const secondsAgo = 1000;
@@ -753,7 +744,7 @@ export async function createPendleCaseWeETH27Jun2024(): Promise<PendleOracleCase
     qt.address,
     pt.address,
     pendleMarket,
-    secondaryPoolOracle.address,
+    secondaryPoolOracle,
     yqt.address,
     secondsAgo,
     secondsAgoLiquidation
@@ -769,7 +760,7 @@ export async function createPendleCaseWeETH27Jun2024(): Promise<PendleOracleCase
     sy,
     yqt,
     pendleMarket: await ethers.getContractAt('PendleMarketV3', pendleMarket),
-    pendlePtLpOracle: await ethers.getContractAt('PendlePtLpOracle', pendlePtLpOracle),
+    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle),
   };
 }
 
@@ -778,25 +769,25 @@ export async function createPendleCaseUSDe29Aug2024(): Promise<PendleOracleCaseP
   const pt = <TokenInfo>{
     address: '0xad853EB4fB3Fe4a66CdFCD7b75922a0494955292',
     symbol: 'PT-USDe-29AUG2024',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const sy = <TokenInfo>{
     address: '0xb3C24D9dcCC2Ec5f778742389ffe448E295B84e0',
     symbol: 'SY-USDe',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const yqt = <TokenInfo>{
     address: '0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34',
     symbol: 'USDe',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const qt = <TokenInfo>{
     address: '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
     symbol: 'USDC',
-    decimals: 6,
+    decimals: 6n,
   };
 
   const secondsAgo = 1000;
@@ -812,7 +803,7 @@ export async function createPendleCaseUSDe29Aug2024(): Promise<PendleOracleCaseP
     qt.address,
     pt.address,
     pendleMarket,
-    secondaryPoolOracle.address,
+    secondaryPoolOracle,
     yqt.address,
     secondsAgo,
     secondsAgoLiquidation
@@ -828,7 +819,7 @@ export async function createPendleCaseUSDe29Aug2024(): Promise<PendleOracleCaseP
     sy,
     yqt,
     pendleMarket: await ethers.getContractAt('PendleMarketV3', pendleMarket),
-    pendlePtLpOracle: await ethers.getContractAt('PendlePtLpOracle', pendlePtLpOracle),
+    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle),
   };
 }
 
@@ -837,25 +828,25 @@ export async function createPendleCaseRsETH27Jun2024(): Promise<PendleOracleCase
   const pt = <TokenInfo>{
     address: '0xAFD22F824D51Fb7EeD4778d303d4388AC644b026',
     symbol: 'PT-rsETH-27JUN2024',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const sy = <TokenInfo>{
     address: '0xf176fB51F4eB826136a54FDc71C50fCd2202E272',
     symbol: 'SY-rsETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const yqt = <TokenInfo>{
     address: '0x4186BFC76E2E237523CBC30FD220FE055156b41F',
     symbol: 'rsETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const qt = <TokenInfo>{
     address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     symbol: 'WETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const secondsAgo = 1000;
@@ -871,7 +862,7 @@ export async function createPendleCaseRsETH27Jun2024(): Promise<PendleOracleCase
     qt.address,
     pt.address,
     pendleMarket,
-    secondaryPoolOracle.address,
+    secondaryPoolOracle,
     yqt.address,
     secondsAgo,
     secondsAgoLiquidation
@@ -887,7 +878,7 @@ export async function createPendleCaseRsETH27Jun2024(): Promise<PendleOracleCase
     sy,
     yqt,
     pendleMarket: await ethers.getContractAt('PendleMarketV3', pendleMarket),
-    pendlePtLpOracle: await ethers.getContractAt('PendlePtLpOracle', pendlePtLpOracle),
+    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle),
   };
 }
 
@@ -896,25 +887,25 @@ export async function createPendleCaseWstEth28Mar2024(): Promise<PendleOracleCas
   const pt = <TokenInfo>{
     address: '0x5A4e68E1F82dD4eAFBda13e47E0EC3cc452ED521',
     symbol: 'PT-wstETH-28MAR2024',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const sy = <TokenInfo>{
     address: '0x80c12D5b6Cc494632Bf11b03F09436c8B61Cc5Df',
     symbol: 'SY-wstETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const yqt = <TokenInfo>{
     address: '0x5979D7b546E38E414F7E9822514be443A4800529',
     symbol: 'wstETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const qt = <TokenInfo>{
     address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     symbol: 'WETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const secondsAgo = 1000;
@@ -931,7 +922,7 @@ export async function createPendleCaseWstEth28Mar2024(): Promise<PendleOracleCas
     qt.address,
     pt.address,
     pendleMarket,
-    secondaryPoolOracle.address,
+    secondaryPoolOracle,
     yqt.address,
     secondsAgo,
     secondsAgoLiquidation
@@ -947,7 +938,7 @@ export async function createPendleCaseWstEth28Mar2024(): Promise<PendleOracleCas
     sy,
     yqt,
     pendleMarket: await ethers.getContractAt('PendleMarketV3', pendleMarket),
-    pendlePtLpOracle: await ethers.getContractAt('PendlePtLpOracle', pendlePtLpOracle),
+    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle),
   };
 }
 
@@ -960,63 +951,66 @@ export async function createPendleUnitTestCase(): Promise<PendleOracleCaseParams
   const qtContract = await mintableErc20Factory.deploy('QT', 'QT', 18);
 
   const pt = <TokenInfo>{
-    address: ptContract.address,
+    address: await ptContract.getAddress(),
     symbol: 'PT',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const sy = <TokenInfo>{
-    address: syContract.address,
+    address: await syContract.getAddress(),
     symbol: 'SY',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const yqt = <TokenInfo>{
-    address: yqtContract.address,
+    address: await yqtContract.getAddress(),
     symbol: 'YQT',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const qt = <TokenInfo>{
-    address: qtContract.address,
+    address: await qtContract.getAddress(),
     symbol: 'QT',
-    decimals: 18,
+    decimals: 18n,
   };
 
   // 0.93
-  const ptToAssetRate = one*(93)/(100);
+  const ptToAssetRate = (one * 93n) / 100n;
   // 0.91
-  const lpToAssetRate = one*(91)/(100);
+  const lpToAssetRate = (one * 91n) / 100n;
   // 0.88
-  const ptToSyRate = one*(88)/(100);
+  const ptToSyRate = (one * 88n) / 100n;
   // 0.85
-  const lpToSyRate = one*(85)/(100);
+  const lpToSyRate = (one * 85n) / 100n;
 
   const pendlePtLpOracle = await (
     await ethers.getContractFactory('TestPendlePtLpOracle')
   ).deploy(ptToAssetRate, lpToAssetRate, ptToSyRate, lpToSyRate);
 
-  const balancePrice = oneX96*(97)/(100);
-  const margincallPrice = oneX96*(96)/(100);
+  const balancePrice = (oneX96 * 97n) / 100n;
+  const margincallPrice = (oneX96 * 96n) / 100n;
   const secondaryPoolOracle = await (
     await ethers.getContractFactory('MockPriceOracle')
   ).deploy(balancePrice, margincallPrice);
 
   const currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+  if (currentBlock === null) {
+    throw new Error('Failed to obtain current block');
+  }
   const expiryTimestamp = currentBlock.timestamp + 10 * 24 * 60 * 60;
 
   const pendleMarket = await (
     await ethers.getContractFactory('MockPendleMarket')
-  ).deploy(ptContract.address, syContract.address, ytContract.address, expiryTimestamp);
+  ).deploy(ptContract, syContract, ytContract, expiryTimestamp);
 
   const secondsAgo = 900;
   const secondsAgoLiquidation = 5;
-  const oracle = await (await ethers.getContractFactory('PendleOracle')).deploy(pendlePtLpOracle.address);
+  const oracle = await (await ethers.getContractFactory('PendleOracle')).deploy(pendlePtLpOracle);
   await oracle.setPair(
     qt.address,
     pt.address,
-    pendleMarket.address,
-    secondaryPoolOracle.address,
+    pendleMarket,
+    secondaryPoolOracle,
     yqt.address,
     secondsAgo,
     secondsAgoLiquidation
@@ -1064,27 +1058,23 @@ export async function createUniswapV2Oracle(): Promise<UniswapV2OracleData> {
   await factory.createPair(Tokens.USDC, Tokens.WETH);
   const usdcWethPair = await ethers.getContractAt('TestUniswapV2Pair', await factory.getPair(Tokens.USDC, Tokens.WETH));
   await usdcWethPair.setPriceCumulatives(
-    BigNumber.from('8336972277168571907928125483464622022025251163418'),
-    BigNumber.from('79842860134165886894026243979741')
+    8336972277168571907928125483464622022025251163418n,
+    79842860134165886894026243979741n
   );
-  await usdcWethPair.setReserves(BigNumber.from('7310295511'), BigNumber.from('2042135526372070598'), 1711622327);
+  await usdcWethPair.setReserves(7310295511n, 2042135526372070598n, 1711622327n);
   pairs.push(usdcWethPair);
 
   await factory.createPair(Tokens.WBTC, Tokens.WETH);
   const wbtcWethPair = await ethers.getContractAt('TestUniswapV2Pair', await factory.getPair(Tokens.WBTC, Tokens.WETH));
   await wbtcWethPair.setPriceCumulatives(
-    BigNumber.from('2717295059900711890375220838382472017626120416460370'),
-    BigNumber.from('82428671486905729838010896445')
+    2717295059900711890375220838382472017626120416460370n,
+    82428671486905729838010896445n
   );
-  await wbtcWethPair.setReserves(
-    BigNumber.from('1568827'),
-    BigNumber.from('308864561753000328'),
-    BigNumber.from(1711618918)
-  );
+  await wbtcWethPair.setReserves(1568827n, 308864561753000328n, 1711618918n);
   pairs.push(wbtcWethPair);
 
   const oracleFactory = await ethers.getContractFactory('UniswapV2Oracle');
-  const oracle = await oracleFactory.deploy(factory.address, windowSize, granularity);
+  const oracle = await oracleFactory.deploy(factory, windowSize, granularity);
 
   return {
     oracle,
@@ -1129,7 +1119,7 @@ export interface PendleMarketOracleCaseParams {
   secondsAgo: number;
   secondsAgoLiquidation: number;
   oracle: PendleMarketOracle;
-  pendlePtLpOracle: IPPtLpOracle;
+  pendlePtLpOracle: IPPYLpOracle;
   pendleMarket: IPMarketV3;
 }
 
@@ -1141,46 +1131,49 @@ export async function createPendleMarketOracleWithoutPairs(): Promise<PendleMark
   const ibContract = await mintableErc20Factory.deploy('IB', 'IB', 18);
 
   const pt = <TokenInfo>{
-    address: ptContract.address,
+    address: await ptContract.getAddress(),
     symbol: 'PT',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const sy = <TokenInfo>{
-    address: syContract.address,
+    address: await syContract.getAddress(),
     symbol: 'SY',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const ib = <TokenInfo>{
-    address: ibContract.address,
+    address: await ibContract.getAddress(),
     symbol: 'IB',
-    decimals: 18,
+    decimals: 18n,
   };
 
   // 0.93
-  const ptToAssetRate = one*(93)/(100);
+  const ptToAssetRate = (one * 93n) / 100n;
   // 0.91
-  const lpToAssetRate = one*(91)/(100);
+  const lpToAssetRate = (one * 91n) / 100n;
   // 0.88
-  const ptToSyRate = one*(88)/(100);
+  const ptToSyRate = (one * 88n) / 100n;
   // 0.85
-  const lpToSyRate = one*(85)/(100);
+  const lpToSyRate = (one * 85n) / 100n;
 
   const pendlePtLpOracle = await (
     await ethers.getContractFactory('TestPendlePtLpOracle')
   ).deploy(ptToAssetRate, lpToAssetRate, ptToSyRate, lpToSyRate);
 
   const currentBlock = await ethers.provider.getBlock(await ethers.provider.getBlockNumber());
+  if (currentBlock === null) {
+    throw new Error('Failed to obtain current block');
+  }
   const expiryTimestamp = currentBlock.timestamp + 10 * 24 * 60 * 60;
 
   const pendleMarket = await (
     await ethers.getContractFactory('MockPendleMarket')
-  ).deploy(ptContract.address, syContract.address, ytContract.address, expiryTimestamp);
+  ).deploy(ptContract, syContract, ytContract, expiryTimestamp);
 
   const secondsAgo = 900;
   const secondsAgoLiquidation = 5;
-  const oracle = await (await ethers.getContractFactory('PendleMarketOracle')).deploy(pendlePtLpOracle.address);
+  const oracle = await (await ethers.getContractFactory('PendleMarketOracle')).deploy(pendlePtLpOracle);
 
   return {
     oracle,
@@ -1199,7 +1192,7 @@ export async function createPendleMarketOracle(): Promise<PendleMarketOracleCase
   await caseParams.oracle.setPair(
     caseParams.ib.address,
     caseParams.pt.address,
-    caseParams.pendleMarket.address,
+    caseParams.pendleMarket,
     caseParams.secondsAgo,
     caseParams.secondsAgoLiquidation
   );
@@ -1228,13 +1221,13 @@ export async function createCurveCaseFrxEthWeth(): Promise<CurveOracleCaseParams
   const baseToken = <TokenInfo>{
     address: '0x178412e79c25968a32e89b11f63B33F733770c2A',
     symbol: 'frxETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const quoteToken = <TokenInfo>{
     address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     symbol: 'WETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const oracle = await (await ethers.getContractFactory('CurveOracle')).deploy();
@@ -1256,13 +1249,13 @@ export async function createCurveCaseCrvUsdUsdc(): Promise<CurveOracleCaseParams
   const baseToken = <TokenInfo>{
     address: '0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5',
     symbol: 'crvUSD',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const quoteToken = <TokenInfo>{
     address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
     symbol: 'USDC',
-    decimals: 6,
+    decimals: 6n,
   };
 
   const oracle = await (await ethers.getContractFactory('CurveOracle')).deploy();
@@ -1298,35 +1291,35 @@ export async function createMarginlyCompositeOracle(): Promise<MarginlyComposite
   const usdc: TokenInfo = {
     address: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
     symbol: 'USDC',
-    decimals: 6,
+    decimals: 6n,
   };
 
   const arb: TokenInfo = {
     address: '0x912CE59144191C1204E64559FE8253a0e49E6548',
     symbol: 'ARB',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const weth = <TokenInfo>{
     address: '0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
     symbol: 'WETH',
-    decimals: 18,
+    decimals: 18n,
   };
 
   const oracle = await (await ethers.getContractFactory('MockPriceOracleV2')).deploy();
   {
-    const mcPrice = BigNumber.from('70757347443141900'); // arb/usdc = 0.89
-    const balancePrice = BigNumber.from('74757347443141900'); // arb/usdc = 0.94
+    const mcPrice = 70757347443141900n; // arb/usdc = 0.89
+    const balancePrice = 74757347443141900n; // arb/usdc = 0.94
     await oracle.setPrice(usdc.address, arb.address, balancePrice, mcPrice);
   }
 
   {
-    const mcPrice = BigNumber.from('293713709653472000000000000000000'); // wteh/abr = 3 707,188
-    const balancePrice = BigNumber.from('306017264062733000000000000000000'); // wteh/abr = 3 862,480
+    const mcPrice = 293713709653472000000000000000000n; // weth/abr = 3 707,188
+    const balancePrice = 306017264062733000000000000000000n; // weth/abr = 3 862,480
     await oracle.setPrice(arb.address, weth.address, balancePrice, mcPrice);
   }
 
-  await compositeOracle.setPair(usdc.address, arb.address, weth.address, oracle.address, oracle.address);
+  await compositeOracle.setPair(usdc.address, arb.address, weth.address, oracle, oracle);
 
   return {
     oracle: compositeOracle,

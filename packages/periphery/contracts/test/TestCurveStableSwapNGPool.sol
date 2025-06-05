@@ -7,7 +7,7 @@ contract TestCurveStableSwapNGPool {
 
   uint256 public last_price = 0;
   uint256 public ema_price = 0;
-  uint256 public price_oracle = 0;
+  uint256 private _price_oracle = 0;
 
   constructor(address coin0, address coin1) {
     _coin0 = coin0;
@@ -22,9 +22,13 @@ contract TestCurveStableSwapNGPool {
     return _coin1;
   }
 
-  function setPrices(uint256 _last_price, uint256 _ema_price, uint256 _price_oracle) external {
+  function setPrices(uint256 _last_price, uint256 _ema_price, uint256 price_oracle_) external {
     last_price = _last_price;
     ema_price = _ema_price;
-    price_oracle = _price_oracle;
+    _price_oracle = price_oracle_;
+  }
+
+  function price_oracle(uint256) external view returns (uint256) {
+    return _price_oracle;
   }
 }

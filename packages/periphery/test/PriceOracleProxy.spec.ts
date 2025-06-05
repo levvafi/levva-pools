@@ -1,11 +1,12 @@
 import { ethers } from 'hardhat';
 import { expect } from 'chai';
-import { MockPriceOracleV2, PriceOracleProxy } from '../typechain-types';
-import { BigNumber, Signer } from 'ethers';
+import { MockPriceOracleV2, PriceOracleProxy, PriceOracleProxy__factory } from '../typechain-types';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
+import { ZeroAddress } from './shared/fixtures';
 
 describe('PriceOracleProxy', () => {
-  let owner: Signer;
-  let nonOwner: Signer;
+  let owner: SignerWithAddress;
+  let nonOwner: SignerWithAddress;
   let underlyingPriceOracle: MockPriceOracleV2;
   let priceOracle: PriceOracleProxy;
   const baseToken = '0x0000000000000000000000000000000000000001';
@@ -16,7 +17,7 @@ describe('PriceOracleProxy', () => {
   const balancePriceX96 = 1n;
   const mcPriceX96 = 2n;
 
-  const x96One = BigNumber.from(2).pow(96);
+  const x96One = 2n ** 96n;
 
   beforeEach(async () => {
     [owner, nonOwner] = await ethers.getSigners();
@@ -24,14 +25,8 @@ describe('PriceOracleProxy', () => {
     underlyingPriceOracle = await (await ethers.getContractFactory('MockPriceOracleV2')).deploy();
     await underlyingPriceOracle.setPrice(underlyingQuoteToken, underlyingBaseToken, balancePriceX96, mcPriceX96);
 
-    priceOracle = await (await ethers.getContractFactory('PriceOracleProxy', owner)).deploy();
-    await priceOracle.setPair(
-      quoteToken,
-      baseToken,
-      underlyingQuoteToken,
-      underlyingBaseToken,
-      underlyingPriceOracle.address
-    );
+    priceOracle = await new PriceOracleProxy__factory().connect(owner).deploy();
+    await priceOracle.setPair(quoteToken, baseToken, underlyingQuoteToken, underlyingBaseToken, underlyingPriceOracle);
   });
 
   it('should return balance price in quote currency', async () => {
@@ -39,7 +34,7 @@ describe('PriceOracleProxy', () => {
     expect(price).to.equal(balancePriceX96);
 
     const invPrice = await priceOracle.getBalancePrice(baseToken, quoteToken);
-    expect(invPrice).to.equal(x96One*(x96One)/(balancePriceX96));
+    expect(invPrice).to.equal((x96One * x96One) / balancePriceX96);
   });
 
   it('should fail to return balance price in quote currency if pair not exists', async () => {
@@ -55,7 +50,7 @@ describe('PriceOracleProxy', () => {
     expect(price).to.equal(mcPriceX96);
 
     const invPrice = await priceOracle.getMargincallPrice(baseToken, quoteToken);
-    expect(invPrice).to.equal(x96One*(x96One)/(mcPriceX96));
+    expect(invPrice).to.equal((x96One * x96One) / mcPriceX96);
   });
 
   it('should fail to return mc price in quote currency if pair not exists', async () => {
@@ -87,8 +82,8 @@ describe('PriceOracleProxy', () => {
     await expect(
       priceOracle
         .connect(nonOwner)
-        .setPair(quoteToken, baseToken, underlyingQuoteToken, underlyingBaseToken, underlyingPriceOracle.address)
-    ).to.be.revertedWith('Ownable: caller is not the owner');
+        .setPair(quoteToken, baseToken, underlyingQuoteToken, underlyingBaseToken, underlyingPriceOracle)
+    ).to.be.revertedWithCustomError(priceOracle, 'OwnableUnauthorizedAccount');
   });
 
   it('should set pair correctly', async () => {
@@ -99,13 +94,7 @@ describe('PriceOracleProxy', () => {
 
     await underlyingPriceOracle.setPrice(undNewQuoteToken, undNewBaseToken, balancePriceX96, mcPriceX96);
 
-    await priceOracle.setPair(
-      newQuoteToken,
-      newBaseToken,
-      undNewQuoteToken,
-      undNewBaseToken,
-      underlyingPriceOracle.address
-    );
+    await priceOracle.setPair(newQuoteToken, newBaseToken, undNewQuoteToken, undNewBaseToken, underlyingPriceOracle);
     const balancePrice = await priceOracle.getBalancePrice(newQuoteToken, newBaseToken);
     const mcPrice = await priceOracle.getMargincallPrice(newQuoteToken, newBaseToken);
     expect(balancePrice).to.equal(balancePriceX96);
@@ -114,65 +103,29 @@ describe('PriceOracleProxy', () => {
 
   it('should fail when setting up pair with zero address', async () => {
     await expect(
-      priceOracle.setPair(
-        ethers.constants.AddressZero,
-        baseToken,
-        underlyingQuoteToken,
-        underlyingBaseToken,
-        underlyingPriceOracle.address
-      )
+      priceOracle.setPair(ZeroAddress, baseToken, underlyingQuoteToken, underlyingBaseToken, underlyingPriceOracle)
     ).to.be.revertedWithCustomError(priceOracle, 'ZeroAddress');
 
     await expect(
-      priceOracle.setPair(
-        quoteToken,
-        ethers.constants.AddressZero,
-        underlyingQuoteToken,
-        underlyingBaseToken,
-        underlyingPriceOracle.address
-      )
+      priceOracle.setPair(quoteToken, ZeroAddress, underlyingQuoteToken, underlyingBaseToken, underlyingPriceOracle)
     ).to.be.revertedWithCustomError(priceOracle, 'ZeroAddress');
 
     await expect(
-      priceOracle.setPair(
-        quoteToken,
-        baseToken,
-        ethers.constants.AddressZero,
-        underlyingBaseToken,
-        underlyingPriceOracle.address
-      )
+      priceOracle.setPair(quoteToken, baseToken, ZeroAddress, underlyingBaseToken, underlyingPriceOracle)
     ).to.be.revertedWithCustomError(priceOracle, 'ZeroAddress');
 
     await expect(
-      priceOracle.setPair(
-        quoteToken,
-        baseToken,
-        underlyingQuoteToken,
-        ethers.constants.AddressZero,
-        underlyingPriceOracle.address
-      )
+      priceOracle.setPair(quoteToken, baseToken, underlyingQuoteToken, ZeroAddress, underlyingPriceOracle)
     ).to.be.revertedWithCustomError(priceOracle, 'ZeroAddress');
 
     await expect(
-      priceOracle.setPair(
-        quoteToken,
-        baseToken,
-        underlyingQuoteToken,
-        underlyingBaseToken,
-        ethers.constants.AddressZero
-      )
+      priceOracle.setPair(quoteToken, baseToken, underlyingQuoteToken, underlyingBaseToken, ZeroAddress)
     ).to.be.revertedWithCustomError(priceOracle, 'ZeroAddress');
   });
 
   it('should fail when setting up pair with same tokens', async () => {
     await expect(
-      priceOracle.setPair(
-        quoteToken,
-        quoteToken,
-        underlyingQuoteToken,
-        underlyingBaseToken,
-        ethers.constants.AddressZero
-      )
+      priceOracle.setPair(quoteToken, quoteToken, underlyingQuoteToken, underlyingBaseToken, ZeroAddress)
     ).to.be.revertedWithCustomError(priceOracle, 'ZeroAddress');
   });
 
@@ -182,7 +135,7 @@ describe('PriceOracleProxy', () => {
 
     const expectError = async () => {
       await expect(
-        priceOracle.setPair(token1, token2, token1, token2, underlyingPriceOracle.address)
+        priceOracle.setPair(token1, token2, token1, token2, underlyingPriceOracle)
       ).to.be.revertedWithCustomError(priceOracle, 'ZeroPrice');
     };
 

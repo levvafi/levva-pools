@@ -10,7 +10,6 @@ import {
   createAlgebraTickOracleDoubleQIB,
   createAlgebraTickOracleForward,
 } from './shared/fixtures';
-import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 
 describe('AlgebraTickOracle prices', () => {
@@ -19,8 +18,8 @@ describe('AlgebraTickOracle prices', () => {
     const price = await oracle.getBalancePrice(quoteToken, baseToken);
 
     const sqrtPrice = await pool.token1ToToken0SqrtPriceX96();
-    const intendedPrice = sqrtPrice*(sqrtPrice);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = sqrtPrice * sqrtPrice;
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getMargincallPrice forward', async () => {
@@ -28,8 +27,8 @@ describe('AlgebraTickOracle prices', () => {
     const price = await oracle.getMargincallPrice(quoteToken, baseToken);
 
     const sqrtPrice = await pool.token1ToToken0SqrtPriceX96();
-    const intendedPrice = sqrtPrice*(sqrtPrice);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = sqrtPrice * sqrtPrice;
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getBalancePrice backward', async () => {
@@ -37,10 +36,8 @@ describe('AlgebraTickOracle prices', () => {
     const price = await oracle.getBalancePrice(quoteToken, baseToken);
 
     const sqrtPrice = await pool.token1ToToken0SqrtPriceX96();
-    const intendedPrice = BigNumber.from(1n << 96n)
-      *(1n << 96n)
-      /(sqrtPrice*(sqrtPrice));
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = ((1n << 96n) * (1n << 96n)) / (sqrtPrice * sqrtPrice);
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getMargincallPrice backward', async () => {
@@ -48,10 +45,8 @@ describe('AlgebraTickOracle prices', () => {
     const price = await oracle.getMargincallPrice(quoteToken, baseToken);
 
     const sqrtPrice = await pool.token1ToToken0SqrtPriceX96();
-    const intendedPrice = BigNumber.from(1n << 96n)
-      *(1n << 96n)
-      /(sqrtPrice*(sqrtPrice));
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = ((1n << 96n) * (1n << 96n)) / (sqrtPrice * sqrtPrice);
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 });
 
@@ -61,9 +56,9 @@ describe('AlgebraTickOracle tech methods', () => {
 
     const oldParams = await oracle.getParams(quoteToken, baseToken);
 
-    const secAgo = 1000;
+    const secAgo = 1000n;
     expect(secAgo).to.be.not.eq(oldParams.secondsAgo);
-    const secAgoLiq = 6;
+    const secAgoLiq = 6n;
     expect(secAgoLiq).to.be.not.eq(oldParams.secondsAgoLiquidation);
 
     await oracle.setOptions(quoteToken, baseToken, secAgo, secAgoLiq);
@@ -80,8 +75,9 @@ describe('AlgebraTickOracle tech methods', () => {
 
     const notOwner = (await ethers.getSigners())[1];
 
-    await expect(oracle.connect(notOwner).setOptions(quoteToken, baseToken, 1000, 6)).to.be.revertedWith(
-      'Ownable: caller is not the owner'
+    await expect(oracle.connect(notOwner).setOptions(quoteToken, baseToken, 1000, 6)).to.be.revertedWithCustomError(
+      oracle,
+      'OwnableUnauthorizedAccount'
     );
   });
 
@@ -122,13 +118,13 @@ describe('AlgebraTickOracleDouble prices', () => {
     const price = await oracle.getBalancePrice(quoteToken, baseToken);
 
     const firstSqrtPrice = await firstPool.token1ToToken0SqrtPriceX96();
-    const firstIntendedPrice = firstSqrtPrice*(firstSqrtPrice);
+    const firstIntendedPrice = firstSqrtPrice * firstSqrtPrice;
 
     const secondSqrtPrice = await secondPool.token1ToToken0SqrtPriceX96();
-    const secondIntendedPrice = secondSqrtPrice*(secondSqrtPrice);
+    const secondIntendedPrice = secondSqrtPrice * secondSqrtPrice;
 
-    const intendedPrice = secondIntendedPrice*(1n << 96n)/(firstIntendedPrice);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = (secondIntendedPrice * (1n << 96n)) / firstIntendedPrice;
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getMargincallPrice IBQ', async () => {
@@ -138,13 +134,13 @@ describe('AlgebraTickOracleDouble prices', () => {
     const price = await oracle.getMargincallPrice(quoteToken, baseToken);
 
     const firstSqrtPrice = await firstPool.token1ToToken0SqrtPriceX96();
-    const firstIntendedPrice = firstSqrtPrice*(firstSqrtPrice);
+    const firstIntendedPrice = firstSqrtPrice * firstSqrtPrice;
 
     const secondSqrtPrice = await secondPool.token1ToToken0SqrtPriceX96();
-    const secondIntendedPrice = secondSqrtPrice*(secondSqrtPrice);
+    const secondIntendedPrice = secondSqrtPrice * secondSqrtPrice;
 
-    const intendedPrice = secondIntendedPrice*(1n << 96n)/(firstIntendedPrice);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = (secondIntendedPrice * (1n << 96n)) / firstIntendedPrice;
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getBalancePrice IQB', async () => {
@@ -154,13 +150,13 @@ describe('AlgebraTickOracleDouble prices', () => {
     const price = await oracle.getBalancePrice(quoteToken, baseToken);
 
     const firstSqrtPrice = await firstPool.token1ToToken0SqrtPriceX96();
-    const firstIntendedPrice = firstSqrtPrice*(firstSqrtPrice);
+    const firstIntendedPrice = firstSqrtPrice * firstSqrtPrice;
 
     const secondSqrtPrice = await secondPool.token1ToToken0SqrtPriceX96();
-    const secondIntendedPrice = secondSqrtPrice*(secondSqrtPrice);
+    const secondIntendedPrice = secondSqrtPrice * secondSqrtPrice;
 
-    const intendedPrice = secondIntendedPrice*(1n << 96n)/(firstIntendedPrice);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = (secondIntendedPrice * (1n << 96n)) / firstIntendedPrice;
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getMargincallPrice IQB', async () => {
@@ -170,13 +166,13 @@ describe('AlgebraTickOracleDouble prices', () => {
     const price = await oracle.getMargincallPrice(quoteToken, baseToken);
 
     const firstSqrtPrice = await firstPool.token1ToToken0SqrtPriceX96();
-    const firstIntendedPrice = firstSqrtPrice*(firstSqrtPrice);
+    const firstIntendedPrice = firstSqrtPrice * firstSqrtPrice;
 
     const secondSqrtPrice = await secondPool.token1ToToken0SqrtPriceX96();
-    const secondIntendedPrice = secondSqrtPrice*(secondSqrtPrice);
+    const secondIntendedPrice = secondSqrtPrice * secondSqrtPrice;
 
-    const intendedPrice = secondIntendedPrice*(1n << 96n)/(firstIntendedPrice);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = (secondIntendedPrice * (1n << 96n)) / firstIntendedPrice;
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getBalancePrice BQI', async () => {
@@ -186,13 +182,13 @@ describe('AlgebraTickOracleDouble prices', () => {
     const price = await oracle.getBalancePrice(quoteToken, baseToken);
 
     const firstSqrtPrice = await firstPool.token1ToToken0SqrtPriceX96();
-    const firstIntendedPrice = firstSqrtPrice*(firstSqrtPrice);
+    const firstIntendedPrice = firstSqrtPrice * firstSqrtPrice;
 
     const secondSqrtPrice = await secondPool.token1ToToken0SqrtPriceX96();
-    const secondIntendedPrice = secondSqrtPrice*(secondSqrtPrice);
+    const secondIntendedPrice = secondSqrtPrice * secondSqrtPrice;
 
-    const intendedPrice = firstIntendedPrice*(1n << 96n)/(secondIntendedPrice);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = (firstIntendedPrice * (1n << 96n)) / secondIntendedPrice;
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getMargincallPrice BQI', async () => {
@@ -202,13 +198,13 @@ describe('AlgebraTickOracleDouble prices', () => {
     const price = await oracle.getMargincallPrice(quoteToken, baseToken);
 
     const firstSqrtPrice = await firstPool.token1ToToken0SqrtPriceX96();
-    const firstIntendedPrice = firstSqrtPrice*(firstSqrtPrice);
+    const firstIntendedPrice = firstSqrtPrice * firstSqrtPrice;
 
     const secondSqrtPrice = await secondPool.token1ToToken0SqrtPriceX96();
-    const secondIntendedPrice = secondSqrtPrice*(secondSqrtPrice);
+    const secondIntendedPrice = secondSqrtPrice * secondSqrtPrice;
 
-    const intendedPrice = firstIntendedPrice*(1n << 96n)/(secondIntendedPrice);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = (firstIntendedPrice * (1n << 96n)) / secondIntendedPrice;
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getBalancePrice BIQ', async () => {
@@ -218,14 +214,14 @@ describe('AlgebraTickOracleDouble prices', () => {
     const price = await oracle.getBalancePrice(quoteToken, baseToken);
 
     const firstSqrtPrice = await firstPool.token1ToToken0SqrtPriceX96();
-    const firstIntendedPrice = firstSqrtPrice*(firstSqrtPrice);
+    const firstIntendedPrice = firstSqrtPrice * firstSqrtPrice;
 
     const secondSqrtPrice = await secondPool.token1ToToken0SqrtPriceX96();
-    const secondIntendedPrice = secondSqrtPrice*(secondSqrtPrice);
+    const secondIntendedPrice = secondSqrtPrice * secondSqrtPrice;
 
-    const one = BigNumber.from(1n << 96n);
-    const intendedPrice = one*(one)*(one)/(firstIntendedPrice)/(secondIntendedPrice);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const one = 1n << 96n;
+    const intendedPrice = (one * one * one) / firstIntendedPrice / secondIntendedPrice;
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getMargincallPrice BIQ', async () => {
@@ -235,14 +231,14 @@ describe('AlgebraTickOracleDouble prices', () => {
     const price = await oracle.getMargincallPrice(quoteToken, baseToken);
 
     const firstSqrtPrice = await firstPool.token1ToToken0SqrtPriceX96();
-    const firstIntendedPrice = firstSqrtPrice*(firstSqrtPrice);
+    const firstIntendedPrice = firstSqrtPrice * firstSqrtPrice;
 
     const secondSqrtPrice = await secondPool.token1ToToken0SqrtPriceX96();
-    const secondIntendedPrice = secondSqrtPrice*(secondSqrtPrice);
+    const secondIntendedPrice = secondSqrtPrice * secondSqrtPrice;
 
-    const one = BigNumber.from(1n << 96n);
-    const intendedPrice = one*(one)*(one)/(firstIntendedPrice)/(secondIntendedPrice);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const one = 1n << 96n;
+    const intendedPrice = (one * one * one) / firstIntendedPrice / secondIntendedPrice;
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getBalancePrice QIB', async () => {
@@ -252,13 +248,13 @@ describe('AlgebraTickOracleDouble prices', () => {
     const price = await oracle.getBalancePrice(quoteToken, baseToken);
 
     const firstSqrtPrice = await firstPool.token1ToToken0SqrtPriceX96();
-    const firstIntendedPrice = firstSqrtPrice*(firstSqrtPrice);
+    const firstIntendedPrice = firstSqrtPrice * firstSqrtPrice;
 
     const secondSqrtPrice = await secondPool.token1ToToken0SqrtPriceX96();
-    const secondIntendedPrice = secondSqrtPrice*(secondSqrtPrice);
+    const secondIntendedPrice = secondSqrtPrice * secondSqrtPrice;
 
-    const intendedPrice = secondIntendedPrice*(firstIntendedPrice)/(1n << 96n);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = (secondIntendedPrice * firstIntendedPrice) / (1n << 96n);
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getMargincallPrice QIB', async () => {
@@ -268,13 +264,13 @@ describe('AlgebraTickOracleDouble prices', () => {
     const price = await oracle.getMargincallPrice(quoteToken, baseToken);
 
     const firstSqrtPrice = await firstPool.token1ToToken0SqrtPriceX96();
-    const firstIntendedPrice = firstSqrtPrice*(firstSqrtPrice);
+    const firstIntendedPrice = firstSqrtPrice * firstSqrtPrice;
 
     const secondSqrtPrice = await secondPool.token1ToToken0SqrtPriceX96();
-    const secondIntendedPrice = secondSqrtPrice*(secondSqrtPrice);
+    const secondIntendedPrice = secondSqrtPrice * secondSqrtPrice;
 
-    const intendedPrice = secondIntendedPrice*(firstIntendedPrice)/(1n << 96n);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = (secondIntendedPrice * firstIntendedPrice) / (1n << 96n);
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getBalancePrice QBI', async () => {
@@ -284,13 +280,13 @@ describe('AlgebraTickOracleDouble prices', () => {
     const price = await oracle.getBalancePrice(quoteToken, baseToken);
 
     const firstSqrtPrice = await firstPool.token1ToToken0SqrtPriceX96();
-    const firstIntendedPrice = firstSqrtPrice*(firstSqrtPrice);
+    const firstIntendedPrice = firstSqrtPrice * firstSqrtPrice;
 
     const secondSqrtPrice = await secondPool.token1ToToken0SqrtPriceX96();
-    const secondIntendedPrice = secondSqrtPrice*(secondSqrtPrice);
+    const secondIntendedPrice = secondSqrtPrice * secondSqrtPrice;
 
-    const intendedPrice = firstIntendedPrice*(1n << 96n)/(secondIntendedPrice);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = (firstIntendedPrice * (1n << 96n)) / secondIntendedPrice;
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 
   it('getMargincallPrice QBI', async () => {
@@ -300,13 +296,13 @@ describe('AlgebraTickOracleDouble prices', () => {
     const price = await oracle.getMargincallPrice(quoteToken, baseToken);
 
     const firstSqrtPrice = await firstPool.token1ToToken0SqrtPriceX96();
-    const firstIntendedPrice = firstSqrtPrice*(firstSqrtPrice);
+    const firstIntendedPrice = firstSqrtPrice * firstSqrtPrice;
 
     const secondSqrtPrice = await secondPool.token1ToToken0SqrtPriceX96();
-    const secondIntendedPrice = secondSqrtPrice*(secondSqrtPrice);
+    const secondIntendedPrice = secondSqrtPrice * secondSqrtPrice;
 
-    const intendedPrice = firstIntendedPrice*(1n << 96n)/(secondIntendedPrice);
-    expect(price).to.be.closeTo(intendedPrice, intendedPrice/(10000));
+    const intendedPrice = (firstIntendedPrice * (1n << 96n)) / secondIntendedPrice;
+    expect(price).to.be.closeTo(intendedPrice, intendedPrice / 10000n);
   });
 });
 
@@ -339,7 +335,7 @@ describe('AlgebraTickOracleDouble tech methods', () => {
 
     await expect(
       oracle.connect(notOwner).setOptions(quoteToken, baseToken, 1000, 6, oldParams.intermediateToken)
-    ).to.be.revertedWith('Ownable: caller is not the owner');
+    ).to.be.revertedWithCustomError(oracle, 'OwnableUnauthorizedAccount');
   });
 
   it('set new params, wrong intermediate token', async () => {

@@ -1,14 +1,24 @@
 import { ethers } from 'hardhat';
-import { Signer } from 'ethers';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { getDecimalsDiff, printPrices } from '../../shared/common';
 import { EulerPriceOracle } from '../../../typechain-types';
-import { resetFork } from '../../shared/utils';
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { reset } from '@nomicfoundation/hardhat-network-helpers';
+const hre = require('hardhat');
+
+async function resetFork(blockNumber?: number) {
+  const hardhatConfig = (<HardhatRuntimeEnvironment>hre).config;
+  const forkingBlockNumber = hardhatConfig.networks.hardhat.forking?.blockNumber;
+  const forkingUrl = hardhatConfig.networks.hardhat.forking?.url;
+
+  await reset(forkingUrl, blockNumber ?? forkingBlockNumber);
+}
 
 describe('EulerOracle', () => {
   const FORK_BLOCK_NUMBER = 22616500;
 
   let oracle: EulerPriceOracle;
-  let owner: Signer;
+  let owner: SignerWithAddress;
 
   before(async () => {
     await resetFork(FORK_BLOCK_NUMBER);

@@ -1,6 +1,5 @@
 import { expect } from 'chai';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
-import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
 import { createSomePythCompositeOracle, createSomePythOracle } from './shared/fixtures';
 
@@ -14,9 +13,7 @@ describe('PythOracle prices', () => {
       const quoteDecimals = await (await ethers.getContractAt('IERC20Metadata', quoteToken)).decimals();
       const baseDecimals = await (await ethers.getContractAt('IERC20Metadata', baseToken)).decimals();
 
-      const expectedPrice = BigNumber.from(1n << 95n)
-        *(BigNumber.from(10).pow(quoteDecimals))
-        /(BigNumber.from(10).pow(baseDecimals)); // 0.5
+      const expectedPrice = ((1n << 95n) * 10n ** quoteDecimals) / 10n ** baseDecimals; // 0.5
 
       const actualPrice = await (oracle as any)[getPrice](quoteToken, baseToken);
       expect(actualPrice).to.be.equal(expectedPrice);
@@ -30,9 +27,7 @@ describe('PythOracle prices', () => {
       const quoteDecimals = await (await ethers.getContractAt('IERC20Metadata', quoteToken)).decimals();
       const baseDecimals = await (await ethers.getContractAt('IERC20Metadata', baseToken)).decimals();
 
-      const expectedPrice = BigNumber.from(1n << 97n)
-        *(BigNumber.from(10).pow(baseDecimals))
-        /(BigNumber.from(10).pow(quoteDecimals)); // 2
+      const expectedPrice = ((1n << 97n) * 10n ** baseDecimals) / 10n ** quoteDecimals; // 2
 
       const actualPrice = await (oracle as any)[getPrice](baseToken, quoteToken);
       expect(actualPrice).to.be.equal(expectedPrice);
@@ -46,9 +41,7 @@ describe('PythOracle prices', () => {
       const quoteDecimals = await (await ethers.getContractAt('IERC20Metadata', quoteToken)).decimals();
       const baseDecimals = await (await ethers.getContractAt('IERC20Metadata', baseToken)).decimals();
 
-      const expectedPrice = BigNumber.from(1n << 98n)
-        *(BigNumber.from(10).pow(quoteDecimals))
-        /(BigNumber.from(10).pow(baseDecimals)); // 4
+      const expectedPrice = ((1n << 98n) * 10n ** quoteDecimals) / 10n ** baseDecimals; // 4
 
       const actualPrice = await (oracle as any)[getPrice](quoteToken, baseToken);
       expect(actualPrice).to.be.equal(expectedPrice);
@@ -62,9 +55,7 @@ describe('PythOracle prices', () => {
       const quoteDecimals = await (await ethers.getContractAt('IERC20Metadata', quoteToken)).decimals();
       const baseDecimals = await (await ethers.getContractAt('IERC20Metadata', baseToken)).decimals();
 
-      const expectedPrice = BigNumber.from(1n << 94n)
-        *(BigNumber.from(10).pow(baseDecimals))
-        /(BigNumber.from(10).pow(quoteDecimals)); // 0.25
+      const expectedPrice = ((1n << 94n) * 10n ** baseDecimals) / 10n ** quoteDecimals; // 0.25
 
       const actualPrice = await (oracle as any)[getPrice](baseToken, quoteToken);
       expect(actualPrice).to.be.equal(expectedPrice);
@@ -81,9 +72,7 @@ describe('PythOracle prices', () => {
       const quoteDecimals = await (await ethers.getContractAt('IERC20Metadata', quoteToken)).decimals();
       const baseDecimals = await (await ethers.getContractAt('IERC20Metadata', baseToken)).decimals();
 
-      const expectedPrice = BigNumber.from(20n << 96n)
-        *(BigNumber.from(10).pow(quoteDecimals))
-        /(BigNumber.from(10).pow(baseDecimals));
+      const expectedPrice = ((20n << 96n) * 10n ** quoteDecimals) / 10n ** baseDecimals;
 
       const actualPrice = await (oracle as any)[getPrice](quoteToken, baseToken);
       expect(actualPrice).to.be.equal(expectedPrice);
@@ -95,7 +84,10 @@ describe('PythOracle prices', () => {
       await pyth.setPrice(pythId, 5, -1, currentTime); // 0.5
 
       await oracle.pause();
-      await expect((oracle as any)[getPrice](quoteToken, baseToken)).to.be.revertedWith('Pausable: paused');
+      await expect((oracle as any)[getPrice](quoteToken, baseToken)).to.be.revertedWithCustomError(
+        oracle,
+        'EnforcedPause'
+      );
 
       await oracle.unpause();
       await (oracle as any)[getPrice](quoteToken, baseToken);
@@ -123,7 +115,10 @@ describe('PythOracle prices', () => {
     await oracle.connect(owner).pause();
     await oracle.connect(owner).unpause();
 
-    await expect(oracle.connect(notOwner).pause()).to.be.revertedWith('Ownable: caller is not the owner');
-    await expect(oracle.connect(notOwner).unpause()).to.be.revertedWith('Ownable: caller is not the owner');
+    await expect(oracle.connect(notOwner).pause()).to.be.revertedWithCustomError(oracle, 'OwnableUnauthorizedAccount');
+    await expect(oracle.connect(notOwner).unpause()).to.be.revertedWithCustomError(
+      oracle,
+      'OwnableUnauthorizedAccount'
+    );
   });
 });
