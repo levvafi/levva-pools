@@ -12,13 +12,13 @@
     "prettify": "prettier --write ."
   },
   "devDependencies": {
-    "@types/chai": "^5.2.2",
+    "@types/chai": "^4.2.2",
     "@types/mocha": "^10.0.1",
     "@types/node": "22.15.29",
     "@types/node-fetch": "^2.6.3",
     "@typescript-eslint/eslint-plugin": "^8.33.1",
     "@typescript-eslint/parser": "^8.33.1",
-    "chai": "^5.2.0",
+    "chai": "^4.2.0",
     "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.5",
     "mocha": "^11.5.0",

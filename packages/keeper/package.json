@@ -15,7 +15,6 @@
   "license": "MIT",
   "dependencies": {
     "@aave/core-v3": "^1.18.0",
-    "@marginly/cli-common": "0.1.0",
     "@marginly/common": "0.1.0",
     "@marginly/contracts": "0.1.0",
     "@marginly/logger": "^1.0.0",

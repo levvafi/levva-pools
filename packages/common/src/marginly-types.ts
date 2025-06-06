@@ -1,15 +1,13 @@
-import { BigNumber } from 'ethers';
-
 export type MarginlyPoolParameters = {
-  maxLeverage: BigNumber;
-  priceSecondsAgo: BigNumber;
-  priceSecondsAgoMC: BigNumber;
-  interestRate: BigNumber;
-  fee: BigNumber;
-  swapFee: BigNumber;
-  mcSlippage: BigNumber;
-  positionMinAmount: BigNumber;
-  quoteLimit: BigNumber;
+  maxLeverage: bigint;
+  priceSecondsAgo: bigint;
+  priceSecondsAgoMC: bigint;
+  interestRate: bigint;
+  fee: bigint;
+  swapFee: bigint;
+  mcSlippage: bigint;
+  positionMinAmount: bigint;
+  quoteLimit: bigint;
 };
 
 export const PositionType = {
@@ -21,8 +19,8 @@ export const PositionType = {
 
 export type Position = {
   _type: number;
-  discountedQuoteAmount: BigNumber;
-  discountedBaseAmount: BigNumber;
+  discountedQuoteAmount: bigint;
+  discountedBaseAmount: bigint;
 };
 
 export const MarginlyMode = {
@@ -31,4 +29,4 @@ export const MarginlyMode = {
   LongEmergency: 2,
 };
 
-export type HeapNode = { account: string; key: BigNumber };
+export type HeapNode = { account: string; key: bigint };

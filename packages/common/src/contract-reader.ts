@@ -1,7 +1,7 @@
 import * as ethers from 'ethers';
 
 export interface ContractDescription {
-  abi: ethers.utils.Interface;
+  abi: ethers.Interface;
   bytecode: string;
 }
 

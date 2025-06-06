@@ -23,7 +23,6 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@marginly/cli-common": "0.1.0",
     "@marginly/common": "0.1.0",
     "@marginly/contracts": "0.1.0",
     "@marginly/deploy": "0.1.0",
