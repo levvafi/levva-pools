@@ -1,11 +1,10 @@
 import { logger } from './logger';
 import { INITIAL_BALANCE, INITIAL_ETH, INITIAL_USDC, USDC_OWNER_ADDR } from './const';
 import assert = require('assert');
-import { formatEther, formatUnits, Provider } from 'ethers';
+import { BrowserProvider, formatEther, formatUnits, Provider } from 'ethers';
 import { Signer } from 'ethers';
 import { usdcContract, wethContract } from './known-contracts';
-import { FiatTokenV2_1Contract } from '../contract-api/FiatTokenV2';
-import { IWETH9 } from '../../../contracts/typechain-types';
+import { IWETH9, IUSDC } from '../../../contracts/typechain-types';
 
 export async function initWeth(signer: Signer, provider: Provider): Promise<IWETH9> {
   const weth = wethContract(provider);
@@ -17,14 +16,14 @@ export async function initWeth(signer: Signer, provider: Provider): Promise<IWET
     .deposit({ value: INITIAL_ETH, gasPrice: 200000000000, gasLimit: 300000 });
   await depositTx.wait();
 
-  assert == ual(formatEther(await weth.balanceOf(address)), INITIAL_BALANCE);
+  assert.equal(formatEther(await weth.balanceOf(address)), INITIAL_BALANCE);
   return weth;
 }
 
-export async function initUsdc(signer: Signer, provider: Provider): Promise<FiatTokenV2_1Contract> {
+export async function initUsdc(signer: Signer, provider: BrowserProvider): Promise<IUSDC> {
   const usdc = usdcContract(provider);
   const address = await signer.getAddress();
-  logger.info(`usdc erc20 address: ${usdc.address}`);
+  logger.info(`usdc erc20 address: ${await usdc.getAddress()}`);
 
   const usdcOwnerSigner = await provider.getSigner(USDC_OWNER_ADDR);
 
@@ -41,6 +40,6 @@ export async function initUsdc(signer: Signer, provider: Provider): Promise<Fiat
   const mintTx = await usdc.connect(signer).mint(address, INITIAL_USDC);
   await mintTx.wait();
 
-  assert == ual(formatUnits(await usdc.balanceOf(address), 6), INITIAL_BALANCE);
+  assert.equal(formatUnits(await usdc.balanceOf(address), 6), INITIAL_BALANCE);
   return usdc;
 }

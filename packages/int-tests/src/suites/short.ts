@@ -1,7 +1,7 @@
 import { SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
-import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
-import { fp48ToHumanString, FP96, toHumanString } from '../utils/fixed-point';
+import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
+import { abs, fp48ToHumanString, FP96, toHumanString } from '../utils/fixed-point';
 import {
   CallType,
   WHOLE_ONE,
@@ -115,7 +115,7 @@ export async function short(sut: SystemUnderTest) {
     const shortAmount = 5n * 10n ** 18n * BigInt(i + 1);
     logger.info(`shortAmount: ${formatUnits(shortAmount, 18)} WETH`);
 
-    const prevBlockNumber = await marginlyPool.provider.getBlockNumber();
+    const prevBlockNumber = await provider.provider.getBlockNumber();
     logger.info(`short call`);
     const minPrice = (await marginlyPool.getBasePrice()).inner / 2n;
     const txReceipt = await gasReporter.saveGasUsage(
@@ -126,7 +126,7 @@ export async function short(sut: SystemUnderTest) {
           gasLimit: 1_000_000,
         })
     );
-    const swapEvent = decodeSwapEvent(txReceipt, uniswap.address);
+    const swapEvent = decodeSwapEvent(txReceipt, uniswap.target);
     logger.info(`short call success`);
     baseDebtsShorters.push(shortAmount);
 
@@ -158,7 +158,7 @@ export async function short(sut: SystemUnderTest) {
       throw new Error(error);
     }
 
-    const realQuoteAmount = swapEvent.amount0.abs();
+    const realQuoteAmount = abs(swapEvent.amount0);
     logger.info(`realQuoteAmount: ${formatUnits(realQuoteAmount, 6)}`);
     const fee = (swapFeeX96 * realQuoteAmount) / FP96.one;
     const expectedQuoteChange = realQuoteAmount - fee;
@@ -172,9 +172,9 @@ export async function short(sut: SystemUnderTest) {
     }
 
     const feeHolderBalanceAfterShort = await usdc.balanceOf(feeHolder);
-    const expectedFeeHolderBalance = feeHolderBalanceBefore.add(fee);
+    const expectedFeeHolderBalance = feeHolderBalanceBefore + fee;
 
-    if (!feeHolderBalanceAfterShort == expectedFeeHolderBalance) {
+    if (feeHolderBalanceAfterShort != expectedFeeHolderBalance) {
       const error = `wrong feeHolderBalance: expected ${expectedFeeHolderBalance}, actual ${feeHolderBalanceAfterShort}`;
       logger.error(error);
       throw new Error(error);
@@ -207,7 +207,7 @@ export async function short(sut: SystemUnderTest) {
   let nextDate = Math.floor(Date.now() / 1000);
 
   for (let i = 1; i <= 365; i++) {
-    const prevBlockNumber = await marginlyPool.provider.getBlockNumber();
+    const prevBlockNumber = await provider.provider.getBlockNumber();
     nextDate += numOfSeconds;
     await provider.mineAtTimestamp(nextDate);
 
@@ -221,7 +221,9 @@ export async function short(sut: SystemUnderTest) {
         .connect(treasury)
         .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 1_000_000 })
     );
-    const marginCallEvent = txReceipt.events?.find((e) => e.event == 'EnactMarginCall');
+    const marginCallEvent = txReceipt.logs
+      ?.filter((e) => e instanceof EventLog)
+      .find((e) => e.eventName == 'EnactMarginCall');
     if (marginCallEvent) {
       logger.warn(`Margin call happened at day ${i} (${nextDate} time)`);
       logger.warn(`mc account: ${marginCallEvent.args![0]}`);
@@ -245,7 +247,7 @@ export async function short(sut: SystemUnderTest) {
 
       // base collateral change == base debt change
       const epsilon = 1;
-      const delta = (baseDebtDelta - baseCollateralCoeff - realDebtFee).abs();
+      const delta = abs(baseDebtDelta - baseCollateralCoeff - realDebtFee);
       if (delta <= epsilon) {
         logger.warn(`quoteDebtDelta: ${formatUnits(baseDebtDelta, 18)} WETH`);
         logger.warn(`quoteCollatDelta: ${formatUnits(baseCollatDelta, 18)} WETH`);
@@ -275,7 +277,7 @@ export async function short(sut: SystemUnderTest) {
         baseDebtsShorters[i] = realBaseAmount;
       }
 
-      const lenderShortersDelta = (lendersTotalBaseDelta + realDebtFee - shortersTotalBaseDelta).abs();
+      const lenderShortersDelta = abs(lendersTotalBaseDelta + realDebtFee - shortersTotalBaseDelta);
       if (lenderShortersDelta > epsilon * shortersNumber) {
         const lendersDelta = formatUnits(lendersTotalBaseDelta, 18);
         const debtFee = formatUnits(realDebtFee, 18);

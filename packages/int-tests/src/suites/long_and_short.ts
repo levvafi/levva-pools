@@ -1,7 +1,7 @@
 import { SystemUnderTest, TechnicalPositionOwner } from '.';
 import { logger } from '../utils/logger';
-import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
-import { FP96, toHumanString } from '../utils/fixed-point';
+import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
+import { abs, FP96, toHumanString } from '../utils/fixed-point';
 import {
   CallType,
   decodeSwapEvent,
@@ -118,8 +118,8 @@ export async function longAndShort(sut: SystemUnderTest) {
         })
     );
     logger.info(`long call success`);
-    const swapEvent = decodeSwapEvent(txReceipt, uniswap.address);
-    const swapAmount = swapEvent.amount0.abs();
+    const swapEvent = decodeSwapEvent(txReceipt, uniswap.target);
+    const swapAmount = abs(swapEvent.amount0);
     logger.warn(`swap amount ${formatUnits(swapAmount, 6)}`);
     longersAmounts[i][0] = longersAmounts[i][0] + longAmount;
     longersAmounts[i][1] = longersAmounts[i][1] + (swapAmount * swapMultiplierLong) / FP96.one;
@@ -151,8 +151,8 @@ export async function longAndShort(sut: SystemUnderTest) {
         })
     );
     logger.info(`short call success`);
-    const swapEvent = decodeSwapEvent(txReceipt, uniswap.address);
-    const swapAmount = swapEvent.amount0.abs();
+    const swapEvent = decodeSwapEvent(txReceipt, uniswap.target);
+    const swapAmount = abs(swapEvent.amount0);
     logger.warn(`swap amount: ${formatUnits(swapAmount, 6)}`);
     shortersAmounts[i][0] = shortersAmounts[i][0] + shortAmount;
     shortersAmounts[i][1] = shortersAmounts[i][1] + (swapAmount * swapMultiplierShort) / FP96.one;
@@ -175,7 +175,9 @@ export async function longAndShort(sut: SystemUnderTest) {
       .connect(treasury)
       .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 500_000 })
   );
-  const marginCallEvent = txReceipt.events?.find((e) => e.event == 'EnactMarginCall');
+  const marginCallEvent = txReceipt.logs
+    ?.filter((e) => e instanceof EventLog)
+    .find((e) => e.eventName == 'EnactMarginCall');
   if (marginCallEvent) {
     logger.warn(`Margin call happened`);
     logger.warn(`mc account: ${marginCallEvent.args![0]}`);
@@ -266,7 +268,7 @@ export async function longAndShort(sut: SystemUnderTest) {
 
   const epsilon = 10;
 
-  let delta = (shortersTotalDebtDelta - longersTotalCollDelta + realBaseDebtFee).abs();
+  let delta = abs(shortersTotalDebtDelta - longersTotalCollDelta + realBaseDebtFee);
   if (delta > epsilon) {
     const shortDebtDelta = formatUnits(shortersTotalDebtDelta, 18);
     const longCollDelta = formatUnits(longersTotalCollDelta, 18);
@@ -277,7 +279,7 @@ export async function longAndShort(sut: SystemUnderTest) {
     // throw new Error(error);
   }
 
-  delta = (longersTotalDebtDelta - shortersTotalCollDelta + realQuoteDebtFee).abs();
+  delta = abs(longersTotalDebtDelta - shortersTotalCollDelta + realQuoteDebtFee);
   if (delta > epsilon) {
     const shortCollDelta = formatUnits(shortersTotalCollDelta, 6);
     const longDebtDelta = formatUnits(longersTotalDebtDelta, 6);

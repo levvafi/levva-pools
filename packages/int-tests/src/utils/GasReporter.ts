@@ -18,7 +18,7 @@ export class GasReporter {
 
   public async saveGasUsage(
     txName: string,
-    x: ContractTransactionResponse | Promise<ContractTransactionResponse> // | ContractTransaction | Promise<ContractTransaction>
+    x: ContractTransactionResponse | Promise<ContractTransactionResponse>
   ): Promise<ContractTransactionReceipt> {
     const resolved = await x;
     let txReceipt = await resolved.wait();

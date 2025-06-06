@@ -1,174 +1,62 @@
-import { Web3Provider } from '@ethersproject/providers';
-import { BigNumber, constants, Wallet, ethers } from 'ethers';
-import { ContractsCollection } from './types';
-import bn from 'bignumber.js';
+import { BrowserProvider, Wallet, formatUnits, parseUnits } from 'ethers';
 import { logger } from './logger';
 import { tickToPrice } from '@uniswap/v3-sdk';
 import { Token } from '@uniswap/sdk-core';
-import { formatUnits, parseUnits } from 'ethers';
-import { WETH9Contract } from '../contract-api/WETH9';
-import { UniswapV3PoolContract } from '../contract-api/UniswapV3Pool';
-import { FiatTokenV2_1Contract } from '../contract-api/FiatTokenV2';
-import { MarginlyRouterContract } from '../contract-api/MarginlyRouter';
 import { uniswapV3Swapdata } from './chain-ops';
-
-// from TickMath
-const MIN_TICK = -887272;
-const MAX_TICK = -MIN_TICK;
-
-function sqrt(value: bigint): bigint {
-  return BigNumber.from(new bn(value.toString()).sqrt().toFixed().split('.')[0]);
-}
-
-// todo: inner func with owners and lprovider and export with treasury only
-export async function addLiquidity(
-  treasury: Wallet,
-  provider: Web3Provider,
-  { weth, usdc, nonFungiblePositionManager, uniswap }: ContractsCollection,
-  usdcDeposit: bigint
-) {
-  const address = await treasury.getAddress();
-  const [usdcBalance, wethBalance] = await Promise.all([usdc.balanceOf(address), weth.balanceOf(address)]);
-
-  const { tick } = await uniswap.connect(provider).slot0();
-
-  const USDC = new Token(1, usdc.address, 6, 'USDC');
-  const WETH = new Token(1, weth.address, 18, 'WETH');
-  // const DAI = new Token(1, '0x6B175474E89094C44Da98b954EedeAC495271d0F', 18, 'DAI', 'DAI Stablecoin')
-
-  const wethPrice = BigNumber.from(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));
-  console.log(`WETH PRICE: ${wethPrice}`);
-  console.log(`usdcDeposit:::: ${usdcDeposit.toString()}`);
-  const wethDeposit0 = usdcDeposit * '1000000000000';
-  console.log(`wethDeposit0:::: ${wethDeposit0.toString()}`);
-
-  const wethDeposit = wethDeposit0 / wethPrice;
-  console.log(`wethDeposit:::: ${wethDeposit.toString()}`);
-
-  if (usdcDeposit.gt(usdcBalance)) {
-    const additionalMint = usdcDeposit - usdcBalance;
-    const usdcMintTx = await usdc.connect(treasury).mint(address, additionalMint, { gasLimit: 3000000 });
-    await usdcMintTx.wait();
-  }
-
-  if (wethDeposit.gt(wethBalance)) {
-    const additionalMint = wethDeposit - wethBalance;
-    const wethMintTx = await weth.connect(treasury).deposit({ value: additionalMint, gasLimit: 3000000 });
-    await wethMintTx.wait();
-  }
-
-  const usdcApproveTx = await usdc.connect(treasury).approve(nonFungiblePositionManager.address, constants.MaxUint256);
-  await usdcApproveTx.wait();
-
-  const wethApproveTx = await weth.connect(treasury).approve(nonFungiblePositionManager.address, constants.MaxUint256);
-  await wethApproveTx.wait();
-
-  const now = Math.floor(Date.now() / 1000);
-
-  const tickDelta = (BigNumber.from(tick) * 5) / 10000;
-  const tickLower = BigNumber.from(tick) - tickDelta;
-  const tickUpper = BigNumber.from(tick).add(tickDelta);
-  console.log(`tickDelta:`, tickDelta.toString());
-  console.log(`tickLower:`, tickLower.toString());
-  console.log(`tick:`, tick);
-  console.log(`tickUpper:`, tickUpper.toString());
-
-  console.log(`usdcDeposit:`, usdcDeposit.toString());
-  console.log(`wethDeposit:`, wethDeposit.toString());
-
-  console.log(`Before mint`);
-  const mintTx = await nonFungiblePositionManager.connect(treasury).mint(
-    {
-      token0: await uniswap.token0(),
-      token1: await uniswap.token1(),
-      fee: await uniswap.fee(),
-      tickLower: MIN_TICK,
-      tickUpper: MAX_TICK,
-      amount0Desired: usdcDeposit,
-      amount1Desired: wethDeposit,
-      amount0Min: 0,
-      amount1Min: 0,
-      recipient: address,
-      deadline: now + 10000000,
-    },
-    { gasLimit: 1_000_000 }
-  );
-  const receipt = await mintTx.wait();
-
-  let abi = ['event IncreaseLiquidity(uint256 indexed tokenId, uint128 liquidity, uint256 amount0, uint256 amount1)'];
-  let iface = new ethers.utils.Interface(abi);
-
-  const event = receipt.logs.find((x) => {
-    try {
-      iface.parseLog(x);
-      return true;
-    } catch {
-      return undefined;
-    }
-  });
-  if (event === undefined) {
-    throw new Error(`IncreaseLiquidity event not found`);
-  }
-
-  const { tokenId, liquidity, amount0, amount1 } = iface.parseLog(event).args;
-  logger.info(
-    `addLiquidity: New position id: ${tokenId}, liquidity: ${liquidity}, amount0: ${amount0}, amount1: ${amount1}`
-  );
-}
+import { IUniswapV3Pool, IUSDC, IWETH9 } from '../../../contracts/typechain-types';
+import { MarginlyRouter } from '../../../router/typechain-types';
+import { abs } from './fixed-point';
 
 export async function changeWethPrice(
   treasury: Wallet,
-  provider: Web3Provider,
+  provider: BrowserProvider,
   {
     weth,
     usdc,
     uniswap,
     swapRouter,
   }: {
-    weth: WETH9Contract;
-    usdc: FiatTokenV2_1Contract;
-    uniswap: UniswapV3PoolContract;
-    swapRouter: MarginlyRouterContract;
+    weth: IWETH9;
+    usdc: IUSDC;
+    uniswap: IUniswapV3Pool;
+    swapRouter: MarginlyRouter;
   },
   targetPrice: bigint
 ) {
   logger.info(`Start changing price, target: ${targetPrice.toString()}`);
   const { tick } = await uniswap.connect(provider).slot0();
-  const USDC = new Token(1, usdc.address, 6, 'USDC');
-  const WETH = new Token(1, weth.address, 18, 'WETH');
+  const USDC = new Token(1, usdc.target.toString(), 6, 'USDC');
+  const WETH = new Token(1, weth.target.toString(), 18, 'WETH');
 
-  const wethPrice = BigNumber.from(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));
+  const wethPrice = BigInt(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));
   logger.info(`WETH price is ${wethPrice}`);
-  logger.info(`WETH balance uniswap ${formatUnits(await weth.balanceOf(uniswap.address), 18)}`);
-  logger.info(`USDC balance uniswap ${formatUnits(await usdc.balanceOf(uniswap.address), 6)}`);
+  logger.info(`WETH balance uniswap ${formatUnits(await weth.balanceOf(uniswap), 18)}`);
+  logger.info(`USDC balance uniswap ${formatUnits(await usdc.balanceOf(uniswap), 6)}`);
 
-  const decreasingPrice = wethPrice.gt(targetPrice);
+  const decreasingPrice = wethPrice >= targetPrice;
 
   let amountIn = decreasingPrice
     ? parseUnits('2000', 18) // 2000 ETH
     : parseUnits('3200000', 6); //3_200_000 USDC
-  const depositAmount = amountIn * 1_000_000;
+  const depositAmount = amountIn * 1_000_000n;
 
   if (decreasingPrice) {
     await (await weth.connect(treasury).deposit({ value: depositAmount, gasLimit: 3000000 })).wait();
-    await (await weth.connect(treasury).approve(swapRouter.address, depositAmount)).wait();
+    await (await weth.connect(treasury).approve(swapRouter, depositAmount)).wait();
   } else {
-    await (await usdc.connect(treasury).mint(treasury.address, depositAmount, { gasLimit: 3000000 })).wait();
-    await (await usdc.connect(treasury).approve(swapRouter.address, depositAmount)).wait();
+    await (await usdc.connect(treasury).mint(treasury, depositAmount, { gasLimit: 3000000 })).wait();
+    await (await usdc.connect(treasury).approve(swapRouter, depositAmount)).wait();
   }
 
   const fee = await uniswap.fee();
   let currentPrice = wethPrice;
   let priceDelta = 0n;
 
-  while (decreasingPrice ? currentPrice.gt(targetPrice) : targetPrice.gt(currentPrice)) {
-    const currentBlockNumber = await provider.getBlockNumber();
-    const now = (await provider.getBlock(currentBlockNumber)).timestamp;
+  while (decreasingPrice ? currentPrice > targetPrice : targetPrice > currentPrice) {
+    const [tokenIn, tokenOut] = decreasingPrice ? [weth, usdc] : [usdc, weth];
 
-    const [tokenIn, tokenOut] = decreasingPrice ? [weth.address, usdc.address] : [usdc.address, weth.address];
-
-    const priceLeft = targetPrice - currentPrice.abs();
-    if (priceDelta.gt(priceLeft)) {
+    const priceLeft = abs(targetPrice - currentPrice);
+    if (priceDelta > priceLeft) {
       amountIn = (amountIn * priceLeft) / priceDelta;
     }
 
@@ -179,20 +67,20 @@ export async function changeWethPrice(
     ).wait();
 
     const { tick } = await uniswap.connect(provider).slot0();
-    const price = BigNumber.from(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));
-    priceDelta = price - currentPrice.abs();
+    const price = BigInt(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));
+    priceDelta = abs(price - currentPrice);
     currentPrice = price;
     logger.info(`  WETH price is ${currentPrice}`);
-    logger.info(`  uniswap WETH balance  is ${formatUnits(await weth.balanceOf(uniswap.address), 18)}`);
-    logger.info(`  uniswap USDC balance is ${formatUnits(await usdc.balanceOf(uniswap.address), 6)}`);
+    logger.info(`  uniswap WETH balance  is ${formatUnits(await weth.balanceOf(uniswap), 18)}`);
+    logger.info(`  uniswap USDC balance is ${formatUnits(await usdc.balanceOf(uniswap), 6)}`);
   }
 
   {
     const { tick } = await uniswap.connect(provider).slot0();
-    const wethPrice = BigNumber.from(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));
+    const wethPrice = BigInt(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));
     logger.info(`WETH price is ${wethPrice}`);
-    logger.info(`uniswap WETH balance  is ${formatUnits(await weth.balanceOf(uniswap.address), 18)}`);
-    logger.info(`uniswap USDC balance is ${formatUnits(await usdc.balanceOf(uniswap.address), 6)}`);
+    logger.info(`uniswap WETH balance  is ${formatUnits(await weth.balanceOf(uniswap), 18)}`);
+    logger.info(`uniswap USDC balance is ${formatUnits(await usdc.balanceOf(uniswap), 6)}`);
   }
   logger.info(`Price changed`);
 }

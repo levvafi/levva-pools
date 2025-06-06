@@ -1,3 +1,7 @@
+export function abs(num: bigint): bigint {
+  return num > 0n ? num : -num;
+}
+
 export const FP96 = {
   one: 2n ** 96n,
 };

@@ -1,4 +1,4 @@
-import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
+import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import { showSystemAggregates } from '../utils/log-utils';
@@ -112,7 +112,9 @@ export async function simulation1(sut: SystemUnderTest) {
           .connect(treasury)
           .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 500_000 })
       ).wait();
-      const marginCallEvent = txReceipt.events?.find((e) => e.event == 'EnactMarginCall');
+      const marginCallEvent = txReceipt?.logs
+        ?.filter((e) => e instanceof EventLog)
+        .find((e) => e.eventName == 'EnactMarginCall');
       if (marginCallEvent) {
         logger.info(`\n`);
         logger.warn(`Margin call happened at day ${i} (${nextDate} time)`);
@@ -233,7 +235,9 @@ export async function simulation2(sut: SystemUnderTest) {
           .connect(treasury)
           .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 500_000 })
       ).wait();
-      const marginCallEvent = txReceipt.events?.find((e) => e.event == 'EnactMarginCall');
+      const marginCallEvent = txReceipt?.logs
+        ?.filter((e) => e instanceof EventLog)
+        .find((e) => e.eventName == 'EnactMarginCall');
       if (marginCallEvent) {
         logger.info(`\n`);
         logger.warn(`Margin call happened at day ${i} (${nextDate} time)`);
@@ -360,7 +364,9 @@ export async function simulation3(sut: SystemUnderTest) {
         .connect(treasury)
         .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 500_000 })
     ).wait();
-    const marginCallEvent = txReceipt.events?.find((e) => e.event == 'EnactMarginCall');
+    const marginCallEvent = txReceipt?.logs
+      ?.filter((e) => e instanceof EventLog)
+      .find((e) => e.eventName == 'EnactMarginCall');
     if (marginCallEvent) {
       logger.info(`\n`);
       logger.warn(`Margin call happened at day ${i} (${nextDate} time)`);

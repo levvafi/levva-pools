@@ -2,7 +2,7 @@ import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { SystemUnderTest } from '.';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { logger } from '../utils/logger';
-import { encodeLiquidationParamsAave } from '@marginly/common';
+import { encodeLiquidationParamsAave } from '../utils/marginly-keeper';
 import { MarginlyPool } from '../../../contracts/typechain-types';
 
 type PoolCoeffs = {
@@ -123,7 +123,7 @@ export async function keeperAave(sut: SystemUnderTest) {
     bigint,
     bigint,
     bigint,
-    bigint,
+    bigint
   ] = await Promise.all([
     marginlyPool.getBasePrice(),
     marginlyPool.params(),
@@ -159,7 +159,7 @@ export async function keeperAave(sut: SystemUnderTest) {
   const minProfit = 0n;
 
   const longerLiqParams = encodeLiquidationParamsAave(
-    marginlyPool.address,
+    marginlyPool.target,
     longer.address,
     liquidator.address,
     minProfit,
@@ -181,7 +181,7 @@ export async function keeperAave(sut: SystemUnderTest) {
   console.log(`Profit after long position liquidation is ${profit} USDC`);
 
   const shorterLiqParams = encodeLiquidationParamsAave(
-    marginlyPool.address,
+    marginlyPool.target,
     shorter.address,
     liquidator.address,
     minProfit,

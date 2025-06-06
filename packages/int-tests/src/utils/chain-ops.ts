@@ -1,7 +1,6 @@
 import { logger } from '../utils/logger';
 import { SECS_PER_BLOCK } from './const';
-import { Web3Provider } from '@ethersproject/providers';
-import { AbiCoder, ContractTransactionResponse, ethers } from 'ethers';
+import { AbiCoder, Addressable, BrowserProvider, ContractTransactionReceipt, EventLog, Provider } from 'ethers';
 import { FP96, powTaylor } from './fixed-point';
 import { TechnicalPositionOwner } from '../suites';
 import { MarginlyPool } from '../../../contracts/typechain-types';
@@ -53,10 +52,10 @@ export async function waitBlocks(blocks: number): Promise<void> {
   return await new Promise((rs) => setTimeout(rs, blocks * SECS_PER_BLOCK * 1000.0));
 }
 
-export class Web3ProviderDecorator {
-  readonly provider: Web3Provider;
+export class BrowserProviderDecorator {
+  readonly provider: BrowserProvider;
 
-  constructor(provider: Web3Provider) {
+  constructor(provider: BrowserProvider) {
     this.provider = provider;
   }
 
@@ -65,7 +64,11 @@ export class Web3ProviderDecorator {
   }
 
   async getLastBlockTimestamp(): Promise<number> {
-    return (await this.provider.getBlock(this.provider._lastBlockNumber)).timestamp;
+    const latestBlock = await this.provider.getBlock(await this.provider.getBlockNumber());
+    if (latestBlock === null) {
+      throw new Error('Failed to obtain latest block');
+    }
+    return latestBlock.timestamp;
   }
 }
 
@@ -90,8 +93,13 @@ export type SwapEvent = {
   tick: number;
 };
 
-export function decodeSwapEvent(txReceipt: ContractTransactionResponse, uniswapAddress: string): SwapEvent {
-  const swapEvent = txReceipt.events!.find((e) => e.address == uniswapAddress);
+export function decodeSwapEvent(
+  txReceipt: ContractTransactionReceipt,
+  uniswapAddress: string | Addressable
+): SwapEvent {
+  const swapEvent = txReceipt.logs
+    ?.filter((x) => x instanceof EventLog)
+    .find((e) => e.address == uniswapAddress.toString());
   const swapEventTypes = ['int256', 'int256', 'uint160', 'uint128', 'int24'];
   const result = AbiCoder.defaultAbiCoder().decode(swapEventTypes, swapEvent!.data);
 

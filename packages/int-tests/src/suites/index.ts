@@ -1,9 +1,8 @@
-import { ethers, EventLog, parseUnits, Provider, Wallet } from 'ethers';
+import { BrowserProvider, ethers, EventLog, parseUnits, Provider, Wallet } from 'ethers';
 import { logger } from '../utils/logger';
-import { Web3Provider } from '@ethersproject/providers';
 import { initUsdc, initWeth } from '../utils/erc20-init';
 import { uniswapFactoryContract, uniswapPoolContract } from '../utils/known-contracts';
-import { Dex, Web3ProviderDecorator } from '../utils/chain-ops';
+import { Dex, BrowserProviderDecorator } from '../utils/chain-ops';
 import { long } from './long';
 import { short } from './short';
 import { longAndShort } from './long_and_short';
@@ -28,6 +27,7 @@ import { keeperBalancer } from './keeperBalancer';
 import {
   IUniswapV3Factory,
   IUniswapV3Pool,
+  IUSDC,
   IWETH9,
   MarginlyFactory,
   MarginlyFactory__factory,
@@ -75,9 +75,9 @@ export type SystemUnderTest = {
   keeperAlgebra: MarginlyKeeperAlgebra;
   treasury: Wallet;
   accounts: Wallet[];
-  usdc: FiatTokenV2_1Contract;
+  usdc: IUSDC;
   weth: IWETH9;
-  provider: Web3ProviderDecorator;
+  provider: BrowserProviderDecorator;
   gasReporter: GasReporter;
 };
 
@@ -86,7 +86,7 @@ interface SuiteCollection {
 }
 
 async function initializeTestSystem(
-  provider: Provider,
+  provider: BrowserProvider,
   suiteName: string,
   initialAccounts: [string, { unlocked: boolean; secretKey: string; balance: bigint }][]
 ): Promise<SystemUnderTest> {
@@ -136,7 +136,7 @@ async function initializeTestSystem(
   const dodoV2SyncAbi =
     '[{"inputs": [], "name": "sync", "outputs": [], "stateMutability": "nonpayable", "type": "function"}]';
   const dodoV2 = new ethers.Contract(dodoV2Pool, dodoV2SyncAbi);
-  await dodoV2.connect(treasury).sync();
+  await dodoV2.connect(treasury).getFunction('sync').call([]);
 
   const dodoV2Adapter = await new DodoV2Adapter__factory()
     .connect(treasury)
@@ -246,13 +246,13 @@ async function initializeTestSystem(
     keeperUniswapV3,
     keeperBalancer,
     keeperAlgebra,
-    provider: new Web3ProviderDecorator(provider),
+    provider: new BrowserProviderDecorator(provider),
     gasReporter,
   };
 }
 
 export async function startSuite(
-  provider: Web3Provider,
+  provider: BrowserProvider,
   initialAccounts: [string, { unlocked: boolean; secretKey: string; balance: bigint }][],
   suitName: string
 ): Promise<void> {

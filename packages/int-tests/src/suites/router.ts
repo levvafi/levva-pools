@@ -22,7 +22,7 @@ export async function routerSwaps(sut: SystemUnderTest) {
     const adapter = new ethers.Contract(
       adapterAddress,
       require(`@marginly/router/artifacts/contracts/adapters/BalancerAdapter.sol/BalancerAdapter.json`).abi,
-      provider.provider
+      provider
     );
     const dexPoolAddress = dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth, usdc);
 
@@ -47,7 +47,7 @@ export async function routerSwaps(sut: SystemUnderTest) {
         let failed = false;
         try {
           await (
-            await swapRouter.swapExactOutput(dex, weth, usdc.address, wethAmount, usdcAmount, {
+            await swapRouter.swapExactOutput(dex, weth, usdc, wethAmount, usdcAmount, {
               gasLimit: 1_000_000,
             })
           ).wait();
@@ -58,13 +58,13 @@ export async function routerSwaps(sut: SystemUnderTest) {
         assert(failed);
       } else {
         await (
-          await swapRouter.swapExactOutput(dex, weth, usdc.address, wethAmount, usdcAmount, {
+          await swapRouter.swapExactOutput(dex, weth, usdc, wethAmount, usdcAmount, {
             gasLimit: 1_000_000,
           })
         ).wait();
 
-        currentWethBalance = await weth.balanceOf(treasury.address);
-        currentUsdcBalance = await usdc.balanceOf(treasury.address);
+        currentWethBalance = await weth.balanceOf(treasury);
+        currentUsdcBalance = await usdc.balanceOf(treasury);
 
         const currentPoolWethBalance = await weth.balanceOf(dexPoolAddress);
         const currentPoolUsdcBalance = await usdc.balanceOf(dexPoolAddress);
@@ -152,12 +152,11 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
       require(`@marginly/router/artifacts/contracts/adapters/BalancerAdapter.sol/BalancerAdapter.json`).abi,
       provider.provider
     );
-    const dexPoolAddress =
-      dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth.address, usdc.address);
+    const dexPoolAddress = dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth, usdc);
 
     const element =
       dexPoolAddress != ZeroAddress
-        ? { dexName: dexInfo[0], dexIndex: dexInfo[1], address: dexPoolAddress }
+        ? { dexName: dexInfo[0], dexIndex: Number(dexInfo[1]), address: dexPoolAddress }
         : undefined;
     dexs.push(element);
   }
@@ -175,13 +174,13 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
   } while (!dexs[secondDex] || secondDex === firstDex);
   logger.info(`Second dex is ${dexs[secondDex]!.dexName}`);
 
-  const firstDexRatio = Math.floor(Math.random() * SWAP_ONE);
+  const firstDexRatio = BigInt(Math.floor(Math.random() * Number(SWAP_ONE)));
   logger.info(`${dexs[firstDex]!.dexName} dex ratio: ${firstDexRatio}`);
   const secondDexRatio = SWAP_ONE - firstDexRatio;
   logger.info(`${dexs[secondDex]!.dexName} dex ratio: ${secondDexRatio}`);
 
   const swapCalldata = constructSwap(
-    [dexs[firstDex]?.dexIndex!, dexs[secondDex]?.dexIndex!],
+    [BigInt(dexs[firstDex]?.dexIndex!), BigInt(dexs[secondDex]?.dexIndex!)],
     [firstDexRatio, secondDexRatio]
   );
   logger.info(`swap calldata: ${swapCalldata}`);
@@ -200,15 +199,15 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
     const oldSecondPoolWethBalance = await weth.balanceOf(dexs[secondDex]!.address);
     const oldSecondPoolUsdcBalance = await usdc.balanceOf(dexs[secondDex]!.address);
 
-    await weth.connect(treasury).approve(swapRouter.address, wethAmount);
+    await weth.connect(treasury).approve(swapRouter, wethAmount);
     await (
-      await swapRouter.swapExactOutput(swapCalldata, weth.address, usdc.address, wethAmount, usdcAmount, {
+      await swapRouter.swapExactOutput(swapCalldata, weth, usdc, wethAmount, usdcAmount, {
         gasLimit: 1_000_000,
       })
     ).wait();
 
-    currentWethBalance = await weth.balanceOf(treasury.address);
-    currentUsdcBalance = await usdc.balanceOf(treasury.address);
+    currentWethBalance = await weth.balanceOf(treasury);
+    currentUsdcBalance = await usdc.balanceOf(treasury);
 
     const currentFirstPoolWethBalance = await weth.balanceOf(dexs[firstDex]!.address);
     const currentFirstPoolUsdcBalance = await usdc.balanceOf(dexs[firstDex]!.address);
@@ -220,17 +219,17 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
     const firstPoolWethDelta = currentFirstPoolWethBalance - oldFirstPoolWethBalance;
     const secondPoolWethDelta = currentSecondPoolWethBalance - oldSecondPoolWethBalance;
     const wethDelta = oldWethBalance - currentWethBalance;
-    assert(wethDelta.gte(firstPoolWethDelta.add(secondPoolWethDelta)));
-    assert(!wethDelta == 0);
-    assert(wethDelta.lte(wethAmount));
+    assert(wethDelta >= firstPoolWethDelta + secondPoolWethDelta);
+    assert(wethDelta != 0n);
+    assert(wethDelta <= wethAmount);
 
     logger.info(`    Checking usdc balances`);
     const firstPoolUsdcDelta = oldFirstPoolUsdcBalance - currentFirstPoolUsdcBalance;
     const secondPoolUsdcDelta = oldSecondPoolUsdcBalance - currentSecondPoolUsdcBalance;
     const usdcDelta = currentUsdcBalance - oldUsdcBalance;
-    if (dexs[firstDex]?.dexIndex! != Dex.DodoV2 && dexs[secondDex]?.dexIndex! != Dex.DodoV2) {
+    if (BigInt(dexs[firstDex]?.dexIndex!) != Dex.DodoV2 && BigInt(dexs[secondDex]?.dexIndex!) != Dex.DodoV2) {
       // DODO v2 transfer fee out from the pool, so poolUsdcDelta > usdcDelta
-      assert(usdcDelta == firstPoolUsdcDelta.add(secondPoolUsdcDelta));
+      assert(usdcDelta == firstPoolUsdcDelta + secondPoolUsdcDelta);
     }
     assert(usdcDelta == usdcAmount);
   }
@@ -249,15 +248,15 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
     const oldSecondPoolWethBalance = await weth.balanceOf(dexs[secondDex]!.address);
     const oldSecondPoolUsdcBalance = await usdc.balanceOf(dexs[secondDex]!.address);
 
-    await usdc.connect(treasury).approve(swapRouter.address, usdcAmount);
+    await usdc.connect(treasury).approve(swapRouter, usdcAmount);
     await (
-      await swapRouter.swapExactInput(swapCalldata, usdc.address, weth.address, usdcAmount, wethAmount, {
+      await swapRouter.swapExactInput(swapCalldata, usdc, weth, usdcAmount, wethAmount, {
         gasLimit: 1_000_000,
       })
     ).wait();
 
-    currentWethBalance = await weth.balanceOf(treasury.address);
-    currentUsdcBalance = await usdc.balanceOf(treasury.address);
+    currentWethBalance = await weth.balanceOf(treasury);
+    currentUsdcBalance = await usdc.balanceOf(treasury);
 
     const currentFirstPoolWethBalance = await weth.balanceOf(dexs[firstDex]!.address);
     const currentFirstPoolUsdcBalance = await usdc.balanceOf(dexs[firstDex]!.address);
@@ -269,18 +268,18 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
     const firstPoolWethDelta = oldFirstPoolWethBalance - currentFirstPoolWethBalance;
     const secondPoolWethDelta = oldSecondPoolWethBalance - currentSecondPoolWethBalance;
     const wethDelta = currentWethBalance - oldWethBalance;
-    if (dexs[firstDex]?.dexIndex! != Dex.DodoV2 && dexs[secondDex]?.dexIndex! != Dex.DodoV2) {
+    if (BigInt(dexs[firstDex]?.dexIndex!) != Dex.DodoV2 && BigInt(dexs[secondDex]?.dexIndex!) != Dex.DodoV2) {
       // DODO v2 transfer fee out from the pool, so poolWethDelta > wethDelta
-      assert(wethDelta == firstPoolWethDelta.add(secondPoolWethDelta));
+      assert(wethDelta == firstPoolWethDelta + secondPoolWethDelta);
     }
-    assert(wethDelta.gte(wethAmount));
+    assert(wethDelta >= wethAmount);
 
     logger.info(`    Checking usdc balances`);
     const firstPoolUsdcDelta = currentFirstPoolUsdcBalance - oldFirstPoolUsdcBalance;
     const secondPoolUsdcDelta = currentSecondPoolUsdcBalance - oldSecondPoolUsdcBalance;
     const usdcDelta = oldUsdcBalance - currentUsdcBalance;
 
-    assert(usdcDelta == firstPoolUsdcDelta.add(secondPoolUsdcDelta));
+    assert(usdcDelta == firstPoolUsdcDelta + secondPoolUsdcDelta);
     assert(usdcDelta == usdcAmount);
   }
 }

@@ -2,7 +2,7 @@ import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { SystemUnderTest } from '.';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { logger } from '../utils/logger';
-import { encodeLiquidationParamsBalancer } from '@marginly/common';
+import { encodeLiquidationParamsBalancer } from '../utils/marginly-keeper';
 import { MarginlyPool } from '../../../contracts/typechain-types';
 
 type PoolCoeffs = {
@@ -123,7 +123,7 @@ export async function keeperBalancer(sut: SystemUnderTest) {
     bigint,
     bigint,
     bigint,
-    bigint,
+    bigint
   ] = await Promise.all([
     marginlyPool.getBasePrice(),
     marginlyPool.params(),
@@ -153,13 +153,13 @@ export async function keeperBalancer(sut: SystemUnderTest) {
 
   const liquidator = accounts[4];
 
-  let balanceBefore = await usdc.balanceOf(liquidator.address);
+  let balanceBefore = await usdc.balanceOf(liquidator);
 
   const swapCallData = 0n;
   const minProfit = 0n;
 
   const longerLiqParams = encodeLiquidationParamsBalancer(
-    marginlyPool.address,
+    marginlyPool.target,
     longer.address,
     liquidator.address,
     minProfit,
@@ -171,23 +171,23 @@ export async function keeperBalancer(sut: SystemUnderTest) {
 
   await gasReporter.saveGasUsage(
     'keeperBalancer.liquidatePosition',
-    keeperBalancer.connect(liquidator).liquidatePosition(usdc.address, longerDebtAmount, longerLiqParams, ethOpts)
+    keeperBalancer.connect(liquidator).liquidatePosition(usdc, longerDebtAmount, longerLiqParams, ethOpts)
   );
 
-  let balanceAfter = await usdc.balanceOf(liquidator.address);
+  let balanceAfter = await usdc.balanceOf(liquidator);
 
   let profit = formatUnits(balanceAfter - balanceBefore, await usdc.decimals());
   console.log(`Profit after long position liquidation is ${profit} USDC`);
 
   const shorterLiqParams = encodeLiquidationParamsBalancer(
-    marginlyPool.address,
+    marginlyPool.target,
     shorter.address,
     liquidator.address,
     minProfit,
     swapCallData
   );
 
-  balanceBefore = BigNumber.from(await weth.balanceOf(liquidator));
+  balanceBefore = await weth.balanceOf(liquidator);
   await gasReporter.saveGasUsage(
     'keeperAave.liquidatePosition',
     keeperBalancer.connect(liquidator).liquidatePosition(weth, shorterDebtAmount, shorterLiqParams, ethOpts)

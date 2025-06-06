@@ -3,7 +3,7 @@ import ganache from 'ganache';
 import { writeFile } from 'fs/promises';
 import { INITIAL_BALANCE, USDC_OWNER_ADDR } from './utils/const';
 import { logger } from './utils/logger';
-import { Web3Provider } from '@ethersproject/providers';
+import { BrowserProvider } from 'ethers';
 
 (async (): Promise<void> => {
   const logFile = `.ganache.stdout.log`;
@@ -14,7 +14,7 @@ import { Web3Provider } from '@ethersproject/providers';
     throw `Suite name argument not passed. Run script with argument --suite=<suiteName>`;
   }
 
-  const forkBlockNumber = 17265384;
+  const forkBlockNumber = 22644200;
   const server = ganache.server({
     fork: {
       url: `https://rpc.ankr.com/eth@${forkBlockNumber}`,
@@ -37,7 +37,7 @@ import { Web3Provider } from '@ethersproject/providers';
   logger.info(`⛓️ Fork on block ${forkBlockNumber}`);
   server.listen(8545, `127.0.0.1`).catch((err) => logger.fatal(JSON.stringify(err)));
 
-  const provider = new Web3Provider(server.provider as any);
+  const provider = new BrowserProvider(server.provider as any);
   const initialAccounts = Object.entries(server.provider.getInitialAccounts());
 
   try {

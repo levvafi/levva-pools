@@ -1,5 +1,5 @@
 import assert = require('assert');
-import { ethers, formatUnits, parseUnits, ZeroAddress } from 'ethers';
+import { ethers, EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import {
@@ -8,10 +8,10 @@ import {
   CallType,
   assertAccruedRateCoeffs,
   uniswapV3Swapdata,
+  WHOLE_ONE,
 } from '../utils/chain-ops';
-import { fp48ToHumanString, FP96, toHumanString } from '../utils/fixed-point';
+import { abs, fp48ToHumanString, FP96, toHumanString } from '../utils/fixed-point';
 import { showSystemAggregates } from '../utils/log-utils';
-import { WHOLE_ONE } from '@marginly/common';
 
 export async function long(sut: SystemUnderTest) {
   logger.info(`Starting long test suite`);
@@ -105,7 +105,7 @@ export async function long(sut: SystemUnderTest) {
     const positionBefore = await marginlyPool.positions(borrowers[i].address);
     const realQuoteBalanceBefore = await usdc.balanceOf(marginlyPool);
     const realBaseBalanceBefore = await weth.balanceOf(marginlyPool);
-    const prevBlockNumber = await ethers.provider.getBlockNumber();
+    const prevBlockNumber = await provider.provider.getBlockNumber();
     logger.info(`Before long transaction`);
     const maxPrice = (await marginlyPool.getBasePrice()).inner * 2n;
     const txReceipt = await marginlyPool
@@ -113,8 +113,8 @@ export async function long(sut: SystemUnderTest) {
       .execute(CallType.Long, longAmount, 0, maxPrice, false, ZeroAddress, uniswapV3Swapdata(), {
         gasLimit: 1_900_000,
       });
-    await gasReporter.saveGasUsage('long', txReceipt);
-    const swapEvent = decodeSwapEvent(txReceipt, uniswap.address);
+    const receipt = await gasReporter.saveGasUsage('long', txReceipt);
+    const swapEvent = decodeSwapEvent(receipt, uniswap.target);
     //check position
 
     //check coefficients
@@ -210,7 +210,7 @@ export async function long(sut: SystemUnderTest) {
   const numOfSeconds = 24 * 60 * 60; // 1 day
   let nextDate = Math.floor(Date.now() / 1000);
   for (let i = 0; i < 365; i++) {
-    const prevBlockNumber = await marginlyPool.provider.getBlockNumber();
+    const prevBlockNumber = await provider.provider.getBlockNumber();
     nextDate += numOfSeconds;
     await provider.mineAtTimestamp(nextDate);
 
@@ -221,9 +221,11 @@ export async function long(sut: SystemUnderTest) {
     const txReceipt = await marginlyPool
       .connect(treasury)
       .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 500_000 });
-    await gasReporter.saveGasUsage('reinit', txReceipt);
+    const receipt = await gasReporter.saveGasUsage('reinit', txReceipt);
 
-    const marginCallEvent = txReceipt.events?.find((e) => e.event == 'EnactMarginCall');
+    const marginCallEvent = receipt.logs
+      ?.filter((e) => e instanceof EventLog)
+      .find((e) => e.eventName == 'EnactMarginCall');
     if (marginCallEvent) {
       logger.info(`\n`);
       logger.warn(`Margin call happened at day ${i} (${nextDate} time)`);
@@ -248,8 +250,8 @@ export async function long(sut: SystemUnderTest) {
 
       // quote collateral change + debt fee == quote debt change
       const epsilon = 200;
-      const delta = (quoteDebtDelta - quoteCollatDelta - realDebtFee).abs();
-      if (delta.gt(epsilon)) {
+      const delta = abs(quoteDebtDelta - quoteCollatDelta - realDebtFee);
+      if (delta >= epsilon) {
         logger.warn(`quoteDebtDelta: ${formatUnits(quoteDebtDelta, 6)} USDC`);
         logger.warn(`quoteCollatDelta: ${formatUnits(quoteCollatDelta, 6)} USDC`);
         logger.warn(`quoteDbtFee: ${formatUnits(expectedCoeffs.discountedQuoteDebtFee, 6)} USDC`);

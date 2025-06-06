@@ -2,7 +2,7 @@ import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { SystemUnderTest } from '.';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { logger } from '../utils/logger';
-import { encodeLiquidationParams } from '@marginly/common';
+import { encodeLiquidationParams } from '../utils/marginly-keeper';
 import { MarginlyPool } from '../../../contracts/typechain-types';
 
 type PoolCoeffs = {
@@ -13,13 +13,7 @@ type PoolCoeffs = {
 };
 
 //To generate swapCallData use script here https://dotnetfiddle.net/zAmYaP
-const balancerSwapCallData = 2621441;
-const sushiSwapSwapCallData = 7864321;
-const dodoV1SwapCallData = 12058625;
-const dodoV2SwapCallData = 13107201;
-const kyberClassicSwapCallData = 4718593;
-
-const keeperSwapCallData = sushiSwapSwapCallData;
+const keeperSwapCallData = 7864321n;
 
 async function getDebtAmount(
   marginlyPool: MarginlyPool,
@@ -132,7 +126,7 @@ export async function keeperUniswapV3(sut: SystemUnderTest) {
     bigint,
     bigint,
     bigint,
-    bigint,
+    bigint
   ] = await Promise.all([
     marginlyPool.getBasePrice(),
     marginlyPool.params(),
@@ -165,14 +159,15 @@ export async function keeperUniswapV3(sut: SystemUnderTest) {
   let balanceBefore = await usdc.balanceOf(liquidator);
 
   {
-    const [amount0, amount1] = (await uniswap.token0()) == usdc.address ? [longerDebtAmount, 0] : [0, longerDebtAmount];
+    const [amount0, amount1] =
+      (await uniswap.token0()) == (await usdc.getAddress()) ? [longerDebtAmount, 0] : [0, longerDebtAmount];
     const liquidationParams = encodeLiquidationParams(
-      usdc.address,
+      usdc.target,
       longerDebtAmount,
-      marginlyPool.address,
+      marginlyPool.target,
       longer.address,
       liquidator.address,
-      uniswap.address,
+      uniswap.target,
       0n,
       keeperSwapCallData
     );
@@ -193,14 +188,14 @@ export async function keeperUniswapV3(sut: SystemUnderTest) {
   balanceBefore = await weth.balanceOf(liquidator);
   {
     const [amount0, amount1] =
-      (await uniswap.token0()) == weth.address ? [shorterDebtAmount, 0] : [0, shorterDebtAmount];
+      (await uniswap.token0()) == (await weth.getAddress()) ? [shorterDebtAmount, 0] : [0, shorterDebtAmount];
     const liquidationParams = encodeLiquidationParams(
-      weth.address,
+      weth.target,
       shorterDebtAmount,
-      marginlyPool.address,
+      marginlyPool.target,
       shorter.address,
       liquidator.address,
-      uniswap.address,
+      uniswap.target,
       0n,
       keeperSwapCallData
     );

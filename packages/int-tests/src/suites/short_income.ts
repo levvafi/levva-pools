@@ -1,5 +1,5 @@
 import assert = require('assert');
-import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
+import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import { CallType, decodeSwapEvent, uniswapV3Swapdata, WHOLE_ONE } from '../utils/chain-ops';
@@ -86,7 +86,9 @@ export async function shortIncome(sut: SystemUnderTest) {
       .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 1_000_000 })
   );
   logger.info(`reinit executed`);
-  const marginCallEvent = reinitReceipt.events?.find((e) => e.event == 'EnactMarginCall');
+  const marginCallEvent = reinitReceipt.logs
+    ?.filter((e) => e instanceof EventLog)
+    .find((e) => e.eventName == 'EnactMarginCall');
   if (marginCallEvent) {
     const error = `MC happened, try reducing time shift`;
     logger.error(error);
@@ -107,7 +109,7 @@ export async function shortIncome(sut: SystemUnderTest) {
         gasLimit: 1_000_000,
       })
   );
-  const closePosSwapEvent = decodeSwapEvent(closePosReceipt, uniswap.address);
+  const closePosSwapEvent = decodeSwapEvent(closePosReceipt, uniswap.target);
   const swapAmount = closePosSwapEvent.amount0;
   logger.info(`swapAmount: ${formatUnits(swapAmount, 6)} USDC`);
   const fee = (swapFeeX96 * swapAmount) / FP96.one;
