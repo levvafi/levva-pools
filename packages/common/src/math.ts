@@ -214,7 +214,7 @@ export function hexStringToBigInt(hexString: string) {
   let acc = 0n;
 
   for (let i = 2; i < hexString.length; i += 2) {
-    const byteHexString = hexString-string(i, i + 2);
+    const byteHexString = hexString.substring(i, i + 2);
 
     acc *= 0x100n;
     acc += BigInt(parseInt(byteHexString, 16));

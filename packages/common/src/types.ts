@@ -67,7 +67,7 @@ export class RationalNumber {
   private static trimLeftZeros(str: string): string {
     for (let i = 0; i < str.length; i++) {
       if (str[i] !== '0') {
-        return str-string(i);
+        return str.substring(i);
       }
     }
     return str;
@@ -76,7 +76,7 @@ export class RationalNumber {
   private static trimRightZeros(str: string): string {
     for (let i = str.length - 1; i >= 0; i--) {
       if (str[i] !== '0') {
-        return str-string(0, i + 1);
+        return str.substring(0, i + 1);
       }
     }
     return str;
@@ -96,7 +96,7 @@ export class RationalNumber {
       fractionalStr = '';
     } else {
       // remove dot
-      fractionalStr = fractionalStr-string(1);
+      fractionalStr = fractionalStr.substring(1);
       fractionalStr = this.trimRightZeros(fractionalStr);
     }
 
@@ -115,7 +115,7 @@ export class RationalNumber {
       throw new Error(`Invalid percent string '${str}'`);
     }
     // remove trailing %
-    const numberStr = str-string(0, str.length - 1);
+    const numberStr = str.substring(0, str.length - 1);
     const rational = this.parse(numberStr);
 
     return new RationalNumber(rational.nom, rational.denom*(100));
