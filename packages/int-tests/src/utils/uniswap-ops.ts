@@ -6,10 +6,10 @@ import { uniswapV3Swapdata } from './chain-ops';
 import { IUniswapV3Pool, IUSDC, IWETH9 } from '../../../contracts/typechain-types';
 import { MarginlyRouter } from '../../../router/typechain-types';
 import { abs } from './fixed-point';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 
 export async function changeWethPrice(
-  treasury: Wallet,
-  provider: BrowserProvider,
+  treasury: SignerWithAddress,
   {
     weth,
     usdc,
@@ -24,7 +24,7 @@ export async function changeWethPrice(
   targetPrice: bigint
 ) {
   logger.info(`Start changing price, target: ${targetPrice.toString()}`);
-  const { tick } = await uniswap.connect(provider).slot0();
+  const { tick } = await uniswap.connect(treasury.provider).slot0();
   const USDC = new Token(1, usdc.target.toString(), 6, 'USDC');
   const WETH = new Token(1, weth.target.toString(), 18, 'WETH');
 
@@ -66,7 +66,7 @@ export async function changeWethPrice(
         .swapExactInput(uniswapV3Swapdata(), tokenIn, tokenOut, amountIn, 0, { gasLimit: 1_000_000 })
     ).wait();
 
-    const { tick } = await uniswap.connect(provider).slot0();
+    const { tick } = await uniswap.connect(treasury.provider).slot0();
     const price = BigInt(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));
     priceDelta = abs(price - currentPrice);
     currentPrice = price;
@@ -76,7 +76,7 @@ export async function changeWethPrice(
   }
 
   {
-    const { tick } = await uniswap.connect(provider).slot0();
+    const { tick } = await uniswap.connect(treasury.provider).slot0();
     const wethPrice = BigInt(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));
     logger.info(`WETH price is ${wethPrice}`);
     logger.info(`uniswap WETH balance  is ${formatUnits(await weth.balanceOf(uniswap), 18)}`);

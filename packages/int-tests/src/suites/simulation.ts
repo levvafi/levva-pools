@@ -1,8 +1,26 @@
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
-import { SystemUnderTest } from '.';
+import { initializeTestSystem, SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import { showSystemAggregates } from '../utils/log-utils';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
+import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
+
+describe('Simulation', () => {
+  it('Simulation1', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    await simulation1(sut);
+  });
+
+  it('Simulation2', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    await simulation2(sut);
+  });
+
+  it('Simulation3', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    await simulation3(sut);
+  });
+});
 
 export async function prepareAccounts(sut: SystemUnderTest) {
   const { treasury, usdc, weth, accounts } = sut;
@@ -24,9 +42,9 @@ export async function prepareAccounts(sut: SystemUnderTest) {
  After some time pool hasn't enough liquidity to enact margin call for short position
  Liquidator receive short position with deposit of 1000 USDC
 */
-export async function simulation1(sut: SystemUnderTest) {
+async function simulation1(sut: SystemUnderTest) {
   logger.info(`Starting simulation1 test suite`);
-  const { marginlyPool, usdc, weth, accounts, treasury, provider } = sut;
+  const { marginlyPool, usdc, weth, accounts, treasury } = sut;
 
   await prepareAccounts(sut);
 
@@ -104,7 +122,7 @@ export async function simulation1(sut: SystemUnderTest) {
   for (let i = 0; i < 30; i++) {
     logger.info(`Iteration ${i + 1} of 30`);
     nextDate += numOfSeconds;
-    await provider.mineAtTimestamp(nextDate);
+    await time.setNextBlockTimestamp(nextDate);
 
     try {
       const txReceipt = await (
@@ -147,9 +165,9 @@ export async function simulation1(sut: SystemUnderTest) {
 }
 
 /// Lender USDC
-export async function simulation2(sut: SystemUnderTest) {
+async function simulation2(sut: SystemUnderTest) {
   logger.info(`Starting simulation2 test suite`);
-  const { marginlyPool, usdc, weth, accounts, treasury, provider } = sut;
+  const { marginlyPool, usdc, weth, accounts, treasury } = sut;
 
   await prepareAccounts(sut);
 
@@ -227,7 +245,7 @@ export async function simulation2(sut: SystemUnderTest) {
   for (let i = 0; i < 30; i++) {
     logger.info(`Iteration ${i + 1} of 30`);
     nextDate += numOfSeconds;
-    await provider.mineAtTimestamp(nextDate);
+    await time.setNextBlockTimestamp(nextDate);
 
     try {
       const txReceipt = await (
@@ -268,9 +286,9 @@ export async function simulation2(sut: SystemUnderTest) {
   }
 }
 
-export async function simulation3(sut: SystemUnderTest) {
+async function simulation3(sut: SystemUnderTest) {
   logger.info(`Starting simulation2 test suite`);
-  const { marginlyPool, usdc, weth, accounts, treasury, provider } = sut;
+  const { marginlyPool, usdc, weth, accounts, treasury } = sut;
 
   await prepareAccounts(sut);
 
@@ -357,7 +375,7 @@ export async function simulation3(sut: SystemUnderTest) {
   for (let i = 0; i < 30; i++) {
     logger.info(`Iteration ${i + 1} of 30`);
     nextDate += numOfSeconds;
-    await provider.mineAtTimestamp(nextDate);
+    await time.setNextBlockTimestamp(nextDate);
 
     const txReceipt = await (
       await marginlyPool

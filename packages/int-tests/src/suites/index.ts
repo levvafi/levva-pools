@@ -1,29 +1,10 @@
-import { BrowserProvider, ethers, EventLog, parseUnits, Provider, Wallet } from 'ethers';
+import { EventLog, parseUnits } from 'ethers';
+import { ethers } from 'hardhat';
 import { logger } from '../utils/logger';
 import { initUsdc, initWeth } from '../utils/erc20-init';
 import { uniswapFactoryContract, uniswapPoolContract } from '../utils/known-contracts';
-import { Dex, BrowserProviderDecorator } from '../utils/chain-ops';
-import { long } from './long';
-import { short } from './short';
-import { longAndShort } from './long_and_short';
-import { longIncome } from './long_income';
-import { shortIncome } from './short_income';
+import { Dex } from '../utils/chain-ops';
 import { GasReporter } from '../utils/GasReporter';
-import { simulation1, simulation2, simulation3 } from './simulation';
-import { longEmergency, shortEmergency } from './shutdown';
-import { keeperAave } from './keeperAave';
-import {
-  deleveragePrecisionLong,
-  deleveragePrecisionShort,
-  deleveragePrecisionLongCollateral,
-  deleveragePrecisionShortCollateral,
-  deleveragePrecisionLongReinit,
-  deleveragePrecisionShortReinit,
-} from './deleveragePrecision';
-import { balanceSync, balanceSyncWithdrawBase, balanceSyncWithdrawQuote } from './balanceSync';
-import { routerSwaps, routerMultipleSwaps } from './router';
-import { keeperUniswapV3 } from './keeperUniswapV3';
-import { keeperBalancer } from './keeperBalancer';
 import {
   IUniswapV3Factory,
   IUniswapV3Pool,
@@ -56,6 +37,7 @@ import {
 } from '../../../router/typechain-types';
 
 import { UniswapV3TickOracle__factory } from '../../../periphery/typechain-types';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 
 /// @dev theme paddle front firm patient burger forward little enter pause rule limb
 export const FeeHolder = '0x4c576Bf4BbF1d9AB9c359414e5D2b466bab085fa';
@@ -73,40 +55,28 @@ export type SystemUnderTest = {
   keeperUniswapV3: MarginlyKeeperUniswapV3;
   keeperBalancer: MarginlyKeeperBalancer;
   keeperAlgebra: MarginlyKeeperAlgebra;
-  treasury: Wallet;
-  accounts: Wallet[];
+  treasury: SignerWithAddress;
+  accounts: SignerWithAddress[];
   usdc: IUSDC;
   weth: IWETH9;
-  provider: BrowserProviderDecorator;
   gasReporter: GasReporter;
 };
 
-interface SuiteCollection {
-  [key: string]: (sut: SystemUnderTest) => Promise<void>;
-}
-
-async function initializeTestSystem(
-  provider: BrowserProvider,
-  suiteName: string,
-  initialAccounts: [string, { unlocked: boolean; secretKey: string; balance: bigint }][]
-): Promise<SystemUnderTest> {
+export async function initializeTestSystem(): Promise<SystemUnderTest> {
   logger.info('Initializing');
+  const accounts = await ethers.getSigners();
+  const count = accounts.length - 1;
+  for (let i = 0; i < count; ++i) {}
+  const treasury = accounts[0];
 
-  const count = initialAccounts.length - 1;
-  const accounts: Wallet[] = [];
-  for (let i = 0; i < count; ++i) {
-    accounts.push(new Wallet(initialAccounts[1 + i][1].secretKey, provider));
-  }
-  const treasury = new Wallet(initialAccounts[0][1].secretKey, provider);
-
-  const weth = await initWeth(treasury, provider);
-  const usdc = await initUsdc(treasury, provider);
+  const weth = await initWeth(treasury, treasury.provider);
+  const usdc = await initUsdc(treasury, treasury.provider);
 
   const uniswapFactory = uniswapFactoryContract(treasury);
   logger.info(`uniswapFactory: ${await uniswapFactory.getAddress()}`);
   logger.info(`uniswapFactory owner: ${await uniswapFactory.owner()}`);
 
-  const uniswap = uniswapPoolContract(await uniswapFactory.getPool(weth, usdc, 500), provider);
+  const uniswap = uniswapPoolContract(await uniswapFactory.getPool(weth, usdc, 500), treasury.provider);
   logger.info(`uniswap pool for WETH/USDC ${await uniswap.getAddress()}`);
 
   const uniswapAdapter = await new UniswapV3Adapter__factory()
@@ -171,7 +141,7 @@ async function initializeTestSystem(
   logger.info(`swap router: ${await swapRouter.getAddress()}`);
 
   const priceOracle = await new UniswapV3TickOracle__factory().connect(treasury).deploy(uniswapFactory);
-  logger.info(`price oracle: ${priceOracle}`);
+  logger.info(`price oracle: ${await priceOracle.getAddress()}`);
 
   const secondsAgo = 1800;
   const secondsAgoLiquidation = 5;
@@ -179,7 +149,7 @@ async function initializeTestSystem(
   await priceOracle.connect(treasury).setOptions(usdc, weth, secondsAgo, secondsAgoLiquidation, uniswapPoolFee);
 
   const marginlyPoolImplementation = await new MarginlyPool__factory().connect(treasury).deploy();
-  logger.info(`marginly pool implementation: ${await marginlyPoolImplementation}`);
+  logger.info(`marginly pool implementation: ${await marginlyPoolImplementation.getAddress()}`);
 
   const marginlyFactory = await new MarginlyFactory__factory()
     .connect(treasury)
@@ -199,22 +169,22 @@ async function initializeTestSystem(
   };
 
   const defaultSwapCallData = 0;
-  const gasReporter = new GasReporter(suiteName);
+  const gasReporter = new GasReporter('FIXME');
   const txReceipt = await gasReporter.saveGasUsage(
     'factory.createPool',
     marginlyFactory.createPool(usdc, weth, priceOracle, defaultSwapCallData, initialParams)
   );
 
-  const poolCreatedEvents = txReceipt?.logs
+  const poolCreatedEvent = txReceipt?.logs
     ?.filter((log) => log instanceof EventLog)
-    .find((x) => x.eventName === 'PoolCreated')?.args?.pool;
+    .find((x) => x.eventName === 'PoolCreated');
 
-  if (!poolCreatedEvents || poolCreatedEvents.length === 0 || !poolCreatedEvents[0].args) {
+  if (poolCreatedEvent?.args === undefined) {
     throw new Error('PoolCreated event is not found');
   }
-  const marginlyAddress = poolCreatedEvents[0].args[4];
+  const marginlyAddress = poolCreatedEvent.args[4];
 
-  const marginlyPool = MarginlyPool__factory.connect(marginlyAddress, provider);
+  const marginlyPool = MarginlyPool__factory.connect(marginlyAddress, treasury.provider);
   logger.info(`marginly <> uniswap: ${marginlyAddress} <> ${await uniswap.getAddress()}`);
 
   const aavePoolAddressesProviderAddress = '0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e'; //ethereum mainnet
@@ -246,53 +216,6 @@ async function initializeTestSystem(
     keeperUniswapV3,
     keeperBalancer,
     keeperAlgebra,
-    provider: new BrowserProviderDecorator(provider),
     gasReporter,
   };
-}
-
-export async function startSuite(
-  provider: BrowserProvider,
-  initialAccounts: [string, { unlocked: boolean; secretKey: string; balance: bigint }][],
-  suitName: string
-): Promise<void> {
-  const suits: SuiteCollection = {
-    long,
-    longAndShort,
-    longIncome,
-    short,
-    shortIncome,
-    simulation1,
-    simulation2,
-    simulation3,
-    shortEmergency,
-    longEmergency,
-    keeperAave,
-    keeperBalancer,
-    keeperUniswapV3,
-    deleveragePrecisionLong,
-    deleveragePrecisionShort,
-    deleveragePrecisionLongCollateral,
-    deleveragePrecisionShortCollateral,
-    deleveragePrecisionLongReinit,
-    deleveragePrecisionShortReinit,
-    balanceSync,
-    balanceSyncWithdrawBase,
-    balanceSyncWithdrawQuote,
-    routerSwaps,
-    routerMultipleSwaps,
-  };
-
-  const suite = suits[suitName];
-  if (!suite) {
-    const availableTests = Object.keys(suits);
-    throw `Test '${suitName}' not found. Available tests: ${availableTests}`;
-  }
-
-  logger.info(`Start test`);
-  const sut = await initializeTestSystem(provider, suitName, initialAccounts);
-  await suite(sut);
-  logger.info(`Test suite finished successfully`);
-  sut.gasReporter.reportToConsole();
-  await sut.gasReporter.saveToFile();
 }

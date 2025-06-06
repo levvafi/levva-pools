@@ -1,11 +1,29 @@
 import assert = require('assert');
 import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
-import { SystemUnderTest } from '.';
+import { initializeTestSystem, SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { FP96 } from '../utils/fixed-point';
+import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 
-export async function balanceSync(sut: SystemUnderTest) {
+describe('Balance sync', () => {
+  it('Balance sync', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    balanceSync(sut);
+  });
+
+  it('Balance sync withdraw base', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    balanceSyncWithdrawBase(sut);
+  });
+
+  it('Balance sync withdraw quote', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    balanceSyncWithdrawQuote(sut);
+  });
+});
+
+async function balanceSync(sut: SystemUnderTest) {
   logger.info(`Starting balanceSync test suite`);
   const { marginlyPool, marginlyFactory, treasury, usdc, weth } = sut;
 
@@ -40,7 +58,7 @@ export async function balanceSync(sut: SystemUnderTest) {
   assert((await marginlyPool.discountedQuoteCollateral()) == quoteTransferAmount);
 }
 
-export async function balanceSyncWithdrawBase(sut: SystemUnderTest) {
+async function balanceSyncWithdrawBase(sut: SystemUnderTest) {
   logger.info(`Starting balanceSync test suite`);
   const { marginlyPool, marginlyFactory, treasury, usdc, weth, accounts } = sut;
   const techPositionOwner = await marginlyFactory.techPositionOwner();
@@ -134,7 +152,7 @@ export async function balanceSyncWithdrawBase(sut: SystemUnderTest) {
   logger.info(`Great, that fixed the problem`);
 }
 
-export async function balanceSyncWithdrawQuote(sut: SystemUnderTest) {
+async function balanceSyncWithdrawQuote(sut: SystemUnderTest) {
   logger.info(`Starting balanceSync test suite`);
   const { marginlyPool, marginlyFactory, treasury, usdc, weth, accounts } = sut;
   const techPositionOwner = await marginlyFactory.techPositionOwner();

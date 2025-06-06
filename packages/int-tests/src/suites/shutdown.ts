@@ -1,19 +1,32 @@
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
-import { SystemUnderTest } from '.';
+import { initializeTestSystem, SystemUnderTest } from '.';
 import { FP96 } from '../utils/fixed-point';
 import { logger } from '../utils/logger';
 import { changeWethPrice } from '../utils/uniswap-ops';
 import { showSystemAggregates } from '../utils/log-utils';
 import { prepareAccounts } from './simulation';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
+import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
+
+describe('Shutdown', () => {
+  it('Short emergency', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    await shortEmergency(sut);
+  });
+
+  it('Long emergency', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    await longEmergency(sut);
+  });
+});
 
 /*
 System shutdown case, when price of WETH token drastically increased
 ShortEmergency
 */
-export async function shortEmergency(sut: SystemUnderTest) {
+async function shortEmergency(sut: SystemUnderTest) {
   logger.info(`Starting shortEmergency test suite`);
-  const { marginlyPool, usdc, weth, accounts, treasury, provider } = sut;
+  const { marginlyPool, usdc, weth, accounts, treasury } = sut;
 
   await prepareAccounts(sut);
 
@@ -92,7 +105,7 @@ export async function shortEmergency(sut: SystemUnderTest) {
   const wethPriceX96 = (await marginlyPool.getBasePrice()).inner * 10n ** 12n;
 
   logger.info(`Increasing WETH price by ~80%`);
-  await changeWethPrice(treasury, provider.provider, sut, (wethPriceX96 * 18n) / 10n / FP96.one);
+  await changeWethPrice(treasury, sut, (wethPriceX96 * 18n) / 10n / FP96.one);
 
   //shift dates and reinit
   logger.info(`Shift date for 1 month, 1 day per iteration`);
@@ -102,7 +115,7 @@ export async function shortEmergency(sut: SystemUnderTest) {
   for (let i = 0; i < 30; i++) {
     logger.info(`Iteration ${i + 1} of 30`);
     nextDate += numOfSeconds;
-    await provider.mineAtTimestamp(nextDate);
+    await time.setNextBlockTimestamp(nextDate);
 
     try {
       const txReceipt = await (
@@ -160,9 +173,9 @@ export async function shortEmergency(sut: SystemUnderTest) {
   await showSystemAggregates(sut);
 }
 
-export async function longEmergency(sut: SystemUnderTest) {
+async function longEmergency(sut: SystemUnderTest) {
   logger.info(`Starting longEmergency test suite`);
-  const { marginlyPool, usdc, weth, accounts, treasury, provider } = sut;
+  const { marginlyPool, usdc, weth, accounts, treasury } = sut;
 
   await prepareAccounts(sut);
 
@@ -230,7 +243,7 @@ export async function longEmergency(sut: SystemUnderTest) {
   const wethPriceX96 = (await marginlyPool.getBasePrice()).inner * 10n ** 12n;
 
   logger.info(`Decreasing WETH price by ~40%`);
-  await changeWethPrice(treasury, provider.provider, sut, (wethPriceX96 * 6n) / 10n / FP96.one);
+  await changeWethPrice(treasury, sut, (wethPriceX96 * 6n) / 10n / FP96.one);
 
   //shift dates and reinit
   logger.info(`Shift date for 1 month, 1 day per iteration`);
@@ -240,7 +253,7 @@ export async function longEmergency(sut: SystemUnderTest) {
   for (let i = 0; i < 30; i++) {
     logger.info(`Iteration ${i + 1} of 30`);
     nextDate += numOfSeconds;
-    await provider.mineAtTimestamp(nextDate);
+    await time.setNextBlockTimestamp(nextDate);
 
     try {
       const txReceipt = await (

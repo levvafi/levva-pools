@@ -5,7 +5,8 @@ import { createMarginlyFactory } from './shared/fixtures';
 import snapshotGasCost from 'optifat-snapshot-gas-cost';
 import { MarginlyPool } from '../typechain-types';
 import { ethers } from 'hardhat';
-import { PositionType, ZeroAddress } from './shared/utils';
+import { PositionType } from './shared/utils';
+import { ZeroAddress } from 'ethers';
 
 describe('MarginlyFactory', () => {
   function getPoolParams() {

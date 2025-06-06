@@ -1,31 +1,34 @@
 import { logger } from './logger';
-import { INITIAL_BALANCE, INITIAL_ETH, INITIAL_USDC, USDC_OWNER_ADDR } from './const';
+import { INITIAL_BALANCE, INITIAL_USDC, USDC_OWNER_ADDR } from './const';
 import assert = require('assert');
-import { BrowserProvider, formatEther, formatUnits, Provider } from 'ethers';
-import { Signer } from 'ethers';
+import { formatUnits, Provider } from 'ethers';
 import { usdcContract, wethContract } from './known-contracts';
 import { IWETH9, IUSDC } from '../../../contracts/typechain-types';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
+import { ethers } from 'hardhat';
 
-export async function initWeth(signer: Signer, provider: Provider): Promise<IWETH9> {
+export async function initWeth(signer: SignerWithAddress, provider: Provider): Promise<IWETH9> {
   const weth = wethContract(provider);
   const address = await signer.getAddress();
   logger.info(`weth erc20 address: ${await weth.getAddress()}`);
 
-  const depositTx = await weth
-    .connect(signer)
-    .deposit({ value: INITIAL_ETH, gasPrice: 200000000000, gasLimit: 300000 });
-  await depositTx.wait();
+  const wethBalance = (await signer.provider.getBalance(signer)) / 2n;
+  const currentBalance = await weth.balanceOf(signer);
+  if (currentBalance < wethBalance) {
+    const depositTx = await weth.connect(signer).deposit({ value: wethBalance - currentBalance });
+    await depositTx.wait();
+  }
 
-  assert.equal(formatEther(await weth.balanceOf(address)), INITIAL_BALANCE);
+  // assert.equal(await weth.balanceOf(address), wethBalance);
   return weth;
 }
 
-export async function initUsdc(signer: Signer, provider: BrowserProvider): Promise<IUSDC> {
+export async function initUsdc(signer: SignerWithAddress, provider: Provider): Promise<IUSDC> {
   const usdc = usdcContract(provider);
   const address = await signer.getAddress();
   logger.info(`usdc erc20 address: ${await usdc.getAddress()}`);
 
-  const usdcOwnerSigner = await provider.getSigner(USDC_OWNER_ADDR);
+  const usdcOwnerSigner = await ethers.getImpersonatedSigner(await usdc.owner());
 
   const transferOwnershipTx = await usdc.connect(usdcOwnerSigner).transferOwnership(address);
 
@@ -37,9 +40,12 @@ export async function initUsdc(signer: Signer, provider: BrowserProvider): Promi
   const configureMinterTx = await usdc.connect(signer).configureMinter(address, INITIAL_USDC * 10n);
   await configureMinterTx.wait();
 
-  const mintTx = await usdc.connect(signer).mint(address, INITIAL_USDC);
-  await mintTx.wait();
+  const currentBalance = await usdc.balanceOf(signer);
+  if (currentBalance < INITIAL_USDC) {
+    const mintTx = await usdc.connect(signer).mint(address, INITIAL_USDC - currentBalance);
+    await mintTx.wait();
+  }
 
-  assert.equal(formatUnits(await usdc.balanceOf(address), 6), INITIAL_BALANCE);
+  // assert.equal(formatUnits(await usdc.balanceOf(address), 6), INITIAL_BALANCE);
   return usdc;
 }

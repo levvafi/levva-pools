@@ -1,4 +1,4 @@
-import { SystemUnderTest } from '.';
+import { initializeTestSystem, SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { abs, fp48ToHumanString, FP96, toHumanString } from '../utils/fixed-point';
@@ -11,6 +11,14 @@ import {
   uniswapV3Swapdata,
 } from '../utils/chain-ops';
 import { showSystemAggregates } from '../utils/log-utils';
+import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
+
+describe('Short', () => {
+  it('Short', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    await short(sut);
+  });
+});
 
 async function prepareAccounts(sut: SystemUnderTest) {
   const { treasury, usdc, weth, accounts } = sut;
@@ -23,11 +31,11 @@ async function prepareAccounts(sut: SystemUnderTest) {
   }
 }
 
-export async function short(sut: SystemUnderTest) {
+async function short(sut: SystemUnderTest) {
   logger.info(`Starting short test suite`);
   await prepareAccounts(sut);
   logger.info(`Prepared accounts`);
-  const { marginlyPool, marginlyFactory, usdc, weth, accounts, treasury, provider, uniswap, gasReporter } = sut;
+  const { marginlyPool, marginlyFactory, usdc, weth, accounts, treasury, uniswap, gasReporter } = sut;
 
   const lendersNumber = 2;
   const shortersNumber = 10;
@@ -115,7 +123,7 @@ export async function short(sut: SystemUnderTest) {
     const shortAmount = 5n * 10n ** 18n * BigInt(i + 1);
     logger.info(`shortAmount: ${formatUnits(shortAmount, 18)} WETH`);
 
-    const prevBlockNumber = await provider.provider.getBlockNumber();
+    const prevBlockNumber = await treasury.provider.getBlockNumber();
     logger.info(`short call`);
     const minPrice = (await marginlyPool.getBasePrice()).inner / 2n;
     const txReceipt = await gasReporter.saveGasUsage(
@@ -207,9 +215,9 @@ export async function short(sut: SystemUnderTest) {
   let nextDate = Math.floor(Date.now() / 1000);
 
   for (let i = 1; i <= 365; i++) {
-    const prevBlockNumber = await provider.provider.getBlockNumber();
+    const prevBlockNumber = await treasury.provider.getBlockNumber();
     nextDate += numOfSeconds;
-    await provider.mineAtTimestamp(nextDate);
+    await time.setNextBlockTimestamp(nextDate);
 
     const baseCollateralCoeffBefore = await marginlyPool.baseCollateralCoeff();
     const baseDebtCoeffBefore = await marginlyPool.baseDebtCoeff();

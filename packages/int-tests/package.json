@@ -9,30 +9,38 @@
   },
   "devDependencies": {
     "@marginly/contracts": "0.1.0",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.7",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.3.0",
+    "@typechain/ethers-v6": "^0.5.0",
+    "@typechain/hardhat": "^9.1.0",
+    "@types/node": ">=18.0.0",
     "@uniswap/v3-sdk": "^3.9.0",
-    "hardhat": "^2.12.2",
+    "ethers": "^6.14.3",
+    "hardhat": "2.24.1",
     "ts-node": "^10.9.1",
+    "typechain": "^8.3.0",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@ganache/ethereum": "^0.10.2",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.7",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@openzeppelin/contracts": "^5.3.0",
+    "@typechain/ethers-v6": "^0.5.0",
+    "@typechain/hardhat": "^9.1.0",
     "@types/node": "^22.15.29",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "@uniswap/v3-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.4.3",
     "ethers": "^6.14.3",
-    "ganache": "^7.8.0",
     "pino": "^9.7.0",
     "pino-pretty": "^13.0.0",
     "tslib": "^2.4.1"
   },
   "scripts": {
-    "compile": "hardhat compile",
-    "start": "bash -c 'yarn ts-node ./src/index.ts \"$*\" ; ( exit ${PIPESTATUS[0]} )' --",
-    "build": "tsc",
-    "lint:write": "prettier --write ./src",
-    "lint": "prettier --check ./src"
+    "test": "UPDATE_SNAPSHOT=1 REPORT_GAS=true hardhat test ./src/suites/*.ts",
+    "lint:write": "prettier --write ./src"
   }
 }

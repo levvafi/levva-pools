@@ -1,6 +1,6 @@
 import assert = require('assert');
 import { ethers, EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
-import { SystemUnderTest } from '.';
+import { initializeTestSystem, SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import {
   getLongSortKeyX48,
@@ -12,11 +12,19 @@ import {
 } from '../utils/chain-ops';
 import { abs, fp48ToHumanString, FP96, toHumanString } from '../utils/fixed-point';
 import { showSystemAggregates } from '../utils/log-utils';
+import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 
-export async function long(sut: SystemUnderTest) {
+describe('Long', () => {
+  it('Long', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    await long(sut);
+  });
+});
+
+async function long(sut: SystemUnderTest) {
   logger.info(`Starting long test suite`);
 
-  const { marginlyPool, marginlyFactory, treasury, usdc, weth, accounts, provider, uniswap, gasReporter } = sut;
+  const { marginlyPool, marginlyFactory, treasury, usdc, weth, accounts, uniswap, gasReporter } = sut;
 
   const lenders = accounts.slice(0, 20); // 2 lenders
   const quoteAmount = parseUnits('1000000', 6); // 1_000_000 USDC
@@ -105,7 +113,7 @@ export async function long(sut: SystemUnderTest) {
     const positionBefore = await marginlyPool.positions(borrowers[i].address);
     const realQuoteBalanceBefore = await usdc.balanceOf(marginlyPool);
     const realBaseBalanceBefore = await weth.balanceOf(marginlyPool);
-    const prevBlockNumber = await provider.provider.getBlockNumber();
+    const prevBlockNumber = await treasury.provider.getBlockNumber();
     logger.info(`Before long transaction`);
     const maxPrice = (await marginlyPool.getBasePrice()).inner * 2n;
     const txReceipt = await marginlyPool
@@ -210,9 +218,9 @@ export async function long(sut: SystemUnderTest) {
   const numOfSeconds = 24 * 60 * 60; // 1 day
   let nextDate = Math.floor(Date.now() / 1000);
   for (let i = 0; i < 365; i++) {
-    const prevBlockNumber = await provider.provider.getBlockNumber();
+    const prevBlockNumber = await treasury.provider.getBlockNumber();
     nextDate += numOfSeconds;
-    await provider.mineAtTimestamp(nextDate);
+    await time.setNextBlockTimestamp(nextDate);
 
     const quoteCollateralCoeffBefore = await marginlyPool.quoteCollateralCoeff();
     const quoteDebtCoeffBefore = await marginlyPool.quoteDebtCoeff();

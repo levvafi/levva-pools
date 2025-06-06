@@ -1,14 +1,22 @@
 import assert = require('assert');
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
-import { SystemUnderTest } from '.';
+import { initializeTestSystem, SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import { CallType, decodeSwapEvent, uniswapV3Swapdata, WHOLE_ONE } from '../utils/chain-ops';
 import { FP96, toHumanString } from '../utils/fixed-point';
 import { changeWethPrice } from '../utils/uniswap-ops';
+import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 
-export async function shortIncome(sut: SystemUnderTest) {
+describe('Short income', () => {
+  it('Short income', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    await shortIncome(sut);
+  });
+});
+
+async function shortIncome(sut: SystemUnderTest) {
   logger.info(`Starting shortIncome test suite`);
-  const { marginlyPool, treasury, usdc, weth, accounts, provider, uniswap, gasReporter } = sut;
+  const { marginlyPool, treasury, usdc, weth, accounts, uniswap, gasReporter } = sut;
 
   const swapFeeX96 = ((await marginlyPool.params()).swapFee * FP96.one) / WHOLE_ONE;
   logger.info(`swapFee: ${toHumanString(swapFeeX96)}`);
@@ -70,13 +78,13 @@ export async function shortIncome(sut: SystemUnderTest) {
   );
 
   logger.info(`Decreasing WETH price by ~10%`);
-  await changeWethPrice(treasury, provider.provider, sut, (wethPriceX96 * 9n) / 10n / FP96.one);
+  await changeWethPrice(treasury, sut, (wethPriceX96 * 9n) / 10n / FP96.one);
 
   const shiftInDays = 10;
   logger.info(`Shift date by ${shiftInDays} days`);
   // shift time
   const numOfSeconds = shiftInDays * 24 * 60 * 60;
-  await provider.mineAtTimestamp(Number(await marginlyPool.lastReinitTimestampSeconds()) + numOfSeconds);
+  await time.setNextBlockTimestamp(Number(await marginlyPool.lastReinitTimestampSeconds()) + numOfSeconds);
 
   logger.info(`reinit`);
   const reinitReceipt = await gasReporter.saveGasUsage(

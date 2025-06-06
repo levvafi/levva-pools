@@ -1,13 +1,26 @@
 import assert = require('assert');
 import { parseUnits, ZeroAddress } from 'ethers';
-import { SystemUnderTest } from '.';
+import { initializeTestSystem, SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import { constructSwap, Dex, SWAP_ONE } from '../utils/chain-ops';
 import { ethers } from 'ethers';
+import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 
-export async function routerSwaps(sut: SystemUnderTest) {
+describe('Router', () => {
+  it('Router swaps', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    await routerSwaps(sut);
+  });
+
+  it('Router multiple swaps', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    await routerMultipleSwaps(sut);
+  });
+});
+
+async function routerSwaps(sut: SystemUnderTest) {
   logger.info(`Starting routerSwaps test suite`);
-  const { treasury, usdc, weth, swapRouter, provider } = sut;
+  const { treasury, usdc, weth, swapRouter } = sut;
 
   let currentWethBalance = await weth.balanceOf(treasury.address);
   let currentUsdcBalance = await usdc.balanceOf(treasury.address);
@@ -22,7 +35,7 @@ export async function routerSwaps(sut: SystemUnderTest) {
     const adapter = new ethers.Contract(
       adapterAddress,
       require(`@marginly/router/artifacts/contracts/adapters/BalancerAdapter.sol/BalancerAdapter.json`).abi,
-      provider
+      treasury.provider
     );
     const dexPoolAddress = dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth, usdc);
 
@@ -133,9 +146,9 @@ export async function routerSwaps(sut: SystemUnderTest) {
   }
 }
 
-export async function routerMultipleSwaps(sut: SystemUnderTest) {
+async function routerMultipleSwaps(sut: SystemUnderTest) {
   logger.info(`Starting routerMultipleSwaps test suite`);
-  const { treasury, usdc, weth, swapRouter, provider } = sut;
+  const { treasury, usdc, weth, swapRouter } = sut;
 
   let currentWethBalance = await weth.balanceOf(treasury.address);
   let currentUsdcBalance = await usdc.balanceOf(treasury.address);
@@ -150,7 +163,7 @@ export async function routerMultipleSwaps(sut: SystemUnderTest) {
     const adapter = new ethers.Contract(
       await swapRouter.adapters(dexInfo[1]),
       require(`@marginly/router/artifacts/contracts/adapters/BalancerAdapter.sol/BalancerAdapter.json`).abi,
-      provider.provider
+      treasury.provider
     );
     const dexPoolAddress = dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth, usdc);
 

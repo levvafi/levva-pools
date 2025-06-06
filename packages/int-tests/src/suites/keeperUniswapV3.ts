@@ -1,9 +1,17 @@
 import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
-import { SystemUnderTest } from '.';
+import { initializeTestSystem, SystemUnderTest } from '.';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { logger } from '../utils/logger';
 import { encodeLiquidationParams } from '../utils/marginly-keeper';
 import { MarginlyPool } from '../../../contracts/typechain-types';
+import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
+
+describe('KeeperUniswapV3', () => {
+  it('KeeperUniswapV3', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    await keeperUniswapV3(sut);
+  });
+});
 
 type PoolCoeffs = {
   baseCollateralCoeffX96: bigint;
@@ -45,11 +53,11 @@ async function getDebtAmount(
   }
 }
 
-export async function keeperUniswapV3(sut: SystemUnderTest) {
+async function keeperUniswapV3(sut: SystemUnderTest) {
   logger.info(`Starting keeper liquidation test suite`);
   const ethArgs = { gasLimit: 1_000_000 };
 
-  const { marginlyPool, keeperUniswapV3, treasury, usdc, weth, accounts, provider, uniswap, gasReporter } = sut;
+  const { marginlyPool, keeperUniswapV3, treasury, usdc, weth, accounts, uniswap, gasReporter } = sut;
 
   const lender = accounts[0];
   logger.info(`Deposit lender account`);

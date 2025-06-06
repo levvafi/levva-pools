@@ -1,14 +1,13 @@
-import "@nomiclabs/hardhat-ethers";
+import '@nomicfoundation/hardhat-toolbox';
 
 export default {
-  solidity: {
-    compilers: [
-      {
-        version: "0.4.18"
+  networks: {
+    hardhat: {
+      forking: {
+        enabled: true,
+        url: 'https://ethereum-rpc.publicnode.com',
+        blockNumber: 21814800,
       },
-      {
-        version: "0.6.12"
-      }
-    ]
+    },
   },
 };

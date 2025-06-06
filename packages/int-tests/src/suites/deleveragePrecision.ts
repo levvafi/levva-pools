@@ -1,9 +1,42 @@
 import assert = require('assert');
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
-import { SystemUnderTest } from '.';
+import { initializeTestSystem, SystemUnderTest } from '.';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { FP96, toHumanString } from '../utils/fixed-point';
 import { logger } from '../utils/logger';
+import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
+
+describe('Deleverage precision', () => {
+  it('Long', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    deleveragePrecisionLong(sut);
+  });
+
+  it('Short', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    deleveragePrecisionShort(sut);
+  });
+
+  it('Long Collateral', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    deleveragePrecisionLongCollateral(sut);
+  });
+
+  it('Short Collateral', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    deleveragePrecisionShortCollateral(sut);
+  });
+
+  it('Long Reinit', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    deleveragePrecisionLongReinit(sut);
+  });
+
+  it('Short Reinit', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    deleveragePrecisionShortReinit(sut);
+  });
+});
 
 const paramsDefaultLeverage = {
   interestRate: 0,
@@ -41,8 +74,8 @@ const paramsWithIr = {
   quoteLimit: 10n ** 12n * 10n ** 6n,
 };
 
-export async function deleveragePrecisionLong(sut: SystemUnderTest) {
-  const { marginlyPool, usdc, weth, accounts, treasury, provider, gasReporter } = sut;
+async function deleveragePrecisionLong(sut: SystemUnderTest) {
+  const { marginlyPool, usdc, weth, accounts, treasury, gasReporter } = sut;
 
   const coeffsTable: { [key: string]: {} } = {};
   const aggregates: { [key: string]: {} } = {};
@@ -287,7 +320,7 @@ export async function deleveragePrecisionLong(sut: SystemUnderTest) {
     await gasReporter.saveGasUsage('setParameters', setParamsTx);
 
     nextDate += timeDelta;
-    await provider.mineAtTimestamp(nextDate);
+    await time.setNextBlockTimestamp(nextDate);
     const reinitTx = await marginlyPool
       .connect(treasury)
       .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 500_000 });
@@ -360,16 +393,16 @@ export async function deleveragePrecisionLong(sut: SystemUnderTest) {
   console.table(positions);
 }
 
-export async function deleveragePrecisionLongCollateral(sut: SystemUnderTest) {
+async function deleveragePrecisionLongCollateral(sut: SystemUnderTest) {
   await deleveragePrecisionLongCollateralReinitInner(sut, false);
 }
 
-export async function deleveragePrecisionLongReinit(sut: SystemUnderTest) {
+async function deleveragePrecisionLongReinit(sut: SystemUnderTest) {
   await deleveragePrecisionLongCollateralReinitInner(sut, true);
 }
 
 async function deleveragePrecisionLongCollateralReinitInner(sut: SystemUnderTest, withReinits: boolean) {
-  const { marginlyPool, usdc, weth, accounts, treasury, provider, uniswap, gasReporter } = sut;
+  const { marginlyPool, usdc, weth, accounts, treasury, gasReporter } = sut;
 
   const coeffsTable: { [key: string]: {} } = {};
   const aggregates: { [key: string]: {} } = {};
@@ -553,7 +586,7 @@ async function deleveragePrecisionLongCollateralReinitInner(sut: SystemUnderTest
     await gasReporter.saveGasUsage('setParameters', setParamsTx);
 
     now += timeDelta;
-    await provider.mineAtTimestamp(now);
+    await time.setNextBlockTimestamp(now);
     const reinitTx = await marginlyPool
       .connect(treasury)
       .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 500_000 });
@@ -576,7 +609,7 @@ async function deleveragePrecisionLongCollateralReinitInner(sut: SystemUnderTest
 
       for (let j = 0; j < 12; ++j) {
         now += 30 * 24 * 60 * 60;
-        await provider.mineAtTimestamp(now);
+        await time.setNextBlockTimestamp(now);
         const reinitTx = await marginlyPool
           .connect(treasury)
           .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 500_000 });
@@ -641,8 +674,8 @@ async function deleveragePrecisionLongCollateralReinitInner(sut: SystemUnderTest
   console.table(positions);
 }
 
-export async function deleveragePrecisionShort(sut: SystemUnderTest) {
-  const { marginlyPool, usdc, weth, accounts, treasury, provider, uniswap, gasReporter } = sut;
+async function deleveragePrecisionShort(sut: SystemUnderTest) {
+  const { marginlyPool, usdc, weth, accounts, treasury, gasReporter } = sut;
 
   const coeffsTable: { [key: string]: {} } = {};
   const aggregates: { [key: string]: {} } = {};
@@ -895,7 +928,7 @@ export async function deleveragePrecisionShort(sut: SystemUnderTest) {
     await gasReporter.saveGasUsage('setParameters', setParamsTx);
 
     nextDate += timeDelta;
-    await provider.mineAtTimestamp(nextDate);
+    await time.setNextBlockTimestamp(nextDate);
     const reinitTx = await marginlyPool
       .connect(treasury)
       .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 500_000 });
@@ -967,15 +1000,16 @@ export async function deleveragePrecisionShort(sut: SystemUnderTest) {
   console.table(positions);
 }
 
-export async function deleveragePrecisionShortCollateral(sut: SystemUnderTest) {
+async function deleveragePrecisionShortCollateral(sut: SystemUnderTest) {
   await deleveragePrecisionShortCollateralReinitInner(sut, false);
 }
 
-export async function deleveragePrecisionShortReinit(sut: SystemUnderTest) {
+async function deleveragePrecisionShortReinit(sut: SystemUnderTest) {
   await deleveragePrecisionShortCollateralReinitInner(sut, true);
 }
+
 async function deleveragePrecisionShortCollateralReinitInner(sut: SystemUnderTest, withReinits: boolean) {
-  const { marginlyPool, usdc, weth, accounts, treasury, provider, uniswap, gasReporter } = sut;
+  const { marginlyPool, usdc, weth, accounts, treasury, gasReporter } = sut;
 
   const coeffsTable: { [key: string]: {} } = {};
   const aggregates: { [key: string]: {} } = {};
@@ -1164,7 +1198,7 @@ async function deleveragePrecisionShortCollateralReinitInner(sut: SystemUnderTes
     await gasReporter.saveGasUsage('setParameters', setParamsTx);
 
     now += timeDelta;
-    await provider.mineAtTimestamp(now);
+    await time.setNextBlockTimestamp(now);
     const reinitTx = await marginlyPool
       .connect(treasury)
       .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 500_000 });
@@ -1187,7 +1221,7 @@ async function deleveragePrecisionShortCollateralReinitInner(sut: SystemUnderTes
 
       for (let j = 0; j < 12; ++j) {
         now += 30 * 24 * 60 * 60;
-        await provider.mineAtTimestamp(now);
+        await time.setNextBlockTimestamp(now);
         const reinitTx = await marginlyPool
           .connect(treasury)
           .execute(CallType.Reinit, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 500_000 });

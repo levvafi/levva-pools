@@ -1,4 +1,4 @@
-import { SystemUnderTest, TechnicalPositionOwner } from '.';
+import { initializeTestSystem, SystemUnderTest, TechnicalPositionOwner } from '.';
 import { logger } from '../utils/logger';
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { abs, FP96, toHumanString } from '../utils/fixed-point';
@@ -10,6 +10,14 @@ import {
   uniswapV3Swapdata,
   WHOLE_ONE,
 } from '../utils/chain-ops';
+import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
+
+describe('Long and short', () => {
+  it('long and short', async () => {
+    const sut = await loadFixture(initializeTestSystem);
+    await longAndShort(sut);
+  });
+});
 
 async function prepareAccounts(sut: SystemUnderTest) {
   const { treasury, usdc, weth, accounts } = sut;
@@ -27,11 +35,11 @@ async function prepareAccounts(sut: SystemUnderTest) {
   logger.debug(`  Depositing accounts completed`);
 }
 
-export async function longAndShort(sut: SystemUnderTest) {
+async function longAndShort(sut: SystemUnderTest) {
   logger.info(`Starting long_and_short test suite`);
   await prepareAccounts(sut);
   logger.info(`Prepared accounts`);
-  const { marginlyPool, usdc, weth, accounts, treasury, provider, uniswap, gasReporter } = sut;
+  const { marginlyPool, usdc, weth, accounts, treasury, uniswap, gasReporter } = sut;
 
   const params = await marginlyPool.params();
   await marginlyPool.connect(treasury).setParameters({ ...params });
@@ -91,7 +99,7 @@ export async function longAndShort(sut: SystemUnderTest) {
 
   logger.info(`Shift date for 1 year`);
   const numOfSeconds = 365 * 24 * 60 * 60;
-  await provider.mineAtTimestamp(Number(await marginlyPool.lastReinitTimestampSeconds()) + numOfSeconds);
+  await time.setNextBlockTimestamp(Number(await marginlyPool.lastReinitTimestampSeconds()) + numOfSeconds);
 
   await gasReporter.saveGasUsage(
     'reinit',
@@ -168,7 +176,7 @@ export async function longAndShort(sut: SystemUnderTest) {
 
   logger.info(`Shift date for 1 year`);
   logger.warn(`leverageLong: ${toHumanString((await marginlyPool.systemLeverage()).longX96)}`);
-  await provider.mineAtTimestamp(Number(await marginlyPool.lastReinitTimestampSeconds()) + numOfSeconds);
+  await time.setNextBlockTimestamp(Number(await marginlyPool.lastReinitTimestampSeconds()) + numOfSeconds);
   const txReceipt = await gasReporter.saveGasUsage(
     'reinit',
     await marginlyPool
