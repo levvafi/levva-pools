@@ -7,35 +7,34 @@ describe('math', () => {
       baseDecimals: 18,
       quoteDecimals: 6,
       price: 1800,
-      expectedPrice: 1800n * (10n ** 6n),
+      expectedPrice: 1800n * 10n ** 6n,
     },
     {
       baseDecimals: 6,
       quoteDecimals: 18,
       price: 1 / 2000,
-      expectedPrice: 5n * (10n ** 26n),
+      expectedPrice: 5n * 10n ** 26n,
     },
     {
       baseDecimals: 18,
       quoteDecimals: 18,
       price: 50,
-      expectedPrice: 50n * (10n ** 18n),
+      expectedPrice: 50n * 10n ** 18n,
     },
     {
       baseDecimals: 18,
       quoteDecimals: 18,
       price: 1 / 8,
-      expectedPrice: 125n * (10n ** 15n),
+      expectedPrice: 125n * 10n ** 15n,
     },
   ];
 
   priceFp18ConversionCases.forEach(({ baseDecimals, quoteDecimals, price, expectedPrice }) => {
-      it(`should convert price to Fp18 for price: ${price}, baseDecimals: ${baseDecimals}, quoteDecimals: ${quoteDecimals}`, () => {
-        const actualPrice = priceToPriceFp18(price, baseDecimals, quoteDecimals);
-        expect(actualPrice).to.equal(expectedPrice);
-      });
-    },
-  );
+    it(`should convert price to Fp18 for price: ${price}, baseDecimals: ${baseDecimals}, quoteDecimals: ${quoteDecimals}`, () => {
+      const actualPrice = priceToPriceFp18(price, baseDecimals, quoteDecimals);
+      expect(actualPrice).to.equal(expectedPrice);
+    });
+  });
 
   it('should convert real word price to sqrtPriceX96', () => {
     const price = 0.0005483482514447399;
@@ -58,43 +57,42 @@ describe('math', () => {
       baseDecimals: 18,
       quoteDecimals: 6,
       price: 1024,
-      expectedPrice: 32n * (2n ** 96n) / (10n ** 6n),
+      expectedPrice: (32n * 2n ** 96n) / 10n ** 6n,
     },
     {
       baseDecimals: 6,
       quoteDecimals: 18,
       price: 1 / 1024,
-      expectedPrice: (10n ** 6n) * (2n ** 96n) / 32n,
+      expectedPrice: (10n ** 6n * 2n ** 96n) / 32n,
     },
     {
       baseDecimals: 18,
       quoteDecimals: 18,
       price: 16,
-      expectedPrice: 4n * (2n ** 96n),
+      expectedPrice: 4n * 2n ** 96n,
     },
     {
       baseDecimals: 18,
       quoteDecimals: 18,
       price: 1 / 4,
-      expectedPrice: (2n ** 96n) / 2n,
+      expectedPrice: 2n ** 96n / 2n,
     },
   ];
 
   priceX96ConversionCases.forEach(({ baseDecimals, quoteDecimals, price, expectedPrice }) => {
-      it(`should convert price to X96 for price: ${price}, baseDecimals: ${baseDecimals}, quoteDecimals: ${quoteDecimals}`, () => {
-        const actualPrice = priceToSqrtPriceX96(price, baseDecimals, quoteDecimals);
+    it(`should convert price to X96 for price: ${price}, baseDecimals: ${baseDecimals}, quoteDecimals: ${quoteDecimals}`, () => {
+      const actualPrice = priceToSqrtPriceX96(price, baseDecimals, quoteDecimals);
 
-        let delta = actualPrice - expectedPrice;
-        if (delta < 0n) {
-          delta = -delta;
-        }
+      let delta = actualPrice - expectedPrice;
+      if (delta < 0n) {
+        delta = -delta;
+      }
 
-        const error = Number(delta) / Number(expectedPrice);
+      const error = Number(delta) / Number(expectedPrice);
 
-        expect(error).to.lessThan(1e-16);
-      });
-    },
-  );
+      expect(error).to.lessThan(1e-16);
+    });
+  });
 
   const exchangeCases = [
     {
@@ -139,11 +137,11 @@ describe('math', () => {
       const baseOne = 10n ** BigInt(baseDecimals);
       const quoteOne = 10n ** BigInt(quoteDecimals);
 
-      const baseAmountFp18 = baseAmount[0] * baseOne / baseAmount[1];
+      const baseAmountFp18 = (baseAmount[0] * baseOne) / baseAmount[1];
 
-      const expectedQuoteFp18Amount = expectedQuoteAmount[0] * quoteOne / expectedQuoteAmount[1];
+      const expectedQuoteFp18Amount = (expectedQuoteAmount[0] * quoteOne) / expectedQuoteAmount[1];
 
-      const actualQuoteFp18Amount = baseAmountFp18 * actualPrice / priceOne;
+      const actualQuoteFp18Amount = (baseAmountFp18 * actualPrice) / priceOne;
 
       expect(actualQuoteFp18Amount).to.equal(expectedQuoteFp18Amount);
     });

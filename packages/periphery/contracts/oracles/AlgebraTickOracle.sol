@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@cryptoalgebra/v1.9-core/contracts/interfaces/IAlgebraFactory.sol';
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
@@ -25,7 +25,7 @@ contract AlgebraTickOracle is IPriceOracle, Ownable2Step {
   mapping(address => mapping(address => OracleParams)) public getParams;
   address public immutable factory;
 
-  constructor(address _factory) {
+  constructor(address _factory) Ownable(msg.sender) {
     factory = _factory;
   }
 

@@ -8,11 +8,9 @@ import {
   PendleMarketAdapter__factory,
 } from '../../typechain-types';
 import { constructSwap, Dex, resetFork, SWAP_ONE } from '../shared/utils';
-import { EthAddress } from '@marginly/common';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { formatUnits, parseUnits } from 'ethers';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { ArbMainnetERC20BalanceOfSlot, setTokenBalance } from '../shared/tokens';
-import { BigNumber } from 'ethers';
 
 // Arbitrum Ether.fi PT eETH / weETH
 
@@ -30,19 +28,19 @@ async function initializeRouterArbWeEth(): Promise<{
   const poolInput = {
     pendleMarket: '0xf9f9779d8ff604732eba9ad345e6a27ef5c2a9d6',
     slippage: 30,
-    ptToken: ptToken.address,
-    ibToken: weETH.address,
+    ptToken: ptToken,
+    ibToken: weETH,
   };
   const pendleAdapter = await new PendleMarketAdapter__factory().connect(owner).deploy([poolInput]);
   const routerInput = {
     dexIndex: Dex.Pendle,
-    adapter: pendleAdapter.address,
+    adapter: pendleAdapter,
   };
   const router = await new MarginlyRouter__factory().connect(owner).deploy([routerInput]);
 
   const balance = parseUnits('0.5', 18);
-  await setTokenBalance(weETH.address, ArbMainnetERC20BalanceOfSlot.WEETH, EthAddress.parse(user.address), balance);
-  await setTokenBalance(ptToken.address, ArbMainnetERC20BalanceOfSlot.PTWEETH, EthAddress.parse(user.address), balance);
+  await setTokenBalance(weETH.target, ArbMainnetERC20BalanceOfSlot.WEETH, user.address, balance);
+  await setTokenBalance(ptToken.target, ArbMainnetERC20BalanceOfSlot.PTWEETH, user.address, balance);
 
   return {
     ptToken,
@@ -71,53 +69,51 @@ describe('Pendle PT-weETH - weETH', () => {
     });
 
     it('weETH to pt exact input', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `pt balance Before: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const weETHBalanceBefore = await weETH.balanceOf(user.address);
+      const weETHBalanceBefore = await weETH.balanceOf(user);
       console.log(
         `weETH balance before: ${formatUnits(weETHBalanceBefore, await weETH.decimals())} ${await weETH.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.Pendle], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.Pendle], [BigInt(SWAP_ONE)]);
       const weETHSwapAmount = weETHBalanceBefore;
-      await weETH.connect(user).approve(router.address, weETHSwapAmount);
+      await weETH.connect(user).approve(router, weETHSwapAmount);
       await router
         .connect(user)
-        .swapExactInput(swapCalldata, weETH.address, ptToken.address, weETHSwapAmount, weETHSwapAmount.mul(9).div(10));
+        .swapExactInput(swapCalldata, weETH, ptToken, weETHSwapAmount, (weETHSwapAmount * 9n) / 10n);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceAfter).to.be.greaterThan(ptBalanceBefore);
-      const weETHBalanceAfter = await weETH.balanceOf(user.address);
+      const weETHBalanceAfter = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceAfter: ${formatUnits(weETHBalanceAfter, await weETH.decimals())} ${await weETH.symbol()}`
       );
-      expect(weETHBalanceBefore.sub(weETHBalanceAfter)).to.be.lessThanOrEqual(weETHSwapAmount);
+      expect(weETHBalanceBefore - weETHBalanceAfter).to.be.lessThanOrEqual(weETHSwapAmount);
     });
 
     it('weETH to pt exact output', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const weETHBalanceBefore = await weETH.balanceOf(user.address);
+      const weETHBalanceBefore = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceBefore: ${formatUnits(weETHBalanceBefore, await weETH.decimals())} ${await weETH.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.Pendle], [SWAP_ONE]);
-      const ptOut = weETHBalanceBefore.div(2);
-      await weETH.connect(user).approve(router.address, weETHBalanceBefore);
-      await router
-        .connect(user)
-        .swapExactOutput(swapCalldata, weETH.address, ptToken.address, weETHBalanceBefore, ptOut);
+      const swapCalldata = constructSwap([Dex.Pendle], [BigInt(SWAP_ONE)]);
+      const ptOut = weETHBalanceBefore / 2n;
+      await weETH.connect(user).approve(router, weETHBalanceBefore);
+      await router.connect(user).swapExactOutput(swapCalldata, weETH, ptToken, weETHBalanceBefore, ptOut);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceAfter.sub(ptBalanceBefore)).to.be.eq(ptOut);
-      const weETHBalanceAfter = await weETH.balanceOf(user.address);
+      expect(ptBalanceAfter - ptBalanceBefore).to.be.eq(ptOut);
+      const weETHBalanceAfter = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceAfter: ${formatUnits(weETHBalanceAfter, await weETH.decimals())} ${await weETH.symbol()}`
       );
@@ -125,24 +121,24 @@ describe('Pendle PT-weETH - weETH', () => {
     });
 
     it('pt to weETH exact input', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const weETHBalanceBefore = await weETH.balanceOf(user.address);
+      const weETHBalanceBefore = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceBefore: ${formatUnits(weETHBalanceBefore, await weETH.decimals())} ${await weETH.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.Pendle], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.Pendle], [BigInt(SWAP_ONE)]);
       const ptIn = ptBalanceBefore;
-      await ptToken.connect(user).approve(router.address, ptIn);
-      await router.connect(user).swapExactInput(swapCalldata, ptToken.address, weETH.address, ptIn, 0);
+      await ptToken.connect(user).approve(router, ptIn);
+      await router.connect(user).swapExactInput(swapCalldata, ptToken, weETH, ptIn, 0);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceBefore.sub(ptBalanceAfter)).to.be.eq(ptIn);
-      const weETHBalanceAfter = await weETH.balanceOf(user.address);
+      expect(ptBalanceBefore - ptBalanceAfter).to.be.eq(ptIn);
+      const weETHBalanceAfter = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceAfter: ${formatUnits(weETHBalanceAfter, await weETH.decimals())} ${await weETH.symbol()}`
       );
@@ -150,47 +146,45 @@ describe('Pendle PT-weETH - weETH', () => {
     });
 
     it('pt to weETH exact output', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const weETHBalanceBefore = await weETH.balanceOf(user.address);
+      const weETHBalanceBefore = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceBefore: ${formatUnits(weETHBalanceBefore, await weETH.decimals())} ${await weETH.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.Pendle], [SWAP_ONE]);
-      const weETHOut = ptBalanceBefore.div(2);
-      const maxPtIn = weETHOut.mul(120).div(100);
-      await ptToken.connect(user).approve(router.address, maxPtIn);
-      await router
-        .connect(user)
-        .swapExactOutput(swapCalldata, ptToken.address, weETH.address, weETHOut.mul(12).div(10), weETHOut);
+      const swapCalldata = constructSwap([Dex.Pendle], [BigInt(SWAP_ONE)]);
+      const weETHOut = ptBalanceBefore / 2n;
+      const maxPtIn = (weETHOut * 120n) / 100n;
+      await ptToken.connect(user).approve(router, maxPtIn);
+      await router.connect(user).swapExactOutput(swapCalldata, ptToken, weETH, (weETHOut * 12n) / 10n, weETHOut);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
-      const weETHBalanceAfter = await weETH.balanceOf(user.address);
+      const weETHBalanceAfter = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceAfter: ${formatUnits(weETHBalanceAfter, await weETH.decimals())} ${await weETH.symbol()}`
       );
-      expect(weETHBalanceAfter.sub(weETHBalanceBefore)).to.be.eq(weETHOut);
+      expect(weETHBalanceAfter - weETHBalanceBefore).to.be.eq(weETHOut);
 
-      const weETHBalanceOwner = await weETH.balanceOf(owner.address);
+      const weETHBalanceOwner = await weETH.balanceOf(owner);
       console.log(
         `weETHBalanceOwner: ${formatUnits(weETHBalanceOwner, await weETH.decimals())}  ${await weETH.symbol()}`
       );
 
-      await pendleAdapter.connect(owner).redeemDust(ptToken.address, weETH.address, owner.address);
+      await pendleAdapter.connect(owner).redeemDust(ptToken, weETH, owner);
 
-      const weETHBalanceOwnerAfterRedeem = await weETH.balanceOf(owner.address);
+      const weETHBalanceOwnerAfterRedeem = await weETH.balanceOf(owner);
       console.log(
         `sUsdeBalanceOwnerAfterRedeem: ${formatUnits(
           weETHBalanceOwnerAfterRedeem,
           await weETH.decimals()
         )} ${await weETH.symbol()}`
       );
-      expect(weETHBalanceOwnerAfterRedeem).to.be.greaterThanOrEqual(BigNumber.from(0));
+      expect(weETHBalanceOwnerAfterRedeem).to.be.greaterThanOrEqual(0n);
     });
   });
 
@@ -210,33 +204,27 @@ describe('Pendle PT-weETH - weETH', () => {
     });
 
     it('weETH to pt exact input, forbidden', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const weETHBalanceBefore = await weETH.balanceOf(user.address);
+      const weETHBalanceBefore = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceBefore: ${formatUnits(weETHBalanceBefore, await weETH.decimals())} ${await weETH.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.Pendle], [SWAP_ONE]);
-      await weETH.connect(user).approve(router.address, weETHBalanceBefore);
+      const swapCalldata = constructSwap([Dex.Pendle], [BigInt(SWAP_ONE)]);
+      await weETH.connect(user).approve(router, weETHBalanceBefore);
       const tx = router
         .connect(user)
-        .swapExactInput(
-          swapCalldata,
-          weETH.address,
-          ptToken.address,
-          weETHBalanceBefore,
-          weETHBalanceBefore.mul(9).div(10)
-        );
+        .swapExactInput(swapCalldata, weETH, ptToken, weETHBalanceBefore, (weETHBalanceBefore * 9n) / 10n);
       await expect(tx).to.be.revertedWithCustomError(pendleAdapter, 'NotSupported');
 
       console.log('This swap is forbidden after maturity');
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceAfter).to.be.eq(ptBalanceBefore);
-      const weETHBalanceAfter = await weETH.balanceOf(user.address);
+      const weETHBalanceAfter = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceAfter: ${formatUnits(weETHBalanceAfter, await weETH.decimals())} ${await weETH.symbol()}`
       );
@@ -244,28 +232,26 @@ describe('Pendle PT-weETH - weETH', () => {
     });
 
     it('weETH to pt exact output, forbidden', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const weETHBalanceBefore = await weETH.balanceOf(user.address);
+      const weETHBalanceBefore = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceBefore: ${formatUnits(weETHBalanceBefore, await weETH.decimals())} ${await weETH.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.Pendle], [SWAP_ONE]);
-      const ptOut = weETHBalanceBefore.div(2);
-      await weETH.connect(user).approve(router.address, weETHBalanceBefore);
-      const tx = router
-        .connect(user)
-        .swapExactOutput(swapCalldata, weETH.address, ptToken.address, weETHBalanceBefore, ptOut);
+      const swapCalldata = constructSwap([Dex.Pendle], [BigInt(SWAP_ONE)]);
+      const ptOut = weETHBalanceBefore / 2n;
+      await weETH.connect(user).approve(router, weETHBalanceBefore);
+      const tx = router.connect(user).swapExactOutput(swapCalldata, weETH, ptToken, weETHBalanceBefore, ptOut);
       await expect(tx).to.be.revertedWithCustomError(pendleAdapter, 'NotSupported');
 
       console.log('This swap is forbidden after maturity');
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceAfter).to.be.eq(ptBalanceBefore);
-      const weETHBalanceAfter = await weETH.balanceOf(user.address);
+      const weETHBalanceAfter = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceAfter: ${formatUnits(weETHBalanceAfter, await weETH.decimals())} ${await weETH.symbol()}`
       );
@@ -273,24 +259,24 @@ describe('Pendle PT-weETH - weETH', () => {
     });
 
     it('pt to weETH exact input', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const weETHBalanceBefore = await weETH.balanceOf(user.address);
+      const weETHBalanceBefore = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceBefore: ${formatUnits(weETHBalanceBefore, await weETH.decimals())} ${await weETH.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.Pendle], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.Pendle], [BigInt(SWAP_ONE)]);
       const ptIn = ptBalanceBefore;
-      await ptToken.connect(user).approve(router.address, ptIn);
-      await router.connect(user).swapExactInput(swapCalldata, ptToken.address, weETH.address, ptIn, 0);
+      await ptToken.connect(user).approve(router, ptIn);
+      await router.connect(user).swapExactInput(swapCalldata, ptToken, weETH, ptIn, 0);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceBefore.sub(ptBalanceAfter)).to.be.eq(ptIn);
-      const weETHBalanceAfter = await weETH.balanceOf(user.address);
+      expect(ptBalanceBefore - ptBalanceAfter).to.be.eq(ptIn);
+      const weETHBalanceAfter = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceAfter: ${formatUnits(weETHBalanceAfter, await weETH.decimals())} ${await weETH.symbol()}`
       );
@@ -298,30 +284,28 @@ describe('Pendle PT-weETH - weETH', () => {
     });
 
     it('pt to weETH exact output', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const weETHBalanceBefore = await weETH.balanceOf(user.address);
+      const weETHBalanceBefore = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceBefore: ${formatUnits(weETHBalanceBefore, await weETH.decimals())} ${await weETH.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.Pendle], [SWAP_ONE]);
-      const weETHOut = ptBalanceBefore.div(2);
-      await ptToken.connect(user).approve(router.address, ptBalanceBefore);
-      await router
-        .connect(user)
-        .swapExactOutput(swapCalldata, ptToken.address, weETH.address, weETHOut.mul(11).div(10), weETHOut);
+      const swapCalldata = constructSwap([Dex.Pendle], [BigInt(SWAP_ONE)]);
+      const weETHOut = ptBalanceBefore / 2n;
+      await ptToken.connect(user).approve(router, ptBalanceBefore);
+      await router.connect(user).swapExactOutput(swapCalldata, ptToken, weETH, (weETHOut * 11n) / 10n, weETHOut);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
-      const weETHBalanceAfter = await weETH.balanceOf(user.address);
+      const weETHBalanceAfter = await weETH.balanceOf(user);
       console.log(
         `weETHBalanceAfter: ${formatUnits(weETHBalanceAfter, await weETH.decimals())} ${await weETH.symbol()}`
       );
-      expect(weETHBalanceAfter.sub(weETHBalanceBefore)).to.be.eq(weETHOut);
+      expect(weETHBalanceAfter - weETHBalanceBefore).to.be.eq(weETHOut);
     });
   });
 });

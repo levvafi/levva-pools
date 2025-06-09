@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
-import {Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
+import {Ownable2Step, Ownable} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 
 import {IPool} from "@aave/core-v3/contracts/interfaces/IPool.sol";
 import {IAToken} from "@aave/core-v3/contracts/interfaces/IAToken.sol";
@@ -26,7 +26,7 @@ contract AavePriceOracle is IPriceOracle, Ownable2Step {
     error AaveATokenPriceOracle__WrongInput();
     error AaveATokenPriceOracle__NotInitialized();
 
-    constructor(address _poolAddressProvider) {
+    constructor(address _poolAddressProvider) Ownable(msg.sender) {
         if (_poolAddressProvider == address(0)) revert AaveATokenPriceOracle__ZeroAddress();
 
         i_poolAddressProvider = _poolAddressProvider;

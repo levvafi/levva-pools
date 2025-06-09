@@ -14,5 +14,5 @@
       "forceConsistentCasingInFileNames": true
     },
     "include": ["test"],
-    "files": ["hardhat.common.ts"]
+    "files": ["hardhat.config.ts"]
   }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 import '@marginly/contracts/contracts/interfaces/IPriceOracle.sol';
@@ -19,6 +19,8 @@ contract PriceOracleProxy is IPriceOracle, Ownable2Step {
   error NotInitialized();
 
   mapping(address => mapping(address => OracleParams)) public getParams;
+
+  constructor() Ownable(msg.sender) {}
 
   function setPair(
     address quoteToken,

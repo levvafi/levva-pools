@@ -1,5 +1,4 @@
 import { expect } from 'chai';
-import { BigNumber } from 'ethers';
 import {
   createPendleCaseEzETH27Jun2024,
   createPendleCaseRsETH27Jun2024,
@@ -22,8 +21,8 @@ describe('Pendle PT oracle before maturity (PendleOracle)', () => {
       margincallPriceFromSecondaryOracle,
     } = await fetchPendlePrices(caseParams);
 
-    const expectedBalancePrice = balancePtToSyPrice.mul(balancePriceFromSecondaryOracle).div(one);
-    const expectedMargincallPrice = margincallPtToSyPrice.mul(margincallPriceFromSecondaryOracle).div(one);
+    const expectedBalancePrice = (balancePtToSyPrice * balancePriceFromSecondaryOracle) / one;
+    const expectedMargincallPrice = (margincallPtToSyPrice * margincallPriceFromSecondaryOracle) / one;
 
     printPendleTokenSymbols(caseParams);
 
@@ -37,8 +36,8 @@ describe('Pendle PT oracle before maturity (PendleOracle)', () => {
       expectedMargincallPrice
     );
 
-    expect(actualBalancePrice).to.be.closeTo(expectedBalancePrice, BigNumber.from(1000));
-    expect(actualMargincallPrice).to.be.closeTo(expectedMargincallPrice, BigNumber.from(1000));
+    expect(actualBalancePrice).to.be.closeTo(expectedBalancePrice, 1000n);
+    expect(actualMargincallPrice).to.be.closeTo(expectedMargincallPrice, 1000n);
   });
 
   it('PT-rsETH-27JUN2024 / WETH', async () => {
@@ -53,8 +52,8 @@ describe('Pendle PT oracle before maturity (PendleOracle)', () => {
       margincallPriceFromSecondaryOracle,
     } = await fetchPendlePrices(caseParams);
 
-    const expectedBalancePrice = balancePtToSyPrice.mul(balancePriceFromSecondaryOracle).div(one);
-    const expectedMargincallPrice = margincallPtToSyPrice.mul(margincallPriceFromSecondaryOracle).div(one);
+    const expectedBalancePrice = (balancePtToSyPrice * balancePriceFromSecondaryOracle) / one;
+    const expectedMargincallPrice = (margincallPtToSyPrice * margincallPriceFromSecondaryOracle) / one;
 
     printPendleTokenSymbols(caseParams);
 
@@ -68,8 +67,8 @@ describe('Pendle PT oracle before maturity (PendleOracle)', () => {
       expectedMargincallPrice
     );
 
-    expect(actualBalancePrice).to.be.closeTo(expectedBalancePrice, BigNumber.from(1000));
-    expect(actualMargincallPrice).to.be.closeTo(expectedMargincallPrice, BigNumber.from(1000));
+    expect(actualBalancePrice).to.be.closeTo(expectedBalancePrice, 1000n);
+    expect(actualMargincallPrice).to.be.closeTo(expectedMargincallPrice, 1000n);
   });
 
   it('PT-ezETH-27JUN2024 / WETH', async () => {
@@ -84,8 +83,8 @@ describe('Pendle PT oracle before maturity (PendleOracle)', () => {
       margincallPriceFromSecondaryOracle,
     } = await fetchPendlePrices(caseParams);
 
-    const expectedBalancePrice = balancePtToSyPrice.mul(balancePriceFromSecondaryOracle).div(one);
-    const expectedMargincallPrice = margincallPtToSyPrice.mul(margincallPriceFromSecondaryOracle).div(one);
+    const expectedBalancePrice = (balancePtToSyPrice * balancePriceFromSecondaryOracle) / one;
+    const expectedMargincallPrice = (margincallPtToSyPrice * margincallPriceFromSecondaryOracle) / one;
 
     printPendleTokenSymbols(caseParams);
 
@@ -99,8 +98,8 @@ describe('Pendle PT oracle before maturity (PendleOracle)', () => {
       expectedMargincallPrice
     );
 
-    expect(actualBalancePrice).to.be.closeTo(expectedBalancePrice, BigNumber.from(1000));
-    expect(actualMargincallPrice).to.be.closeTo(expectedMargincallPrice, BigNumber.from(1000));
+    expect(actualBalancePrice).to.be.closeTo(expectedBalancePrice, 1000n);
+    expect(actualMargincallPrice).to.be.closeTo(expectedMargincallPrice, 1000n);
   });
 });
 
@@ -117,8 +116,8 @@ describe('Pendle PT oracle after maturity (PendleOracle)', () => {
       margincallPriceFromSecondaryOracle,
     } = await fetchPendlePrices(caseParams);
 
-    const expectedBalancePrice = balancePtToSyPrice.mul(balancePriceFromSecondaryOracle).div(one);
-    const expectedMargincallPrice = margincallPtToSyPrice.mul(margincallPriceFromSecondaryOracle).div(one);
+    const expectedBalancePrice = (balancePtToSyPrice * balancePriceFromSecondaryOracle) / one;
+    const expectedMargincallPrice = (margincallPtToSyPrice * margincallPriceFromSecondaryOracle) / one;
 
     printPendleTokenSymbols(caseParams);
 
@@ -132,7 +131,7 @@ describe('Pendle PT oracle after maturity (PendleOracle)', () => {
       expectedMargincallPrice
     );
 
-    expect(actualBalancePrice).to.be.closeTo(expectedBalancePrice, BigNumber.from(1000));
-    expect(actualMargincallPrice).to.be.closeTo(expectedMargincallPrice, BigNumber.from(1000));
+    expect(actualBalancePrice).to.be.closeTo(expectedBalancePrice, 1000n);
+    expect(actualMargincallPrice).to.be.closeTo(expectedMargincallPrice, 1000n);
   });
 });

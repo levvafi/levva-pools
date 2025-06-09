@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/utils/math/Math.sol';
 import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
@@ -32,7 +32,7 @@ contract TestBalancerVault {
       uint256 amount = amounts[i];
 
       preLoanBalances[i] = token.balanceOf(address(this));
-      feeAmounts[i] = Math.mulDiv(amount, feeAmount, 1e6, Math.Rounding.Up);
+      feeAmounts[i] = Math.mulDiv(amount, feeAmount, 1e6, Math.Rounding.Ceil);
 
       require(preLoanBalances[i] >= amount, 'INSUFFICIENT_FLASH_LOAN_BALANCE');
       TransferHelper.safeTransfer(address(token), address(recipient), amount);

@@ -31,11 +31,11 @@ export class MockTokenDeployer extends BaseDeployer implements ITokenDeployer {
       );
       const one = BigNumber.from(10).pow(tokenInfo.decimals);
 
-      const desiredBalance = amount.mul(one).toInteger();
+      const desiredBalance = amount*(one).toInteger();
       const currentBalance: BigNumber = await tokenContract.balanceOf(ethAddress.toString());
 
       if (currentBalance.lt(desiredBalance)) {
-        await tokenContract.mint(ethAddress.toString(), desiredBalance.sub(currentBalance));
+        await tokenContract.mint(ethAddress.toString(), desiredBalance-(currentBalance));
       }
     } else {
       throw new Error(`Unable to set balance for token ${token.id}`);

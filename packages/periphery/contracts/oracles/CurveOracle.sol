@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
@@ -47,6 +47,8 @@ contract CurveOracle is IPriceOracle, Ownable2Step {
   uint256 private constant X96ONE = 79228162514264337593543950336;
   uint256 private constant PRICE_DECIMALS = 18;
   mapping(address => mapping(address => OracleParams)) public getParams;
+
+  constructor() Ownable(msg.sender) {}
 
   function addPool(
     address pool,

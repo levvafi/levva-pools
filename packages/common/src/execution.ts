@@ -1,8 +1,7 @@
 import { Logger } from './logger';
 import { throwIfCritical } from './error';
 import { using } from './resource';
-import { sleep } from "./utils";
-
+import { sleep } from './utils';
 
 export type Executor = <T>(call: () => Promise<T>) => Promise<T>;
 

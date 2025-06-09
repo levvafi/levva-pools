@@ -6,11 +6,11 @@ import {
   createUniswapV2OracleWithPairs,
   createUniswapV2OracleWithPairsAndObservations,
 } from './shared/fixtures';
-import { BigNumber } from 'ethers';
 import { ethers } from 'hardhat';
+import { toBeHex } from 'ethers';
 
 function getPairKey(pair: string, baseToken: string, quoteToken: string) {
-  return BigNumber.from(baseToken).lt(BigNumber.from(quoteToken)) ? BigNumber.from(pair) : BigNumber.from(pair).mul(-1);
+  return toBeHex(baseToken) < toBeHex(quoteToken) ? BigInt(toBeHex(pair)) : -BigInt(toBeHex(pair));
 }
 
 describe('UniswapV2Oracle prices', () => {
@@ -29,8 +29,8 @@ describe('UniswapV2Oracle prices', () => {
       { quoteToken: Tokens.WETH, baseToken: Tokens.WBTC },
     ];
 
-    const expectedPairKey0 = getPairKey(pairs[0].address, Tokens.WETH, Tokens.USDC);
-    const expectedPairKey1 = getPairKey(pairs[1].address, Tokens.WBTC, Tokens.WETH);
+    const expectedPairKey0 = getPairKey(await pairs[0].getAddress(), Tokens.WETH, Tokens.USDC);
+    const expectedPairKey1 = getPairKey(await pairs[1].getAddress(), Tokens.WBTC, Tokens.WETH);
 
     await oracle.addPairs(pairsToAdd, pairOptions);
 
@@ -38,16 +38,16 @@ describe('UniswapV2Oracle prices', () => {
     expect(await oracle.pairKeys(1)).to.be.equal(expectedPairKey1);
 
     for (let i = 0; i < pairsToAdd.length; i++) {
-      const pairKey = getPairKey(pairs[i].address, pairsToAdd[i].baseToken, pairsToAdd[i].quoteToken);
+      const pairKey = getPairKey(await pairs[i].getAddress(), pairsToAdd[i].baseToken, pairsToAdd[i].quoteToken);
       const actualOption = await oracle.pairOptions(pairKey);
       expect(actualOption.secondsAgo).to.be.equal(pairOptions[i].secondsAgo);
       expect(actualOption.secondsAgoLiquidation).to.be.equal(pairOptions[i].secondsAgoLiquidation);
     }
 
     const granularity = await oracle.granularity();
-    const lastObservationIndex = granularity - 1;
+    const lastObservationIndex = granularity - 1n;
     for (let i = 0; i < pairs.length; i++) {
-      const pairKey = getPairKey(pairs[i].address, pairsToAdd[i].baseToken, pairsToAdd[i].quoteToken);
+      const pairKey = getPairKey(await pairs[i].getAddress(), pairsToAdd[i].baseToken, pairsToAdd[i].quoteToken);
       const actualObservation = await oracle.pairObservations(pairKey, lastObservationIndex);
       expect(actualObservation.timestamp).to.be.eq(0);
       expect(actualObservation.priceCumulative).to.be.eq(0);
@@ -97,14 +97,14 @@ describe('UniswapV2Oracle prices', () => {
     await expect(
       oracle.addPairs(
         [{ baseToken: Tokens.WETH, quoteToken: Tokens.USDC }],
-        [{ secondsAgo: granularity - 1, secondsAgoLiquidation: granularity }]
+        [{ secondsAgo: granularity - 1n, secondsAgoLiquidation: granularity }]
       )
     ).to.be.revertedWithCustomError(oracle, 'WrongValue');
 
     await expect(
       oracle.addPairs(
         [{ baseToken: Tokens.WETH, quoteToken: Tokens.USDC }],
-        [{ secondsAgo: granularity, secondsAgoLiquidation: granularity - 1 }]
+        [{ secondsAgo: granularity, secondsAgoLiquidation: granularity - 1n }]
       )
     ).to.be.revertedWithCustomError(oracle, 'WrongValue');
   });
@@ -115,14 +115,14 @@ describe('UniswapV2Oracle prices', () => {
     await expect(
       oracle.addPairs(
         [{ baseToken: Tokens.WETH, quoteToken: Tokens.USDC }],
-        [{ secondsAgo: windowSize, secondsAgoLiquidation: windowSize.add(1) }]
+        [{ secondsAgo: windowSize, secondsAgoLiquidation: windowSize + 1n }]
       )
     ).to.be.revertedWithCustomError(oracle, 'WrongValue');
 
     await expect(
       oracle.addPairs(
         [{ baseToken: Tokens.WETH, quoteToken: Tokens.USDC }],
-        [{ secondsAgo: windowSize.add(1), secondsAgoLiquidation: windowSize }]
+        [{ secondsAgo: windowSize + 1n, secondsAgoLiquidation: windowSize }]
       )
     ).to.be.revertedWithCustomError(oracle, 'WrongValue');
   });
@@ -136,7 +136,7 @@ describe('UniswapV2Oracle prices', () => {
         [{ baseToken: Tokens.WETH, quoteToken: Tokens.USDC }],
         [{ secondsAgo: 60, secondsAgoLiquidation: 60 }]
       )
-    ).to.be.revertedWith('Ownable: caller is not the owner');
+    ).to.be.revertedWithCustomError(oracle, 'OwnableUnauthorizedAccount');
   });
 
   it('removePairs should fail when caller not an owner', async () => {
@@ -144,7 +144,7 @@ describe('UniswapV2Oracle prices', () => {
     const [, notAnOwner] = await ethers.getSigners();
     oracle = oracle.connect(notAnOwner);
 
-    await expect(oracle.removePairAt(0)).to.be.revertedWith('Ownable: caller is not the owner');
+    await expect(oracle.removePairAt(0)).to.be.revertedWithCustomError(oracle, 'OwnableUnauthorizedAccount');
   });
 
   it('removePair should replace last pair at first place', async () => {
@@ -203,7 +203,7 @@ describe('UniswapV2Oracle prices', () => {
     await oracle.update(pairKey);
 
     const granularity = await oracle.granularity();
-    for (let i = 0; i < granularity; i++) {
+    for (let i = 0n; i < granularity; i++) {
       const observationAfter = await oracle.pairObservations(pairKey, i);
       if (i == targetObservationIndex) {
         expect(observationAfter.timestamp).not.to.be.eq(0);
@@ -308,7 +308,7 @@ describe('UniswapV2Oracle prices', () => {
 
     const granularity = await oracle.granularity();
 
-    for (let i = 0; i < granularity; i++) {
+    for (let i = 0n; i < granularity; i++) {
       const observationAfter = await oracle.pairObservations(pairKey0, i);
       if (i == targetObservationIndex) {
         expect(observationAfter.timestamp).not.to.be.eq(0);
@@ -322,15 +322,15 @@ describe('UniswapV2Oracle prices', () => {
     const pairKey1 = await oracle.pairKeys(1);
     for (let i = 0; i < granularity; i++) {
       const observationAfter = await oracle.pairObservations(pairKey1, i);
-      expect(observationAfter.timestamp.toBigInt()).to.be.eq(0n);
-      expect(observationAfter.priceCumulative.toBigInt()).to.be.eq(0n);
+      expect(observationAfter.timestamp).to.be.eq(0n);
+      expect(observationAfter.priceCumulative).to.be.eq(0n);
     }
 
     await oracle.updateAll();
 
     const observationAfter = await oracle.pairObservations(pairKey1, targetObservationIndex);
-    expect(observationAfter.timestamp.toBigInt()).not.to.be.eq(0n);
-    expect(observationAfter.priceCumulative.toBigInt()).not.to.be.eq(0n);
+    expect(observationAfter.timestamp).not.to.be.eq(0n);
+    expect(observationAfter.priceCumulative).not.to.be.eq(0n);
   });
 
   it('updateAll then update', async () => {
@@ -383,7 +383,7 @@ describe('UniswapV2Oracle prices', () => {
     const { oracle } = await loadFixture(createUniswapV2OracleWithPairsAndObservations);
 
     const balancePriceRaw = await oracle.getBalancePrice(Tokens.USDC, Tokens.WETH);
-    const balancePrice = balancePriceRaw.mul(10n ** 12n).div(2n ** 96n);
+    const balancePrice = (balancePriceRaw * 10n ** 12n) / 2n ** 96n;
     expect(balancePrice).to.be.eq(3579);
     console.log(`Balance price is ${balancePrice}`);
   });
@@ -392,7 +392,7 @@ describe('UniswapV2Oracle prices', () => {
     const { oracle } = await loadFixture(createUniswapV2OracleWithPairsAndObservations);
 
     const mcPriceRaw = await oracle.getMargincallPrice(Tokens.USDC, Tokens.WETH);
-    const mcPrice = mcPriceRaw.mul(10n ** 12n).div(2n ** 96n);
+    const mcPrice = (mcPriceRaw * 10n ** 12n) / 2n ** 96n;
     expect(mcPrice).to.be.eq(3579);
     console.log(`MC price is ${mcPrice}`);
   });
@@ -467,11 +467,13 @@ describe('UniswapV2Oracle prices', () => {
     await oracle.addOperator(signer1.address);
     expect(await oracle.operators(signer1.address)).to.be.equal(true);
 
-    await expect(oracle.connect(signer2).addOperator(signer2.address)).to.be.revertedWith(
-      'Ownable: caller is not the owner'
+    await expect(oracle.connect(signer2).addOperator(signer2.address)).to.be.revertedWithCustomError(
+      oracle,
+      'OwnableUnauthorizedAccount'
     );
-    await expect(oracle.connect(signer1).addOperator(signer2.address)).to.be.revertedWith(
-      'Ownable: caller is not the owner'
+    await expect(oracle.connect(signer1).addOperator(signer2.address)).to.be.revertedWithCustomError(
+      oracle,
+      'OwnableUnauthorizedAccount'
     );
   });
 
@@ -485,11 +487,13 @@ describe('UniswapV2Oracle prices', () => {
     expect(await oracle.operators(signer2.address)).to.be.equal(true);
     expect(await oracle.operators(signer3.address)).to.be.equal(false);
 
-    await expect(oracle.connect(signer2).removeOperator(signer1.address)).to.be.revertedWith(
-      'Ownable: caller is not the owner'
+    await expect(oracle.connect(signer2).removeOperator(signer1.address)).to.be.revertedWithCustomError(
+      oracle,
+      'OwnableUnauthorizedAccount'
     );
-    await expect(oracle.connect(signer3).removeOperator(signer1.address)).to.be.revertedWith(
-      'Ownable: caller is not the owner'
+    await expect(oracle.connect(signer3).removeOperator(signer1.address)).to.be.revertedWithCustomError(
+      oracle,
+      'OwnableUnauthorizedAccount'
     );
 
     await oracle.removeOperator(signer1.address);

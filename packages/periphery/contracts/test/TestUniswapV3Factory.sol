@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
 
@@ -42,14 +42,14 @@ contract TestUniswapV3Factory is IUniswapV3Factory {
   }
 
   function createPool(address, address, uint24) external pure returns (address) {
-    require(false, 'Not implemented');
+    revert('Not implemented');
   }
 
   function setOwner(address) external pure override {
-    require(false, 'Not implemented');
+    revert('Not implemented');
   }
 
   function enableFeeAmount(uint24, int24) external pure override {
-    require(false, 'Not implemented');
+    revert('Not implemented');
   }
 }

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
-import '@openzeppelin/contracts/security/Pausable.sol';
-import '@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol';
+import '@openzeppelin/contracts/utils/Pausable.sol';
+import '@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol';
 
 import '@marginly/contracts/contracts/interfaces/IPriceOracle.sol';
 
@@ -24,7 +24,7 @@ contract ChainlinkOracle is IPriceOracle, CompositeOracle, Ownable2Step, Pausabl
   uint256 public sequencerGracePeriod = 900; // 15 minutes by default
 
   /// @dev Sequencer feed should be provided for L2 chains, use address(0) for L1 chains
-  constructor(address _sequencerFeed) {
+  constructor(address _sequencerFeed) Ownable(msg.sender) {
     sequencerFeed = _sequencerFeed;
   }
 

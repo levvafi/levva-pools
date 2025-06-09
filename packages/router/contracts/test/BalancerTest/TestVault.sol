@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '../../adapters/BalancerAdapter.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
@@ -138,7 +138,7 @@ contract TestVault is IVault {
 
   function _getPoolSpecialization(bytes32 poolId) internal pure returns (PoolSpecialization specialization) {
     uint256 value = uint256(poolId >> (10 * 8)) & (2 ** (2 * 8) - 1);
-    require(value < 3, 'Errors.INVALID_POOL_ID');
+    require(value < 3, 'MarginlyErrors.INVALID_POOL_ID');
     // solhint-disable-next-line no-inline-assembly
     assembly {
       specialization := value

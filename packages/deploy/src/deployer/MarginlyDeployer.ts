@@ -122,13 +122,13 @@ export class MarginlyDeployer extends BaseDeployer {
     const baseOne = BigNumber.from(10).pow(baseTokenInfo.decimals);
     const quoteOne = BigNumber.from(10).pow(quoteTokenInfo.decimals);
     const params = {
-      interestRate: config.params.interestRate.mul(one).toInteger(),
-      fee: config.params.fee.mul(one).toInteger(),
+      interestRate: config.params.interestRate*(one).toInteger(),
+      fee: config.params.fee*(one).toInteger(),
       maxLeverage: config.params.maxLeverage.toInteger(),
-      swapFee: config.params.swapFee.mul(one).toInteger(),
-      mcSlippage: config.params.mcSlippage.mul(one).toInteger(),
-      positionMinAmount: config.params.positionMinAmount.mul(baseOne).toInteger(),
-      quoteLimit: config.params.quoteLimit.mul(quoteOne).toInteger(),
+      swapFee: config.params.swapFee*(one).toInteger(),
+      mcSlippage: config.params.mcSlippage*(one).toInteger(),
+      positionMinAmount: config.params.positionMinAmount*(baseOne).toInteger(),
+      quoteLimit: config.params.quoteLimit*(quoteOne).toInteger(),
     };
 
     let createPoolTx: ethers.ContractTransaction;
@@ -327,7 +327,7 @@ export class MarginlyDeployer extends BaseDeployer {
     return this.deploy(
       'ChainlinkAggregatorV3Mock',
       [
-        priceProviderMock.answer.mul(BigNumber.from(10).pow(priceProviderMock.decimals)).toInteger(),
+        priceProviderMock.answer*(BigNumber.from(10).pow(priceProviderMock.decimals)).toInteger(),
         priceProviderMock.decimals,
       ],
       `priceProviderMock_${id}`,

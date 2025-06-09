@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 
@@ -19,7 +19,7 @@ abstract contract RouterStorage is IMarginlyRouter, Ownable2Step {
 
   mapping(uint256 => address) public adapters;
 
-  constructor(AdapterInput[] memory _adapters) {
+  constructor(AdapterInput[] memory _adapters) Ownable(msg.sender) {
     AdapterInput memory input;
     uint256 length = _adapters.length;
     for (uint256 i; i < length; ) {

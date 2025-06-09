@@ -6,10 +6,6 @@ echo "build contracts"
 yarn workspace @marginly/contracts install
 yarn workspace @marginly/contracts compile
 
-echo "build contracts-uniswap-mock"
-yarn workspace @marginly/contracts-uniswap-mock install
-yarn workspace @marginly/contracts-uniswap-mock compile
-
 echo "build router"
 yarn workspace @marginly/router install
 yarn workspace @marginly/router compile
@@ -26,10 +22,6 @@ echo "build common"
 yarn workspace @marginly/common install
 yarn workspace @marginly/common build
 
-echo "build cli-common"
-yarn workspace @marginly/cli-common install
-yarn workspace @marginly/cli-common build
-
 echo "build logger"
 yarn workspace @marginly/logger install
 yarn workspace @marginly/logger build
@@ -45,16 +37,6 @@ yarn workspace @marginly/deploy build
 echo "build keeper"
 yarn workspace @marginly/keeper install
 yarn workspace @marginly/keeper build
-
-echo "build oracle"
-yarn workspace @marginly/oracle install
-yarn workspace @marginly/oracle build
-
-# echo "build contest-winner-nft"
-# yarn workspace @marginly/contest-winner-nft install
-# yarn workspace @marginly/contest-winner-nft typechain
-# yarn workspace @marginly/contest-winner-nft compile
-# yarn workspace @marginly/contest-winner-nft build
 
 echo "build cli"
 yarn workspace @marginly/cli install

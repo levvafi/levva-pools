@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
@@ -24,6 +24,8 @@ contract MarginlyCompositeOracle is IPriceOracle, Ownable2Step {
   }
 
   mapping(address => mapping(address => OracleParams)) public getParams;
+
+  constructor() Ownable(msg.sender) {}
 
   function _validatePriceOracle(IPriceOracle priceOracle, address quoteToken, address baseToken) private view {
     if (priceOracle.getBalancePrice(quoteToken, baseToken) == 0) revert ZeroPrice();

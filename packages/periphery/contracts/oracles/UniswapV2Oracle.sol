@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
@@ -63,7 +63,7 @@ contract UniswapV2Oracle is IPriceOracle, Ownable2Step {
   error PairAlreadyExists();
   error UnauthorizedAccount();
 
-  constructor(address factory_, uint windowSize_, uint8 granularity_) {
+  constructor(address factory_, uint windowSize_, uint8 granularity_) Ownable(msg.sender) {
     if (factory_ == address(0)) revert WrongValue();
     if (granularity_ < 2) revert WrongValue();
     if ((periodSize = windowSize_ / granularity_) * granularity_ != windowSize_) revert WrongValue();

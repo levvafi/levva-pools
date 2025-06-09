@@ -34,13 +34,7 @@ describe.only('Composite oracle PT-wstUSR/USR with Pendle for PT-wstUSR/wstUSR, 
     );
 
     compositeOracle = await (await ethers.getContractFactory('MarginlyCompositeOracle')).deploy();
-    await compositeOracle.setPair(
-      usrAddress,
-      wstUsrAddress,
-      ptWstUsr27Mar2025,
-      pythOracle.address,
-      pendleMarketOracle.address
-    );
+    await compositeOracle.setPair(usrAddress, wstUsrAddress, ptWstUsr27Mar2025, pythOracle, pendleMarketOracle);
   });
 
   it('pt-wstUSR-27Mar2025/USR price', async () => {
@@ -91,13 +85,7 @@ describe.only('Composite oracle Spectra PT-wstUSR/USR, Pyth wstUSR/USR', () => {
     await curveOracle.addPool(spectraPool, ptWstUsr26Jun2025, wstUsrAddress, false);
 
     compositeOracle = await (await ethers.getContractFactory('MarginlyCompositeOracle')).deploy();
-    await compositeOracle.setPair(
-      usrAddress,
-      wstUsrAddress,
-      ptWstUsr26Jun2025,
-      pythOracle.address,
-      curveOracle.address
-    );
+    await compositeOracle.setPair(usrAddress, wstUsrAddress, ptWstUsr26Jun2025, pythOracle, curveOracle);
   });
 
   it('pt-wstUSR-27Mar2025/USR price', async () => {

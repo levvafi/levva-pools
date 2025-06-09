@@ -44,7 +44,7 @@ describe('PythOracle', () => {
     const balancePrice = await oracle.getBalancePrice(usdFake, weth);
     const mcPrice = await oracle.getMargincallPrice(usdFake, weth);
 
-    const decimalsDiff = 18;
+    const decimalsDiff = 18n;
     printPrices(balancePrice, mcPrice, decimalsDiff);
 
     const revBalancePrice = await oracle.getBalancePrice(weth, usdFake);

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '../dataTypes/Position.sol';
-import './Errors.sol';
+import './MarginlyErrors.sol';
 
 /// @title A Max-Heap implementation
 /// @dev Implemented to use as embedded library. Invariant: key should be greater than zero
@@ -48,7 +48,7 @@ library MaxBinaryHeapLib {
     uint32 index,
     uint96 newKey
   ) internal returns (uint32 newIndex) {
-    if (index >= self.length) revert Errors.WrongIndex();
+    if (index >= self.length) revert MarginlyErrors.WrongIndex();
 
     Node storage node = self.nodes[index];
     if (node.key < newKey) {
@@ -76,7 +76,7 @@ library MaxBinaryHeapLib {
   /// @dev Removes node by account
   function remove(Heap storage self, mapping(address => Position) storage positions, uint32 index) internal {
     uint32 length = self.length;
-    if (index >= length) revert Errors.WrongIndex();
+    if (index >= length) revert MarginlyErrors.WrongIndex();
 
     uint32 last = length - 1;
     self.length = last;

@@ -1,8 +1,8 @@
 import { ethers } from 'hardhat';
 import { time, setBalance } from '@nomicfoundation/hardhat-network-helpers';
 import { UniswapV2Oracle } from '../../../typechain-types/contracts/oracles';
-import { parseEther, parseUnits } from 'ethers/lib/utils';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { parseEther, parseUnits } from 'ethers';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { printPrices } from '../../shared/common';
 
 async function initSystem(
@@ -15,8 +15,8 @@ async function initSystem(
   const oracle = await factory.deploy(uniswapV2Factory, windowSize, granularity);
 
   const [, signer] = await ethers.getSigners();
-  const wethContract = await ethers.getContractAt('IWETH9', wethAddress, signer);
-  await wethContract.deposit({ value: parseEther('1000') });
+  const wethContract = await ethers.getContractAt('IWETH9', wethAddress);
+  await wethContract.connect(signer).deposit({ value: parseEther('1000') });
   return {
     oracle,
     signer,
@@ -56,8 +56,8 @@ describe.skip('Arbitrum: UniswapV2Oracle', () => {
   it('weth-usdc, weth price decreases', async () => {
     const pairKey = await oracle.pairKeys(0);
     const pairAddress = await oracle.keyToAddress(pairKey);
-    const uniswapV2Pair = await ethers.getContractAt('IUniswapV2Pair', pairAddress, wethHolder);
-    const wethContract = await ethers.getContractAt('IWETH9', weth, wethHolder);
+    const uniswapV2Pair = await ethers.getContractAt('IUniswapV2Pair', pairAddress);
+    const wethContract = await ethers.getContractAt('IWETH9', weth);
     for (let i = 0; i < 31; i++) {
       await time.increase(60); // increase time and mine new block
       await oracle.updateAll();
@@ -67,7 +67,7 @@ describe.skip('Arbitrum: UniswapV2Oracle', () => {
       console.log('Initial prices:');
       const balancePrice = await oracle.getBalancePrice(usdc, weth);
       const mcPrice = await oracle.getMargincallPrice(usdc, weth);
-      printPrices(balancePrice, mcPrice, 12);
+      printPrices(balancePrice, mcPrice, 12n);
     }
 
     //make swaps and update price
@@ -75,17 +75,17 @@ describe.skip('Arbitrum: UniswapV2Oracle', () => {
       await time.increase(60); // increase time and mine new block
       await oracle.updateAll();
 
-      await wethContract.transfer(uniswapV2Pair.address, parseEther('1'));
+      await wethContract.connect(wethHolder).transfer(uniswapV2Pair, parseEther('1'));
       const amount1Out = 10 * 10 ** 6;
-      await uniswapV2Pair.swap(0, amount1Out, wethHolder.address, []);
-      await uniswapV2Pair.skim(wethHolder.address);
+      await uniswapV2Pair.connect(wethHolder).swap(0, amount1Out, wethHolder.address, Buffer.from([]));
+      await uniswapV2Pair.connect(wethHolder).skim(wethHolder.address);
     }
 
     {
       console.log('Prices after 10 swaps:');
       const balancePrice = await oracle.getBalancePrice(usdc, weth);
       const mcPrice = await oracle.getMargincallPrice(usdc, weth);
-      printPrices(balancePrice, mcPrice, 12);
+      printPrices(balancePrice, mcPrice, 12n);
     }
   });
 });
@@ -124,15 +124,15 @@ describe.skip('Blast: BlasterSwap', () => {
 
     await setBalance(bridgeAccount.address, parseEther('10'));
 
-    const usdbContract = await ethers.getContractAt('IMintableERC20', usdb, bridgeAccount);
-    await usdbContract.mint(wethHolder.address, parseUnits('1000', 18));
+    const usdbContract = await ethers.getContractAt('IMintableERC20', usdb);
+    await usdbContract.connect(bridgeAccount).mint(wethHolder.address, parseUnits('1000', 18));
   });
 
   it('weth-usdb', async () => {
     const pairKey = await oracle.pairKeys(0);
     const pairAddress = await oracle.keyToAddress(pairKey);
-    const uniswapV2Pair = await ethers.getContractAt('IUniswapV2Pair', pairAddress, wethHolder);
-    const wethContract = await ethers.getContractAt('IWETH9', weth, wethHolder);
+    const uniswapV2Pair = await ethers.getContractAt('IUniswapV2Pair', pairAddress);
+    const wethContract = await ethers.getContractAt('IWETH9', weth);
     for (let i = 0; i < 31; i++) {
       await time.increase(60); // increase time and mine new block
       await oracle.updateAll();
@@ -142,7 +142,7 @@ describe.skip('Blast: BlasterSwap', () => {
       console.log('Initial prices:');
       const balancePrice = await oracle.getBalancePrice(usdb, weth);
       const mcPrice = await oracle.getMargincallPrice(usdb, weth);
-      printPrices(balancePrice, mcPrice, 0);
+      printPrices(balancePrice, mcPrice, 0n);
     }
 
     //make swaps and update price
@@ -150,25 +150,25 @@ describe.skip('Blast: BlasterSwap', () => {
       await time.increase(60); // increase time and mine new block
       await oracle.updateAll();
 
-      await wethContract.transfer(uniswapV2Pair.address, parseEther('1'));
+      await wethContract.transfer(uniswapV2Pair, parseEther('1'));
       const amount0Out = 3000n * 10n ** 18n;
-      await uniswapV2Pair.swap(amount0Out, 0, wethHolder.address, []);
-      await uniswapV2Pair.skim(wethHolder.address);
+      await uniswapV2Pair.connect(wethHolder).swap(amount0Out, 0, wethHolder.address, Buffer.from([]));
+      await uniswapV2Pair.connect(wethHolder).skim(wethHolder.address);
     }
 
     {
       console.log('Prices after 10 swaps:');
       const balancePrice = await oracle.getBalancePrice(usdb, weth);
       const mcPrice = await oracle.getMargincallPrice(usdb, weth);
-      printPrices(balancePrice, mcPrice, 0);
+      printPrices(balancePrice, mcPrice, 0n);
     }
   });
 
   it('pac-weth', async () => {
     const pairKey = await oracle.pairKeys(1);
     const pairAddress = await oracle.keyToAddress(pairKey);
-    const uniswapV2Pair = await ethers.getContractAt('IUniswapV2Pair', pairAddress, wethHolder);
-    const wethContract = await ethers.getContractAt('IWETH9', weth, wethHolder);
+    const uniswapV2Pair = await ethers.getContractAt('IUniswapV2Pair', pairAddress);
+    const wethContract = await ethers.getContractAt('IWETH9', weth);
     for (let i = 0; i < 31; i++) {
       await time.increase(60); // increase time and mine new block
       await oracle.updateAll();
@@ -178,7 +178,7 @@ describe.skip('Blast: BlasterSwap', () => {
       console.log('Initial prices:');
       const balancePrice = await oracle.getBalancePrice(weth, pac);
       const mcPrice = await oracle.getMargincallPrice(weth, pac);
-      printPrices(balancePrice, mcPrice, 0);
+      printPrices(balancePrice, mcPrice, 0n);
     }
 
     //make swaps and update price
@@ -186,25 +186,25 @@ describe.skip('Blast: BlasterSwap', () => {
       await time.increase(60); // increase time and mine new block
       await oracle.updateAll();
 
-      await wethContract.transfer(uniswapV2Pair.address, parseEther('1'));
+      await wethContract.transfer(uniswapV2Pair, parseEther('1'));
       const amount1Out = 20n * 10n ** 18n;
-      await uniswapV2Pair.swap(0, amount1Out, wethHolder.address, []);
-      await uniswapV2Pair.skim(wethHolder.address);
+      await uniswapV2Pair.connect(wethHolder).swap(0, amount1Out, wethHolder.address, Buffer.from([]));
+      await uniswapV2Pair.connect(wethHolder).skim(wethHolder.address);
     }
 
     {
       console.log('Prices after 10 swaps:');
       const balancePrice = await oracle.getBalancePrice(weth, pac);
       const mcPrice = await oracle.getMargincallPrice(weth, pac);
-      printPrices(balancePrice, mcPrice, 0);
+      printPrices(balancePrice, mcPrice, 0n);
     }
   });
 
   it('pac-usdb', async () => {
     const pairKey = await oracle.pairKeys(2);
     const pairAddress = await oracle.keyToAddress(pairKey);
-    const uniswapV2Pair = await ethers.getContractAt('IUniswapV2Pair', pairAddress, wethHolder);
-    const usdbContract = await ethers.getContractAt('IERC20', usdb, wethHolder);
+    const uniswapV2Pair = await ethers.getContractAt('IUniswapV2Pair', pairAddress);
+    const usdbContract = await ethers.getContractAt('IERC20', usdb);
     for (let i = 0; i < 31; i++) {
       await time.increase(60); // increase time and mine new block
       await oracle.updateAll();
@@ -214,7 +214,7 @@ describe.skip('Blast: BlasterSwap', () => {
       console.log('Initial prices:');
       const balancePrice = await oracle.getBalancePrice(usdb, pac);
       const mcPrice = await oracle.getMargincallPrice(usdb, pac);
-      printPrices(balancePrice, mcPrice, 0);
+      printPrices(balancePrice, mcPrice, 0n);
     }
 
     //make swaps and update price
@@ -222,17 +222,17 @@ describe.skip('Blast: BlasterSwap', () => {
       await time.increase(60); // increase time and mine new block
       await oracle.updateAll();
 
-      await usdbContract.transfer(uniswapV2Pair.address, parseEther('10'));
+      await usdbContract.transfer(uniswapV2Pair, parseEther('10'));
       const amount1Out = 100n * 10n ** 18n;
-      await uniswapV2Pair.swap(0, amount1Out, wethHolder.address, []);
-      await uniswapV2Pair.skim(wethHolder.address);
+      await uniswapV2Pair.connect(wethHolder).swap(0, amount1Out, wethHolder.address, Buffer.from([]));
+      await uniswapV2Pair.connect(wethHolder).skim(wethHolder.address);
     }
 
     {
       console.log('Prices after 10 swaps:');
       const balancePrice = await oracle.getBalancePrice(usdb, pac);
       const mcPrice = await oracle.getMargincallPrice(usdb, pac);
-      printPrices(balancePrice, mcPrice, 0);
+      printPrices(balancePrice, mcPrice, 0n);
     }
   });
 });
@@ -260,15 +260,15 @@ describe.skip('Blast: ThrusterV2', () => {
 
     await setBalance(bridgeAccount.address, parseEther('10'));
 
-    const usdbContract = await ethers.getContractAt('IMintableERC20', usdb, bridgeAccount);
-    await usdbContract.mint(wethHolder.address, parseUnits('1000', 18));
+    const usdbContract = await ethers.getContractAt('IMintableERC20', usdb);
+    await usdbContract.connect(bridgeAccount).mint(wethHolder.address, parseUnits('1000', 18));
   });
 
   it('doge-weth', async () => {
     const pairKey = await oracle.pairKeys(0);
     const pairAddress = await oracle.keyToAddress(pairKey);
-    const uniswapV2Pair = await ethers.getContractAt('IUniswapV2Pair', pairAddress, wethHolder);
-    const wethContract = await ethers.getContractAt('IWETH9', weth, wethHolder);
+    const uniswapV2Pair = await ethers.getContractAt('IUniswapV2Pair', pairAddress);
+    const wethContract = await ethers.getContractAt('IWETH9', weth);
     for (let i = 0; i < 31; i++) {
       await time.increase(60); // increase time and mine new block
       await oracle.updateAll();
@@ -278,7 +278,7 @@ describe.skip('Blast: ThrusterV2', () => {
       console.log('Initial prices:');
       const balancePrice = await oracle.getBalancePrice(weth, doge);
       const mcPrice = await oracle.getMargincallPrice(weth, doge);
-      printPrices(balancePrice, mcPrice, -8);
+      printPrices(balancePrice, mcPrice, -8n);
     }
 
     //make swaps and update price
@@ -286,17 +286,17 @@ describe.skip('Blast: ThrusterV2', () => {
       await time.increase(60); // increase time and mine new block
       await oracle.updateAll();
 
-      await wethContract.transfer(uniswapV2Pair.address, parseEther('0.01'));
+      await wethContract.transfer(uniswapV2Pair, parseEther('0.01'));
       const amount1Out = 300n * 10n ** 10n;
-      await uniswapV2Pair.swap(0, amount1Out, wethHolder.address, []);
-      await uniswapV2Pair.skim(wethHolder.address);
+      await uniswapV2Pair.connect(wethHolder).swap(0, amount1Out, wethHolder.address, Buffer.from([]));
+      await uniswapV2Pair.connect(wethHolder).skim(wethHolder.address);
     }
 
     {
       console.log('Prices after 10 swaps:');
       const balancePrice = await oracle.getBalancePrice(weth, doge);
       const mcPrice = await oracle.getMargincallPrice(weth, doge);
-      printPrices(balancePrice, mcPrice, -8);
+      printPrices(balancePrice, mcPrice, -8n);
     }
   });
 });

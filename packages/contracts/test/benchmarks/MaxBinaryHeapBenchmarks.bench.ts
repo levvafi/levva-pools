@@ -4,7 +4,7 @@ import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { generateWallets } from '../shared/utils';
 
 describe('Gas Benchmark - MaxBinaryHeap', () => {
-  const gasBenchmarks: { method: string; length: number; gasUsed: number }[] = [];
+  const gasBenchmarks: { method: string; length: number; gasUsed: bigint }[] = [];
 
   async function deployMaxBinaryHeapTestFixture() {
     // Contracts are deployed using the first signer/account by default
@@ -12,7 +12,7 @@ describe('Gas Benchmark - MaxBinaryHeap', () => {
 
     const factory = await ethers.getContractFactory('MaxBinaryHeapTest');
     const contract = await factory.deploy();
-    await contract.deployed();
+    await contract.deploymentTransaction()?.wait();
 
     return { contract, owner, otherAccount };
   }
@@ -22,14 +22,14 @@ describe('Gas Benchmark - MaxBinaryHeap', () => {
     const heapLength = 1024;
     const wallets = await generateWallets(heapLength);
 
-    expect((await contract.getHeapLength()).toNumber()).to.equal(0);
+    expect(await contract.getHeapLength()).to.equal(0);
 
     for (let i = 0; i < heapLength; i++) {
       const value = i + 1; // worst case
       await contract.connect(owner).add(value, wallets[i].address);
     }
 
-    expect((await contract.getHeapLength()).toNumber()).to.equal(heapLength);
+    expect(await contract.getHeapLength()).to.equal(heapLength);
 
     return { contract, owner, otherAccount, heapLength, wallets };
   }
@@ -43,15 +43,18 @@ describe('Gas Benchmark - MaxBinaryHeap', () => {
     const heapLength = 1024;
     const wallets = await generateWallets(heapLength);
 
-    expect((await contract.getHeapLength()).toNumber()).to.equal(0);
+    expect(await contract.getHeapLength()).to.equal(0);
 
-    let gasUsed = 0;
+    let gasUsed = 0n;
 
     for (let i = 0; i < heapLength; i++) {
       const value = i + 1; // worst case
       const addItemTx = await contract.connect(otherAccount).add(value, wallets[i].address);
       const receipt = await addItemTx.wait();
-      const currentGasUsed = receipt.gasUsed.toNumber();
+      if (receipt === null) {
+        throw new Error('Failed to obtain receipt');
+      }
+      const currentGasUsed = receipt.gasUsed;
 
       if (currentGasUsed > gasUsed) {
         gasUsed = currentGasUsed;
@@ -63,19 +66,22 @@ describe('Gas Benchmark - MaxBinaryHeap', () => {
       }
     }
 
-    expect((await contract.getHeapLength()).toNumber()).to.equal(heapLength);
+    expect(await contract.getHeapLength()).to.equal(heapLength);
   });
 
   it('Should remove root item from heap', async () => {
     const { contract, otherAccount, heapLength } = await loadFixture(prepareHeap);
 
-    let gasUsed = Number.MAX_VALUE;
+    let gasUsed = 0n;
     for (let i = 0; i < heapLength; i++) {
       const removeItemTx = await contract.connect(otherAccount).remove(0);
       const receipt = await removeItemTx.wait();
-      const currentGasUsed = receipt.gasUsed.toNumber();
+      if (receipt === null) {
+        throw new Error('Failed to obtain receipt');
+      }
+      const currentGasUsed = receipt.gasUsed;
 
-      if (currentGasUsed < gasUsed) {
+      if (i == 0 || currentGasUsed < gasUsed) {
         gasUsed = currentGasUsed;
         gasBenchmarks.push({
           method: '.remove(0)',
@@ -85,7 +91,7 @@ describe('Gas Benchmark - MaxBinaryHeap', () => {
       }
     }
 
-    expect((await contract.getHeapLength()).toNumber()).to.equal(0);
+    expect(await contract.getHeapLength()).to.equal(0);
   });
 
   it('Should update item', async () => {
@@ -95,7 +101,10 @@ describe('Gas Benchmark - MaxBinaryHeap', () => {
     {
       const topToBottomTx = await contract.connect(otherAccount).updateByIndex(0, 0);
       const receipt = await topToBottomTx.wait();
-      const currentGasUsed = receipt.gasUsed.toNumber();
+      if (receipt === null) {
+        throw new Error('Failed to obtain receipt');
+      }
+      const currentGasUsed = receipt.gasUsed;
       gasBenchmarks.push({
         method: 'update (top to bottom)',
         length: heapLength,
@@ -108,7 +117,10 @@ describe('Gas Benchmark - MaxBinaryHeap', () => {
       const lastElementIndex = heapLength - 1;
       const bottomToTop = await contract.connect(otherAccount).updateByIndex(lastElementIndex, 2000);
       const receipt = await bottomToTop.wait();
-      const currentGasUsed = receipt.gasUsed.toNumber();
+      if (receipt === null) {
+        throw new Error('Failed to obtain receipt');
+      }
+      const currentGasUsed = receipt.gasUsed;
       gasBenchmarks.push({
         method: 'update (bottom to top)',
         length: heapLength,
@@ -121,7 +133,10 @@ describe('Gas Benchmark - MaxBinaryHeap', () => {
       const middleElementIndex = heapLength / 2;
       const bottomToTop = await contract.connect(otherAccount).updateByIndex(middleElementIndex, 2000);
       const receipt = await bottomToTop.wait();
-      const currentGasUsed = receipt.gasUsed.toNumber();
+      if (receipt === null) {
+        throw new Error('Failed to obtain receipt');
+      }
+      const currentGasUsed = receipt.gasUsed;
       gasBenchmarks.push({
         method: 'update (middle to top)',
         length: heapLength,

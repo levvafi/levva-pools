@@ -1,22 +1,20 @@
 import { ethers } from 'hardhat';
 import { CurveAdapter, ERC20, ICurvePool, MarginlyRouter } from '../../typechain-types';
-import { AdapterInputStruct } from '@marginly/periphery/typechain-types/contracts/admin/abstract/RouterActions';
 import { PoolInputStruct } from '../../typechain-types/contracts/adapters/CurveAdapter';
-import { BigNumber } from 'ethers';
-import { EthAddress } from '@marginly/common';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { ArbMainnetERC20BalanceOfSlot, setTokenBalance } from '../shared/tokens';
+import { formatEther, formatUnits, parseUnits } from 'ethers';
 
 interface TokenInfo {
   contract: ERC20;
   symbol: string;
-  decimals: number;
+  decimals: bigint;
   balanceOfSlot: string;
 }
 
-function formatTokenBalance(token: TokenInfo, amount: BigNumber): string {
-  return `${ethers.utils.formatUnits(amount, token.decimals)} ${token.symbol}`;
+function formatTokenBalance(token: TokenInfo, amount: bigint): string {
+  return `${formatUnits(amount, token.decimals)} ${token.symbol}`;
 }
 
 describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
@@ -32,8 +30,8 @@ describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
     pool = await ethers.getContractAt('ICurvePool', poolAddress);
     const adapterFactory = await ethers.getContractFactory('CurveAdapter');
 
-    const token0Address = await pool.callStatic.coins(0);
-    const token1Address = await pool.callStatic.coins(1);
+    const token0Address = await pool.coins(0);
+    const token1Address = await pool.coins(1);
     const token0Contract = await ethers.getContractAt('ERC20', token0Address);
     const token1Contract = await ethers.getContractAt('ERC20', token1Address);
     const token0Symbol = await token0Contract.symbol();
@@ -58,37 +56,37 @@ describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
     ]);
 
     const routerFactory = await ethers.getContractFactory('MarginlyRouter');
-    router = await routerFactory.deploy([<AdapterInputStruct>{ dexIndex: 0, adapter: adapter.address }]);
+    router = await routerFactory.deploy([{ dexIndex: 0, adapter: adapter }]);
 
     const [owner, user1, user2] = await ethers.getSigners();
 
-    const token0InitBalance = BigNumber.from(10).pow(18);
-    await setTokenBalance(token0Address, token0.balanceOfSlot, EthAddress.parse(owner.address), token0InitBalance);
-    await setTokenBalance(token0Address, token0.balanceOfSlot, EthAddress.parse(user1.address), token0InitBalance);
-    await setTokenBalance(token0Address, token0.balanceOfSlot, EthAddress.parse(user2.address), token0InitBalance);
+    const token0InitBalance = parseUnits('1', 18);
+    await setTokenBalance(token0Address, token0.balanceOfSlot, owner.address, token0InitBalance);
+    await setTokenBalance(token0Address, token0.balanceOfSlot, user1.address, token0InitBalance);
+    await setTokenBalance(token0Address, token0.balanceOfSlot, user2.address, token0InitBalance);
 
-    const token1InitBalance = BigNumber.from(10).pow(19);
-    await setTokenBalance(token1Address, token1.balanceOfSlot, EthAddress.parse(owner.address), token1InitBalance);
-    await setTokenBalance(token1Address, token1.balanceOfSlot, EthAddress.parse(user1.address), token1InitBalance);
-    await setTokenBalance(token1Address, token1.balanceOfSlot, EthAddress.parse(user2.address), token1InitBalance);
+    const token1InitBalance = parseUnits('10', 18);
+    await setTokenBalance(token1Address, token1.balanceOfSlot, owner.address, token1InitBalance);
+    await setTokenBalance(token1Address, token1.balanceOfSlot, user1.address, token1InitBalance);
+    await setTokenBalance(token1Address, token1.balanceOfSlot, user2.address, token1InitBalance);
   });
 
-  function printPrice(priceInToken0: BigNumber) {
-    const priceStr = ethers.utils.formatEther(priceInToken0);
+  function printPrice(priceInToken0: bigint) {
+    const priceStr = formatEther(priceInToken0);
     const inversePrice = 1 / Number.parseFloat(priceStr);
     console.log(`1 ${token1.symbol} = ${priceStr} ${token0.symbol}`);
     console.log(`1 ${token0.symbol} = ${inversePrice} ${token1.symbol}`);
   }
 
-  function printPriceWithDelta(newPriceInToken0: BigNumber, oldPriceInToken0: BigNumber) {
-    const newPriceStr = ethers.utils.formatEther(newPriceInToken0);
+  function printPriceWithDelta(newPriceInToken0: bigint, oldPriceInToken0: bigint) {
+    const newPriceStr = formatEther(newPriceInToken0);
     const inverseNewPrice = 1 / Number.parseFloat(newPriceStr);
 
-    const oldPriceStr = ethers.utils.formatEther(oldPriceInToken0);
+    const oldPriceStr = formatEther(oldPriceInToken0);
     const inverseOldPrice = 1 / Number.parseFloat(oldPriceStr);
 
-    const deltaPrice = newPriceInToken0.sub(oldPriceInToken0);
-    const deltaPriceStr = ethers.utils.formatEther(deltaPrice);
+    const deltaPrice = newPriceInToken0 - oldPriceInToken0;
+    const deltaPriceStr = formatEther(deltaPrice);
     const deltaInversePrice = inverseNewPrice - inverseOldPrice;
 
     console.log(`1 ${token1.symbol} = ${newPriceStr} ${token0.symbol}, delta: ${deltaPriceStr} ${token0.symbol}`);
@@ -97,16 +95,11 @@ describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
     );
   }
 
-  async function swapExactInput(
-    signer: SignerWithAddress,
-    zeroToOne: boolean,
-    amountIn: BigNumber,
-    minAmountOut: BigNumber
-  ) {
+  async function swapExactInput(signer: SignerWithAddress, zeroToOne: boolean, amountIn: bigint, minAmountOut: bigint) {
     const inToken = zeroToOne ? token0 : token1;
     const outToken = zeroToOne ? token1 : token0;
-    const inTokenBalanceBefore = await inToken.contract.balanceOf(signer.address);
-    const outTokenBalanceBefore = await outToken.contract.balanceOf(signer.address);
+    const inTokenBalanceBefore = await inToken.contract.balanceOf(signer);
+    const outTokenBalanceBefore = await outToken.contract.balanceOf(signer);
 
     console.log(
       `signer balance before swap: ${formatTokenBalance(inToken, inTokenBalanceBefore)}, ` +
@@ -121,34 +114,28 @@ describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
 
     const priceInToken0Before = await pool.last_price();
 
-    await router.swapExactInput(
-      BigNumber.from(0),
-      inToken.contract.address,
-      outToken.contract.address,
-      amountIn,
-      minAmountOut
-    );
+    await router.swapExactInput(0n, inToken.contract, outToken.contract, amountIn, minAmountOut);
 
-    const inTokenBalanceAfter = await inToken.contract.balanceOf(signer.address);
-    const outTokenBalanceAfter = await outToken.contract.balanceOf(signer.address);
+    const inTokenBalanceAfter = await inToken.contract.balanceOf(signer);
+    const outTokenBalanceAfter = await outToken.contract.balanceOf(signer);
 
     console.log(
       `\nsigner balance after swap: ${formatTokenBalance(inToken, inTokenBalanceAfter)}, ` +
         `${formatTokenBalance(outToken, outTokenBalanceAfter)}`
     );
 
-    const inTokenDelta = inTokenBalanceBefore.sub(inTokenBalanceAfter);
-    const outTokenDelta = outTokenBalanceAfter.sub(outTokenBalanceBefore);
+    const inTokenDelta = inTokenBalanceBefore - inTokenBalanceAfter;
+    const outTokenDelta = outTokenBalanceAfter - outTokenBalanceBefore;
     console.log(
       `signer balances delta: -${formatTokenBalance(inToken, inTokenDelta)}, ` +
         `${formatTokenBalance(outToken, outTokenDelta)}`
     );
-    const one = BigNumber.from(10).pow(18);
-    let actualPriceInToken0: BigNumber;
+    const one = parseUnits('1', 18);
+    let actualPriceInToken0: bigint;
     if (zeroToOne) {
-      actualPriceInToken0 = inTokenDelta.mul(one).div(outTokenDelta);
+      actualPriceInToken0 = (inTokenDelta * one) / outTokenDelta;
     } else {
-      actualPriceInToken0 = outTokenDelta.mul(one).div(inTokenDelta);
+      actualPriceInToken0 = (outTokenDelta * one) / inTokenDelta;
     }
 
     console.log(`\nPrice before swap (fees not included):`);
@@ -156,20 +143,20 @@ describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
     console.log(`\nActual swap price (with fees):`);
     printPriceWithDelta(actualPriceInToken0, priceInToken0Before);
 
-    expect(inTokenBalanceAfter).to.be.equal(inTokenBalanceBefore.sub(amountIn));
-    expect(outTokenBalanceAfter).to.be.greaterThanOrEqual(outTokenBalanceBefore.add(minAmountOut));
+    expect(inTokenBalanceAfter).to.be.equal(inTokenBalanceBefore - amountIn);
+    expect(outTokenBalanceAfter).to.be.greaterThanOrEqual(outTokenBalanceBefore + minAmountOut);
   }
 
   async function swapExactOutput(
     signer: SignerWithAddress,
     zeroToOne: boolean,
-    maxAmountIn: BigNumber,
-    amountOut: BigNumber
+    maxAmountIn: bigint,
+    amountOut: bigint
   ) {
     const inToken = zeroToOne ? token0 : token1;
     const outToken = zeroToOne ? token1 : token0;
-    const inTokenBalanceBefore = await inToken.contract.balanceOf(signer.address);
-    const outTokenBalanceBefore = await outToken.contract.balanceOf(signer.address);
+    const inTokenBalanceBefore = await inToken.contract.balanceOf(signer);
+    const outTokenBalanceBefore = await outToken.contract.balanceOf(signer);
 
     console.log(
       `signer balance before swap: ${formatTokenBalance(inToken, inTokenBalanceBefore)}, ` +
@@ -184,34 +171,28 @@ describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
 
     const priceInToken0Before = await pool.last_price();
 
-    await router.swapExactOutput(
-      BigNumber.from(0),
-      inToken.contract.address,
-      outToken.contract.address,
-      maxAmountIn,
-      amountOut
-    );
+    await router.swapExactOutput(0n, inToken.contract, outToken.contract, maxAmountIn, amountOut);
 
-    const inTokenBalanceAfter = await inToken.contract.balanceOf(signer.address);
-    const outTokenBalanceAfter = await outToken.contract.balanceOf(signer.address);
+    const inTokenBalanceAfter = await inToken.contract.balanceOf(signer);
+    const outTokenBalanceAfter = await outToken.contract.balanceOf(signer);
 
     console.log(
       `\nsigner balance after swap: ${formatTokenBalance(inToken, inTokenBalanceAfter)}, ` +
         `${formatTokenBalance(outToken, outTokenBalanceAfter)}`
     );
 
-    const inTokenDelta = inTokenBalanceBefore.sub(inTokenBalanceAfter);
-    const outTokenDelta = outTokenBalanceAfter.sub(outTokenBalanceBefore);
+    const inTokenDelta = inTokenBalanceBefore - inTokenBalanceAfter;
+    const outTokenDelta = outTokenBalanceAfter - outTokenBalanceBefore;
     console.log(
       `signer balances delta: -${formatTokenBalance(inToken, inTokenDelta)}, ` +
         `${formatTokenBalance(outToken, outTokenDelta)}`
     );
-    const one = BigNumber.from(10).pow(18);
-    let actualPriceInToken0: BigNumber;
+    const one = parseUnits('1', 18);
+    let actualPriceInToken0: bigint;
     if (zeroToOne) {
-      actualPriceInToken0 = inTokenDelta.mul(one).div(outTokenDelta);
+      actualPriceInToken0 = (inTokenDelta * one) / outTokenDelta;
     } else {
-      actualPriceInToken0 = outTokenDelta.mul(one).div(inTokenDelta);
+      actualPriceInToken0 = (outTokenDelta * one) / inTokenDelta;
     }
 
     console.log(`\nPrice before swap (fees not included):`);
@@ -219,26 +200,26 @@ describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
     console.log(`\nActual swap price (with fees):`);
     printPriceWithDelta(actualPriceInToken0, priceInToken0Before);
 
-    expect(inTokenBalanceAfter).to.be.greaterThanOrEqual(inTokenBalanceBefore.sub(maxAmountIn));
-    expect(outTokenBalanceAfter).to.be.equal(outTokenBalanceBefore.add(amountOut));
+    expect(inTokenBalanceAfter).to.be.greaterThanOrEqual(inTokenBalanceBefore - maxAmountIn);
+    expect(outTokenBalanceAfter).to.be.equal(outTokenBalanceBefore + amountOut);
   }
 
   it('swapExactInput WETH to frxETH', async () => {
     const [owner] = await ethers.getSigners();
-    const amountIn = BigNumber.from(10).pow(15); // 0.0001 WETH
-    const minAmountOut = amountIn.div(100);
+    const amountIn = parseUnits('0.0001', 18); // 0.0001 WETH
+    const minAmountOut = amountIn / 100n;
 
-    await token0.contract.approve(router.address, amountIn);
+    await token0.contract.approve(router, amountIn);
 
     await swapExactInput(owner, true, amountIn, minAmountOut);
   });
 
   it('swapExactInput frxETH to WETH', async () => {
     const [owner] = await ethers.getSigners();
-    const amountIn = BigNumber.from(10).pow(15); // 0.0001 frxETH
-    const minAmountOut = amountIn.div(10);
+    const amountIn = parseUnits('0.0001', 18); // 0.0001 frxETH
+    const minAmountOut = amountIn / 10n;
 
-    await token1.contract.approve(router.address, amountIn);
+    await token1.contract.approve(router, amountIn);
 
     await swapExactInput(owner, false, amountIn, minAmountOut);
   });
@@ -246,10 +227,10 @@ describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
   it('swapExactOutput frxETH to WETH', async () => {
     const [owner] = await ethers.getSigners();
 
-    const maxAmountIn = BigNumber.from(10).pow(15); // 0.0001 frxETH
-    const amountOut = maxAmountIn.div(100);
+    const maxAmountIn = parseUnits('0.0001', 18); // 0.0001 frxETH
+    const amountOut = maxAmountIn / 100n;
 
-    await token1.contract.approve(router.address, maxAmountIn);
+    await token1.contract.approve(router, maxAmountIn);
 
     await swapExactOutput(owner, false, maxAmountIn, amountOut);
   });
@@ -257,20 +238,20 @@ describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
   it('swapExactOutput WETH to frxETH', async () => {
     const [owner] = await ethers.getSigners();
 
-    const maxAmountIn = BigNumber.from(10).pow(15); // 0.0001 frxETH
-    const amountOut = maxAmountIn.div(100);
+    const maxAmountIn = parseUnits('0.0001', 18); // 0.0001 frxETH
+    const amountOut = maxAmountIn / 100n;
 
-    await token0.contract.approve(router.address, maxAmountIn);
+    await token0.contract.approve(router, maxAmountIn);
 
     await swapExactOutput(owner, true, maxAmountIn, amountOut);
   });
 
   it('swapExactInput WETH to frxETH. TooMuchRequested', async () => {
     const [owner] = await ethers.getSigners();
-    const amountIn = BigNumber.from(10).pow(15); // 0.0001 WETH
-    const minAmountOut = amountIn.mul(1000);
+    const amountIn = parseUnits('0.0001', 18); // 0.0001 WETH
+    const minAmountOut = amountIn * 1000n;
 
-    await token0.contract.approve(router.address, amountIn);
+    await token0.contract.approve(router, amountIn);
 
     await expect(swapExactInput(owner, true, amountIn, minAmountOut)).to.be.revertedWith(
       'Exchange resulted in fewer coins than expected'
@@ -279,10 +260,10 @@ describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
 
   it('swapExactInput frxETH to WETH. TooMuchRequested', async () => {
     const [owner] = await ethers.getSigners();
-    const amountIn = BigNumber.from(10).pow(15); // 0.0001 frxETH
-    const minAmountOut = amountIn.mul(1000);
+    const amountIn = parseUnits('0.0001', 18); // 0.0001 frxETH
+    const minAmountOut = amountIn * 1000n;
 
-    await token1.contract.approve(router.address, amountIn);
+    await token1.contract.approve(router, amountIn);
 
     await expect(swapExactInput(owner, false, amountIn, minAmountOut)).to.be.revertedWith(
       'Exchange resulted in fewer coins than expected'
@@ -292,10 +273,10 @@ describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
   it('swapExactOutput WETH to frxETH. TooMuchRequested', async () => {
     const [owner] = await ethers.getSigners();
 
-    const maxAmountIn = BigNumber.from(10).pow(15); // 0.0001 WETH
-    const amountOut = maxAmountIn.mul(1000);
+    const maxAmountIn = parseUnits('0.0001', 18); // 0.0001 WETH
+    const amountOut = maxAmountIn * 1000n;
 
-    await token0.contract.approve(router.address, maxAmountIn);
+    await token0.contract.approve(router, maxAmountIn);
 
     await expect(swapExactOutput(owner, true, maxAmountIn, amountOut)).to.be.revertedWith(
       'Exchange resulted in fewer coins than expected'
@@ -305,10 +286,10 @@ describe('Curve adapter for frxETH/WETH pool (CurveAdapter)', () => {
   it('swapExactOutput frxETH to WETH. TooMuchRequested', async () => {
     const [owner] = await ethers.getSigners();
 
-    const maxAmountIn = BigNumber.from(10).pow(15); // 0.0001 frxETH
-    const amountOut = maxAmountIn.mul(1000);
+    const maxAmountIn = parseUnits('0.0001', 18); // 0.0001 frxETH
+    const amountOut = maxAmountIn * 1000n;
 
-    await token1.contract.approve(router.address, maxAmountIn);
+    await token1.contract.approve(router, maxAmountIn);
 
     await expect(swapExactOutput(owner, false, maxAmountIn, amountOut)).to.be.revertedWith(
       'Exchange resulted in fewer coins than expected'

@@ -1,4 +1,4 @@
-import { parseEther, parseUnits } from 'ethers/lib/utils';
+import { EventLog, parseEther, parseUnits } from 'ethers';
 import { ethers } from 'hardhat';
 import { CurveAdapter, IMarginlyAdapter, MarginlyRouter, TestStableSwap2EMAOraclePool } from '../../typechain-types';
 import { TestERC20Token } from '../../typechain-types';
@@ -11,7 +11,6 @@ import { TestDodoV2Pool } from '../../typechain-types';
 import { TestBalancerPool } from '../../typechain-types';
 import { TestSwapInfo } from '../../typechain-types';
 import { Dex } from './utils';
-import { BigNumber } from 'ethers';
 
 export interface UniswapPoolInfo {
   token0: TestERC20Token;
@@ -26,7 +25,7 @@ export async function createToken(name: string, symbol: string): Promise<TestERC
   const factory = await ethers.getContractFactory('TestERC20Token');
   const tokenContract = await factory.deploy(name, symbol);
   await signer.sendTransaction({
-    to: tokenContract.address,
+    to: tokenContract,
     value: parseEther('100'),
   });
 
@@ -41,13 +40,15 @@ export async function createUniswapV3Pool(
   uniswapV3Adapter: IMarginlyAdapter;
 }> {
   const factory = await (await ethers.getContractFactory('RouterTestUniswapV3Factory')).deploy();
-  const tx = await (await factory.createPool(token0.address, token1.address, 500)).wait();
-  const uniswapPoolAddress = tx.events?.find((x) => x.event === 'TestPoolCreated')!.args?.pool;
+  const tx = await (await factory.createPool(token0, token1, 500)).wait();
+  const uniswapPoolAddress = tx?.logs
+    ?.filter((log) => log instanceof EventLog)
+    .find((x) => x.eventName === 'TestPoolCreated')?.args?.pool;
   const uniswapV3Pool = await ethers.getContractAt('RouterTestUniswapV3Pool', uniswapPoolAddress);
-  await token0.mint(uniswapV3Pool.address, parseUnits('100000', 18));
-  await token1.mint(uniswapV3Pool.address, parseUnits('100000', 18));
+  await token0.mint(uniswapV3Pool, parseUnits('100000', 18));
+  await token1.mint(uniswapV3Pool, parseUnits('100000', 18));
 
-  const adapterInput = [{ token0: token0.address, token1: token1.address, pool: uniswapV3Pool.address }];
+  const adapterInput = [{ token0: token0, token1: token1, pool: uniswapV3Pool }];
   const uniswapV3Adapter = await (await ethers.getContractFactory('UniswapV3Adapter')).deploy(adapterInput);
   return {
     uniswapV3Pool,
@@ -63,17 +64,19 @@ export async function createUniswapV2Pair(
   uniswapV2Adapter: IMarginlyAdapter;
 }> {
   const factory = await (await ethers.getContractFactory('RouterTestUniswapV2Factory')).deploy();
-  const tx = await (await factory.createPair(token0.address, token1.address)).wait();
-  const uniswapPoolAddress = tx.events?.find((x) => x.event === 'TestPairCreated')!.args?.pair;
+  const tx = await (await factory.createPair(token0, token1)).wait();
+  const uniswapPoolAddress = tx?.logs
+    ?.filter((log) => log instanceof EventLog)
+    .find((x) => x.eventName === 'TestPairCreated')?.args?.pair;
   const uniswapV2Pair = await ethers.getContractAt('RouterTestUniswapV2Pair', uniswapPoolAddress);
   // random number between 10k and 1kk
   const token0Supply = Math.floor(Math.random() * (1000000 - 10000)) + 10000;
   const token1Supply = Math.floor(Math.random() * (1000000 - 10000)) + 10000;
-  await token0.mint(uniswapV2Pair.address, parseUnits(token0Supply.toString(), 18));
-  await token1.mint(uniswapV2Pair.address, parseUnits(token1Supply.toString(), 18));
+  await token0.mint(uniswapV2Pair, parseUnits(token0Supply.toString(), 18));
+  await token1.mint(uniswapV2Pair, parseUnits(token1Supply.toString(), 18));
   await uniswapV2Pair.sync();
 
-  const adapterInput = [{ token0: token0.address, token1: token1.address, pool: uniswapV2Pair.address }];
+  const adapterInput = [{ token0: token0, token1: token1, pool: uniswapV2Pair }];
   const uniswapV2Adapter = await (await ethers.getContractFactory('UniswapV2Adapter')).deploy(adapterInput);
   return {
     uniswapV2Pair,
@@ -91,13 +94,13 @@ export async function createBalancer(
 }> {
   const balancerPool = await (await ethers.getContractFactory('TestBalancerPool')).deploy();
   const balancerVault = await (await ethers.getContractFactory('TestVault')).deploy();
-  await token0.mint(balancerVault.address, parseUnits('100000', 18));
-  await token1.mint(balancerVault.address, parseUnits('100000', 18));
+  await token0.mint(balancerVault, parseUnits('100000', 18));
+  await token1.mint(balancerVault, parseUnits('100000', 18));
 
-  const adapterInput = [{ token0: token0.address, token1: token1.address, pool: balancerPool.address }];
+  const adapterInput = [{ token0: token0, token1: token1, pool: balancerPool }];
   const balancerAdapter = await (
     await ethers.getContractFactory('BalancerAdapter')
-  ).deploy(adapterInput, balancerVault.address);
+  ).deploy(adapterInput, balancerVault);
   return {
     balancerVault,
     balancerPool,
@@ -113,13 +116,13 @@ export async function createWooPool(
   wooFiAdapter: IMarginlyAdapter;
 }> {
   const quoteToken = await createToken('WooQuoteToken', 'WQT');
-  const wooPool = await (await ethers.getContractFactory('TestWooPPV2')).deploy(quoteToken.address);
-  await token0.mint(wooPool.address, parseUnits('100000', 18));
-  await token1.mint(wooPool.address, parseUnits('100000', 18));
-  await wooPool.sync(token0.address);
-  await wooPool.sync(token1.address);
+  const wooPool = await (await ethers.getContractFactory('TestWooPPV2')).deploy(quoteToken);
+  await token0.mint(wooPool, parseUnits('100000', 18));
+  await token1.mint(wooPool, parseUnits('100000', 18));
+  await wooPool.sync(token0);
+  await wooPool.sync(token1);
 
-  const adapterInput = [{ token0: token0.address, token1: token1.address, pool: wooPool.address }];
+  const adapterInput = [{ token0: token0, token1: token1, pool: wooPool }];
   const wooFiAdapter = await (await ethers.getContractFactory('WooFiAdapter')).deploy(adapterInput);
   return {
     wooPool,
@@ -134,12 +137,12 @@ export async function createDodoV1Pool(
   dodoV1Pool: TestDodoV1Pool;
   dodoV1Adapter: IMarginlyAdapter;
 }> {
-  const dodoV1Pool = await (await ethers.getContractFactory('TestDodoV1Pool')).deploy(token0.address, token1.address);
-  await token0.mint(dodoV1Pool.address, parseUnits('100000', 18));
-  await token1.mint(dodoV1Pool.address, parseUnits('100000', 18));
+  const dodoV1Pool = await (await ethers.getContractFactory('TestDodoV1Pool')).deploy(token0, token1);
+  await token0.mint(dodoV1Pool, parseUnits('100000', 18));
+  await token1.mint(dodoV1Pool, parseUnits('100000', 18));
   await dodoV1Pool.sync();
 
-  const adapterInput = [{ token0: token0.address, token1: token1.address, pool: dodoV1Pool.address }];
+  const adapterInput = [{ token0: token0, token1: token1, pool: dodoV1Pool }];
   const dodoV1Adapter = await (await ethers.getContractFactory('DodoV1Adapter')).deploy(adapterInput);
   return {
     dodoV1Pool,
@@ -154,12 +157,12 @@ export async function createDodoV2Pool(
   dodoV2Pool: TestDodoV2Pool;
   dodoV2Adapter: IMarginlyAdapter;
 }> {
-  const dodoV2Pool = await (await ethers.getContractFactory('TestDodoV2Pool')).deploy(token0.address, token1.address);
-  await token0.mint(dodoV2Pool.address, parseUnits('100000', 18));
-  await token1.mint(dodoV2Pool.address, parseUnits('100000', 18));
+  const dodoV2Pool = await (await ethers.getContractFactory('TestDodoV2Pool')).deploy(token0, token1);
+  await token0.mint(dodoV2Pool, parseUnits('100000', 18));
+  await token1.mint(dodoV2Pool, parseUnits('100000', 18));
   await dodoV2Pool.sync();
 
-  const adapterInput = [{ token0: token0.address, token1: token1.address, pool: dodoV2Pool.address }];
+  const adapterInput = [{ token0: token0, token1: token1, pool: dodoV2Pool }];
   const dodoV2Adapter = await (await ethers.getContractFactory('DodoV2Adapter')).deploy(adapterInput);
   return {
     dodoV2Pool,
@@ -183,7 +186,7 @@ export async function createMarginlyRouter(): Promise<{
   let token0;
   let token1;
 
-  if (tokenA.address.toLowerCase() < tokenB.address.toLowerCase()) {
+  if (tokenA.target.toString().toLowerCase() < tokenB.target.toString().toLowerCase()) {
     token0 = tokenA;
     token1 = tokenB;
   } else {
@@ -203,19 +206,19 @@ export async function createMarginlyRouter(): Promise<{
 
   constructorInput.push({
     dexIndex: Dex.UniswapV3,
-    adapter: uniswapV3Adapter.address,
+    adapter: uniswapV3Adapter,
   });
   constructorInput.push({
     dexIndex: Dex.QuickSwap,
-    adapter: uniswapV2Adapter.address,
+    adapter: uniswapV2Adapter,
   });
   constructorInput.push({
     dexIndex: Dex.Balancer,
-    adapter: balancerAdapter.address,
+    adapter: balancerAdapter,
   });
-  constructorInput.push({ dexIndex: Dex.Woofi, adapter: wooFiAdapter.address });
-  constructorInput.push({ dexIndex: Dex.DodoV1, adapter: dodoV1Adapter.address });
-  constructorInput.push({ dexIndex: Dex.DodoV2, adapter: dodoV2Adapter.address });
+  constructorInput.push({ dexIndex: Dex.Woofi, adapter: wooFiAdapter });
+  constructorInput.push({ dexIndex: Dex.DodoV1, adapter: dodoV1Adapter });
+  constructorInput.push({ dexIndex: Dex.DodoV2, adapter: dodoV2Adapter });
 
   const marginlyRouter = await factory.deploy(constructorInput);
 
@@ -245,18 +248,16 @@ async function createCurveAdapterInner(inverse: boolean): Promise<{
 }> {
   const token0 = await createToken('Token0', 'TK0');
   const token1 = await createToken('Token1', 'TK1');
-  const pool = await (
-    await ethers.getContractFactory('TestStableSwap2EMAOraclePool')
-  ).deploy(token0.address, token1.address);
+  const pool = await (await ethers.getContractFactory('TestStableSwap2EMAOraclePool')).deploy(token0, token1);
 
-  await token0.mint(pool.address, BigNumber.from(10).pow(20));
-  await token1.mint(pool.address, BigNumber.from(10).pow(20));
+  await token0.mint(pool, parseUnits('100', 18));
+  await token1.mint(pool, parseUnits('100', 18));
 
   const adapterInput = [
     {
-      token0: inverse ? token1.address : token0.address,
-      token1: inverse ? token0.address : token1.address,
-      pool: pool.address,
+      token0: inverse ? token1 : token0,
+      token1: inverse ? token0 : token1,
+      pool: pool,
     },
   ];
   const adapter = await (await ethers.getContractFactory('CurveAdapter')).deploy(adapterInput);
@@ -266,7 +267,7 @@ async function createCurveAdapterInner(inverse: boolean): Promise<{
   ).deploy([
     {
       dexIndex: Dex.Curve,
-      adapter: adapter.address,
+      adapter: adapter,
     },
   ]);
 

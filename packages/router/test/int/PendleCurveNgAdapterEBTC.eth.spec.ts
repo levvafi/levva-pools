@@ -8,9 +8,8 @@ import {
   PendleCurveNgAdapter__factory,
 } from '../../typechain-types';
 import { constructSwap, Dex, showGasUsage, SWAP_ONE, resetFork, assertSwapEvent } from '../shared/utils';
-import { EthAddress } from '@marginly/common';
-import { formatUnits, parseUnits } from 'ethers/lib/utils';
-import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
+import { formatUnits, parseUnits } from 'ethers';
+import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { EthereumMainnetERC20BalanceOfSlot, setTokenBalance } from '../shared/tokens';
 
 async function initializeRouter(): Promise<{
@@ -35,29 +34,19 @@ async function initializeRouter(): Promise<{
     curveSlippage: 100, // 10/1000000 = 0.001%
     //curvePool: '0xabaf76590478f2fe0b396996f55f0b61101e9502', //TriBTCPool
     curvePool: '0x7704d01908afd31bf647d969c295bb45230cd2d6', //ebtc/WBTC pool
-    ibToken: ebtcToken.address,
-    quoteToken: wbtcToken.address,
+    ibToken: ebtcToken,
+    quoteToken: wbtcToken,
   };
   const pendleCurveAdapter = await new PendleCurveNgAdapter__factory().connect(owner).deploy([routeInput]);
 
   const routerInput = {
     dexIndex: Dex.PendleCurve,
-    adapter: pendleCurveAdapter.address,
+    adapter: pendleCurveAdapter,
   };
   const router = await new MarginlyRouter__factory().connect(owner).deploy([routerInput]);
 
-  await setTokenBalance(
-    wbtcToken.address,
-    EthereumMainnetERC20BalanceOfSlot.WBTC,
-    EthAddress.parse(user.address),
-    parseUnits('10', 8)
-  );
-  await setTokenBalance(
-    ptToken.address,
-    EthereumMainnetERC20BalanceOfSlot.PTSUSDE,
-    EthAddress.parse(user.address),
-    parseUnits('10', 8)
-  );
+  await setTokenBalance(wbtcToken.target, EthereumMainnetERC20BalanceOfSlot.WBTC, user.address, parseUnits('10', 8));
+  await setTokenBalance(ptToken.target, EthereumMainnetERC20BalanceOfSlot.PTSUSDE, user.address, parseUnits('10', 8));
 
   return {
     ptToken,
@@ -98,40 +87,38 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
     });
 
     it('WBTC to PT-eBTC exact input', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `PT-eBTC balance Before: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const WBTCBalanceBefore = await WBTC.balanceOf(user.address);
+      const WBTCBalanceBefore = await WBTC.balanceOf(user);
       console.log(
         `WBTC balance before: ${formatUnits(WBTCBalanceBefore, await WBTC.decimals())} ${await WBTC.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.PendleCurve], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(BigInt(SWAP_ONE))]);
       const WBTCSwapAmount = parseUnits('2', 8);
-      await WBTC.connect(user).approve(router.address, WBTCSwapAmount);
+      await WBTC.connect(user).approve(router, WBTCSwapAmount);
 
       const minPtAmountOut = parseUnits('1.8', 8);
 
-      const tx = await router
-        .connect(user)
-        .swapExactInput(swapCalldata, WBTC.address, ptToken.address, WBTCSwapAmount, minPtAmountOut);
+      const tx = await router.connect(user).swapExactInput(swapCalldata, WBTC, ptToken, WBTCSwapAmount, minPtAmountOut);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceAfter).to.be.greaterThan(ptBalanceBefore);
-      const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
+      const WBTCBalanceAfter = await WBTC.balanceOf(user);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
-      expect(WBTCBalanceBefore.sub(WBTCBalanceAfter)).to.be.lessThanOrEqual(WBTCSwapAmount);
+      expect(WBTCBalanceBefore - WBTCBalanceAfter).to.be.lessThanOrEqual(WBTCSwapAmount);
 
       await assertSwapEvent(
         {
           isExactInput: true,
-          tokenIn: WBTC.address,
-          tokenOut: ptToken.address,
+          tokenIn: WBTC.target,
+          tokenOut: ptToken.target,
           amountIn: WBTCSwapAmount,
-          amountOut: ptBalanceAfter.sub(ptBalanceBefore),
+          amountOut: ptBalanceAfter - ptBalanceBefore,
         },
         router,
         tx
@@ -139,116 +126,112 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
     });
 
     it('WBTC to PT-eBTC exact output', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `PT-eBTC balance Before: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const WBTCBalanceBefore = await WBTC.balanceOf(user.address);
+      const WBTCBalanceBefore = await WBTC.balanceOf(user);
       console.log(
         `WBTC balance before: ${formatUnits(WBTCBalanceBefore, await WBTC.decimals())} ${await WBTC.symbol()}`
       );
-      const swapCalldata = constructSwap([Dex.PendleCurve], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
 
       const exactPtOut = parseUnits('1', 8);
       const WBTCMaxIn = parseUnits('2.5', 8);
-      await WBTC.connect(user).approve(router.address, WBTCMaxIn);
-      const tx = await router
-        .connect(user)
-        .swapExactOutput(swapCalldata, WBTC.address, ptToken.address, WBTCMaxIn, exactPtOut);
+      await WBTC.connect(user).approve(router, WBTCMaxIn);
+      const tx = await router.connect(user).swapExactOutput(swapCalldata, WBTC, ptToken, WBTCMaxIn, exactPtOut);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceAfter.sub(ptBalanceBefore)).to.be.eq(exactPtOut);
-      const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
+      expect(ptBalanceAfter - ptBalanceBefore).to.be.eq(exactPtOut);
+      const WBTCBalanceAfter = await WBTC.balanceOf(user);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
       expect(WBTCBalanceBefore).to.be.greaterThan(WBTCBalanceAfter);
 
       await assertSwapEvent(
         {
           isExactInput: false,
-          tokenIn: WBTC.address,
-          tokenOut: ptToken.address,
-          amountIn: WBTCBalanceBefore.sub(WBTCBalanceAfter),
-          amountOut: ptBalanceAfter.sub(ptBalanceBefore),
+          tokenIn: WBTC.target,
+          tokenOut: ptToken.target,
+          amountIn: WBTCBalanceBefore - WBTCBalanceAfter,
+          amountOut: ptBalanceAfter - ptBalanceBefore,
         },
         router,
         tx
       );
 
-      const ebtcOnAdapter = await ebtc.balanceOf(pendleCurveAdapter.address);
+      const ebtcOnAdapter = await ebtc.balanceOf(pendleCurveAdapter);
       console.log(`ebtc stays on adapter: ${formatUnits(ebtcOnAdapter, await ebtc.decimals())} ${await ebtc.symbol()}`);
     });
 
     it('WBTC to PT-eBTC exact output, small amount', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `PT-eBTC balance Before: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const WBTCBalanceBefore = await WBTC.balanceOf(user.address);
+      const WBTCBalanceBefore = await WBTC.balanceOf(user);
       console.log(
         `WBTC balance before: ${formatUnits(WBTCBalanceBefore, await WBTC.decimals())} ${await WBTC.symbol()}`
       );
-      const swapCalldata = constructSwap([Dex.PendleCurve], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
 
       const exactPtOut = parseUnits('0.0006', 8);
       const WBTCMaxIn = parseUnits('0.0012', 8);
-      await WBTC.connect(user).approve(router.address, WBTCMaxIn);
-      const tx = await router
-        .connect(user)
-        .swapExactOutput(swapCalldata, WBTC.address, ptToken.address, WBTCMaxIn, exactPtOut);
+      await WBTC.connect(user).approve(router, WBTCMaxIn);
+      const tx = await router.connect(user).swapExactOutput(swapCalldata, WBTC, ptToken, WBTCMaxIn, exactPtOut);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceAfter.sub(ptBalanceBefore)).to.be.eq(exactPtOut);
-      const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
+      expect(ptBalanceAfter - ptBalanceBefore).to.be.eq(exactPtOut);
+      const WBTCBalanceAfter = await WBTC.balanceOf(user);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
       expect(WBTCBalanceBefore).to.be.greaterThan(WBTCBalanceAfter);
 
       await assertSwapEvent(
         {
           isExactInput: false,
-          tokenIn: WBTC.address,
-          tokenOut: ptToken.address,
-          amountIn: WBTCBalanceBefore.sub(WBTCBalanceAfter),
-          amountOut: ptBalanceAfter.sub(ptBalanceBefore),
+          tokenIn: WBTC.target,
+          tokenOut: ptToken.target,
+          amountIn: WBTCBalanceBefore - WBTCBalanceAfter,
+          amountOut: ptBalanceAfter - ptBalanceBefore,
         },
         router,
         tx
       );
 
-      const ebtcOnAdapter = await ebtc.balanceOf(pendleCurveAdapter.address);
+      const ebtcOnAdapter = await ebtc.balanceOf(pendleCurveAdapter);
       console.log(`ebtc stays on adapter: ${formatUnits(ebtcOnAdapter, await ebtc.decimals())} ${await ebtc.symbol()}`);
     });
 
     it('PT-eBTC to WBTC exact input', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const WBTCBalanceBefore = await WBTC.balanceOf(user.address);
+      const WBTCBalanceBefore = await WBTC.balanceOf(user);
       console.log(`WBTCBalanceBefore: ${formatUnits(WBTCBalanceBefore, await WBTC.decimals())} ${await WBTC.symbol()}`);
-      const swapCalldata = constructSwap([Dex.PendleCurve], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
       const ptIn = parseUnits('0.1', 8);
-      await ptToken.connect(user).approve(router.address, ptIn);
-      const tx = await router.connect(user).swapExactInput(swapCalldata, ptToken.address, WBTC.address, ptIn, 0);
+      await ptToken.connect(user).approve(router, ptIn);
+      const tx = await router.connect(user).swapExactInput(swapCalldata, ptToken, WBTC, ptIn, 0);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceBefore.sub(ptBalanceAfter)).to.be.eq(ptIn);
-      const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
+      expect(ptBalanceBefore - ptBalanceAfter).to.be.eq(ptIn);
+      const WBTCBalanceAfter = await WBTC.balanceOf(user);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
       expect(WBTCBalanceAfter).to.be.greaterThan(WBTCBalanceBefore);
 
       await assertSwapEvent(
         {
           isExactInput: true,
-          tokenIn: ptToken.address,
-          tokenOut: WBTC.address,
-          amountIn: ptBalanceBefore.sub(ptBalanceAfter),
-          amountOut: WBTCBalanceAfter.sub(WBTCBalanceBefore),
+          tokenIn: ptToken.target,
+          tokenOut: WBTC.target,
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: WBTCBalanceAfter - WBTCBalanceBefore,
         },
         router,
         tx
@@ -256,29 +239,27 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
     });
 
     it('PT-eBTC to WBTC exact output', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const WBTCBalanceBefore = await WBTC.balanceOf(user.address);
+      const WBTCBalanceBefore = await WBTC.balanceOf(user);
       console.log(`WBTCBalanceBefore: ${formatUnits(WBTCBalanceBefore, await WBTC.decimals())} ${await WBTC.symbol()}`);
-      const swapCalldata = constructSwap([Dex.PendleCurve], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
       const WBTCOut = parseUnits('1', 8);
       const maxPtIn = parseUnits('1.2', 8);
-      await ptToken.connect(user).approve(router.address, maxPtIn);
-      const tx = await router
-        .connect(user)
-        .swapExactOutput(swapCalldata, ptToken.address, WBTC.address, maxPtIn, WBTCOut);
+      await ptToken.connect(user).approve(router, maxPtIn);
+      const tx = await router.connect(user).swapExactOutput(swapCalldata, ptToken, WBTC, maxPtIn, WBTCOut);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
-      const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
+      const WBTCBalanceAfter = await WBTC.balanceOf(user);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
-      expect(WBTCBalanceAfter.sub(WBTCBalanceBefore)).to.be.eq(WBTCOut);
+      expect(WBTCBalanceAfter - WBTCBalanceBefore).to.be.eq(WBTCOut);
 
-      const WBTCBalanceOnAdapter = await WBTC.balanceOf(pendleCurveAdapter.address);
+      const WBTCBalanceOnAdapter = await WBTC.balanceOf(pendleCurveAdapter);
       console.log(
         `WBTCBalanceOnAdapter: ${formatUnits(WBTCBalanceOnAdapter, await WBTC.decimals())} ${await WBTC.symbol()}`
       );
@@ -286,10 +267,10 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
       await assertSwapEvent(
         {
           isExactInput: false,
-          tokenIn: ptToken.address,
-          tokenOut: WBTC.address,
-          amountIn: ptBalanceBefore.sub(ptBalanceAfter),
-          amountOut: WBTCBalanceAfter.sub(WBTCBalanceBefore),
+          tokenIn: ptToken.target,
+          tokenOut: WBTC.target,
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: WBTCBalanceAfter - WBTCBalanceBefore,
         },
         router,
         tx
@@ -323,93 +304,85 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
     });
 
     it('WBTC to PT-eBTC exact input, forbidden', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const sUsdeBalanceBefore = await WBTC.balanceOf(user.address);
+      const sUsdeBalanceBefore = await WBTC.balanceOf(user);
       console.log(
         `WBTCBalanceBefore: ${formatUnits(sUsdeBalanceBefore, await WBTC.decimals())} ${await WBTC.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.PendleCurve], [SWAP_ONE]);
-      await WBTC.connect(user).approve(router.address, sUsdeBalanceBefore);
+      const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
+      await WBTC.connect(user).approve(router, sUsdeBalanceBefore);
       const tx = router
         .connect(user)
-        .swapExactInput(
-          swapCalldata,
-          WBTC.address,
-          ptToken.address,
-          sUsdeBalanceBefore,
-          sUsdeBalanceBefore.mul(9).div(10)
-        );
+        .swapExactInput(swapCalldata, WBTC, ptToken, sUsdeBalanceBefore, (sUsdeBalanceBefore * 9n) / 10n);
 
       await expect(tx).to.be.revertedWithCustomError(pendleCurveAdapter, 'NotSupported');
 
       console.log('This swap is forbidden after maturity');
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceAfter).to.be.eq(ptBalanceBefore);
-      const sUsdeBalanceAfter = await WBTC.balanceOf(user.address);
+      const sUsdeBalanceAfter = await WBTC.balanceOf(user);
       console.log(`WBTCBalanceAfter: ${formatUnits(sUsdeBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
       expect(sUsdeBalanceAfter).to.be.eq(sUsdeBalanceBefore);
     });
 
     it('WBTC to PT-eBTC exact output, forbidden', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const WBTCBalanceBefore = await WBTC.balanceOf(user.address);
+      const WBTCBalanceBefore = await WBTC.balanceOf(user);
       console.log(
         `sUsdeBalanceBefore: ${formatUnits(WBTCBalanceBefore, await WBTC.decimals())} ${await WBTC.symbol()}`
       );
 
-      const swapCalldata = constructSwap([Dex.PendleCurve], [SWAP_ONE]);
-      const ptOut = WBTCBalanceBefore.div(2);
-      await WBTC.connect(user).approve(router.address, WBTCBalanceBefore);
-      const tx = router
-        .connect(user)
-        .swapExactOutput(swapCalldata, WBTC.address, ptToken.address, WBTCBalanceBefore, ptOut);
+      const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
+      const ptOut = WBTCBalanceBefore / 2n;
+      await WBTC.connect(user).approve(router, WBTCBalanceBefore);
+      const tx = router.connect(user).swapExactOutput(swapCalldata, WBTC, ptToken, WBTCBalanceBefore, ptOut);
       await expect(tx).to.be.revertedWithCustomError(pendleCurveAdapter, 'NotSupported');
 
       console.log('This swap is forbidden after maturity');
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceAfter).to.be.eq(ptBalanceBefore);
-      const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
+      const WBTCBalanceAfter = await WBTC.balanceOf(user);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
       expect(WBTCBalanceAfter).to.be.eq(WBTCBalanceBefore);
     });
 
     it('PT-eBTC to WBTC exact input', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const WBTCBalanceBefore = await WBTC.balanceOf(user.address);
+      const WBTCBalanceBefore = await WBTC.balanceOf(user);
       console.log(`WBTCBalanceBefore: ${formatUnits(WBTCBalanceBefore, await WBTC.decimals())} ${await WBTC.symbol()}`);
 
-      const swapCalldata = constructSwap([Dex.PendleCurve], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
       const ptIn = ptBalanceBefore;
-      await ptToken.connect(user).approve(router.address, ptIn);
-      const tx = await router.connect(user).swapExactInput(swapCalldata, ptToken.address, WBTC.address, ptIn, 0);
+      await ptToken.connect(user).approve(router, ptIn);
+      const tx = await router.connect(user).swapExactInput(swapCalldata, ptToken, WBTC, ptIn, 0);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
-      expect(ptBalanceBefore.sub(ptBalanceAfter)).to.be.eq(ptIn);
-      const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
+      expect(ptBalanceBefore - ptBalanceAfter).to.be.eq(ptIn);
+      const WBTCBalanceAfter = await WBTC.balanceOf(user);
       console.log(`WBTCBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
       expect(WBTCBalanceAfter).to.be.greaterThan(WBTCBalanceBefore);
 
       await assertSwapEvent(
         {
           isExactInput: true,
-          tokenIn: ptToken.address,
-          tokenOut: WBTC.address,
-          amountIn: ptBalanceBefore.sub(ptBalanceAfter),
-          amountOut: WBTCBalanceAfter.sub(WBTCBalanceBefore),
+          tokenIn: ptToken.target,
+          tokenOut: WBTC.target,
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: WBTCBalanceAfter - WBTCBalanceBefore,
         },
         router,
         tx
@@ -417,36 +390,34 @@ describe('PendleCurveAdapter PT-eBTC - WBTC', () => {
     });
 
     it('PT-eBTC to WBTC exact output', async () => {
-      const ptBalanceBefore = await ptToken.balanceOf(user.address);
+      const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
       );
-      const WBTCBalanceBefore = await WBTC.balanceOf(user.address);
+      const WBTCBalanceBefore = await WBTC.balanceOf(user);
       console.log(`WBTCBalanceBefore: ${formatUnits(WBTCBalanceBefore, await WBTC.decimals())} ${await WBTC.symbol()}`);
 
-      const swapCalldata = constructSwap([Dex.PendleCurve], [SWAP_ONE]);
+      const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
       const WBTCOut = parseUnits('0.9', 8);
-      await ptToken.connect(user).approve(router.address, ptBalanceBefore);
+      await ptToken.connect(user).approve(router, ptBalanceBefore);
       const maxPtIn = parseUnits('1.3', 8);
-      const tx = await router
-        .connect(user)
-        .swapExactOutput(swapCalldata, ptToken.address, WBTC.address, maxPtIn, WBTCOut);
+      const tx = await router.connect(user).swapExactOutput(swapCalldata, ptToken, WBTC, maxPtIn, WBTCOut);
       await showGasUsage(tx);
 
-      const ptBalanceAfter = await ptToken.balanceOf(user.address);
+      const ptBalanceAfter = await ptToken.balanceOf(user);
       console.log(`ptBalanceAfter: ${formatUnits(ptBalanceAfter, await ptToken.decimals())} ${await ptToken.symbol()}`);
       expect(ptBalanceBefore).to.be.greaterThan(ptBalanceAfter);
-      const WBTCBalanceAfter = await WBTC.balanceOf(user.address);
+      const WBTCBalanceAfter = await WBTC.balanceOf(user);
       console.log(`sUsdeBalanceAfter: ${formatUnits(WBTCBalanceAfter, await WBTC.decimals())} ${await WBTC.symbol()}`);
-      expect(WBTCBalanceAfter.sub(WBTCBalanceBefore)).to.be.eq(WBTCOut);
+      expect(WBTCBalanceAfter - WBTCBalanceBefore).to.be.eq(WBTCOut);
 
       await assertSwapEvent(
         {
           isExactInput: false,
-          tokenIn: ptToken.address,
-          tokenOut: WBTC.address,
-          amountIn: ptBalanceBefore.sub(ptBalanceAfter),
-          amountOut: WBTCBalanceAfter.sub(WBTCBalanceBefore),
+          tokenIn: ptToken.target,
+          tokenOut: WBTC.target,
+          amountIn: ptBalanceBefore - ptBalanceAfter,
+          amountOut: WBTCBalanceAfter - WBTCBalanceBefore,
         },
         router,
         tx

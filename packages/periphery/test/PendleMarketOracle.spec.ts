@@ -11,12 +11,11 @@ describe('PendleMarketOracle prices before maturity', () => {
   it('getBalancePrice', async () => {
     const caseParams = await loadFixture(createPendleMarketOracle);
 
-    const actualPrice = (await caseParams.oracle.getBalancePrice(caseParams.ib.address, caseParams.pt.address))
-      .mul(one)
-      .div(oneX96);
+    const actualPrice =
+      ((await caseParams.oracle.getBalancePrice(caseParams.ib.address, caseParams.pt.address)) * one) / oneX96;
 
     const expectedPrice = await caseParams.pendlePtLpOracle.getPtToSyRate(
-      caseParams.pendleMarket.address,
+      caseParams.pendleMarket,
       caseParams.secondsAgo
     );
 
@@ -26,12 +25,11 @@ describe('PendleMarketOracle prices before maturity', () => {
   it('getBalancePrice inverted', async () => {
     const caseParams = await loadFixture(createPendleMarketOracle);
 
-    const actualPrice = oneX96
-      .mul(one)
-      .div(await caseParams.oracle.getBalancePrice(caseParams.pt.address, caseParams.ib.address));
+    const actualPrice =
+      (oneX96 * one) / (await caseParams.oracle.getBalancePrice(caseParams.pt.address, caseParams.ib.address));
 
     const expectedPrice = await caseParams.pendlePtLpOracle.getPtToSyRate(
-      caseParams.pendleMarket.address,
+      caseParams.pendleMarket,
       caseParams.secondsAgo
     );
 
@@ -41,12 +39,11 @@ describe('PendleMarketOracle prices before maturity', () => {
   it('getMargincallPrice', async () => {
     const caseParams = await loadFixture(createPendleMarketOracle);
 
-    const actualPrice = (await caseParams.oracle.getMargincallPrice(caseParams.ib.address, caseParams.pt.address))
-      .mul(one)
-      .div(oneX96);
+    const actualPrice =
+      ((await caseParams.oracle.getMargincallPrice(caseParams.ib.address, caseParams.pt.address)) * one) / oneX96;
 
     const expectedPrice = await caseParams.pendlePtLpOracle.getPtToSyRate(
-      caseParams.pendleMarket.address,
+      caseParams.pendleMarket,
       caseParams.secondsAgoLiquidation
     );
 
@@ -56,12 +53,11 @@ describe('PendleMarketOracle prices before maturity', () => {
   it('getMargincallPrice inverted', async () => {
     const caseParams = await loadFixture(createPendleMarketOracle);
 
-    const actualPrice = oneX96
-      .mul(one)
-      .div(await caseParams.oracle.getMargincallPrice(caseParams.pt.address, caseParams.ib.address));
+    const actualPrice =
+      (oneX96 * one) / (await caseParams.oracle.getMargincallPrice(caseParams.pt.address, caseParams.ib.address));
 
     const expectedPrice = await caseParams.pendlePtLpOracle.getPtToSyRate(
-      caseParams.pendleMarket.address,
+      caseParams.pendleMarket,
       caseParams.secondsAgoLiquidation
     );
 
@@ -124,24 +120,18 @@ describe('PendleMarketOracle prices before maturity', () => {
     const caseParams = await loadFixture(createPendleMarketOracleWithoutPairs);
 
     await expect(
-      caseParams.oracle.setPair(
-        caseParams.ib.address,
-        caseParams.pt.address,
-        caseParams.pendleMarket.address,
-        100,
-        1000
-      )
+      caseParams.oracle.setPair(caseParams.ib.address, caseParams.pt.address, caseParams.pendleMarket, 100, 1000)
     ).to.be.revertedWithCustomError(caseParams.oracle, 'WrongValue');
 
     await expect(
-      caseParams.oracle.setPair(caseParams.ib.address, caseParams.pt.address, caseParams.pendleMarket.address, 1000, 0)
+      caseParams.oracle.setPair(caseParams.ib.address, caseParams.pt.address, caseParams.pendleMarket, 1000, 0)
     ).to.be.revertedWithCustomError(caseParams.oracle, 'WrongValue');
 
     await expect(
       caseParams.oracle.setPair(
         caseParams.ib.address,
         '0x0000000000000000000000000000000000000001',
-        caseParams.pendleMarket.address,
+        caseParams.pendleMarket,
         1000,
         100
       )
@@ -149,37 +139,19 @@ describe('PendleMarketOracle prices before maturity', () => {
 
     await caseParams.sy.setIsValidTokenInOut(true, false);
     await expect(
-      caseParams.oracle.setPair(
-        caseParams.ib.address,
-        caseParams.pt.address,
-        caseParams.pendleMarket.address,
-        1000,
-        100
-      )
+      caseParams.oracle.setPair(caseParams.ib.address, caseParams.pt.address, caseParams.pendleMarket, 1000, 100)
     ).to.be.revertedWithCustomError(caseParams.oracle, 'WrongIbTokenAddress');
 
     await caseParams.sy.setIsValidTokenInOut(false, true);
     await expect(
-      caseParams.oracle.setPair(
-        caseParams.ib.address,
-        caseParams.pt.address,
-        caseParams.pendleMarket.address,
-        1000,
-        100
-      )
+      caseParams.oracle.setPair(caseParams.ib.address, caseParams.pt.address, caseParams.pendleMarket, 1000, 100)
     ).to.be.revertedWithCustomError(caseParams.oracle, 'WrongIbTokenAddress');
   });
 
   it('setPair. Fail pair already exists', async () => {
     const caseParams = await loadFixture(createPendleMarketOracle);
     await expect(
-      caseParams.oracle.setPair(
-        caseParams.ib.address,
-        caseParams.pt.address,
-        caseParams.pendleMarket.address,
-        1000,
-        100
-      )
+      caseParams.oracle.setPair(caseParams.ib.address, caseParams.pt.address, caseParams.pendleMarket, 1000, 100)
     ).to.be.revertedWithCustomError(caseParams.oracle, 'PairAlreadyExist');
   });
 });
@@ -188,12 +160,11 @@ describe('PendleOracle prices after maturity', () => {
   it('getBalancePrice', async () => {
     const caseParams = await loadFixture(createPendleMarketOracleAfterMaturity);
 
-    const actualPrice = (await caseParams.oracle.getBalancePrice(caseParams.ib.address, caseParams.pt.address))
-      .mul(one)
-      .div(oneX96);
+    const actualPrice =
+      ((await caseParams.oracle.getBalancePrice(caseParams.ib.address, caseParams.pt.address)) * one) / oneX96;
 
     const expectedPrice = await caseParams.pendlePtLpOracle.getPtToSyRate(
-      caseParams.pendleMarket.address,
+      caseParams.pendleMarket,
       caseParams.secondsAgo
     );
 
@@ -203,12 +174,11 @@ describe('PendleOracle prices after maturity', () => {
   it('getMargincallPrice', async () => {
     const caseParams = await loadFixture(createPendleMarketOracleAfterMaturity);
 
-    const actualPrice = (await caseParams.oracle.getMargincallPrice(caseParams.ib.address, caseParams.pt.address))
-      .mul(one)
-      .div(oneX96);
+    const actualPrice =
+      ((await caseParams.oracle.getMargincallPrice(caseParams.ib.address, caseParams.pt.address)) * one) / oneX96;
 
     const expectedPrice = await caseParams.pendlePtLpOracle.getPtToSyRate(
-      caseParams.pendleMarket.address,
+      caseParams.pendleMarket,
       caseParams.secondsAgoLiquidation
     );
 

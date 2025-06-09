@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { ZERO_ADDRESS, createEmptyMarginlyCompositeOracle, createMarginlyCompositeOracle } from './shared/fixtures';
+import { ZeroAddress, createEmptyMarginlyCompositeOracle, createMarginlyCompositeOracle } from './shared/fixtures';
 
 describe('MarginlyCompositeOracle', () => {
   it('should fail when zero address passed', async () => {
@@ -10,27 +10,27 @@ describe('MarginlyCompositeOracle', () => {
     const base = '0x0000000000000000000000000000000000000003';
     const oracle1 = '0x0000000000000000000000000000000000000004';
 
-    await expect(oracle.setPair(ZERO_ADDRESS, interm, base, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWithCustomError(
+    await expect(oracle.setPair(ZeroAddress, interm, base, ZeroAddress, ZeroAddress)).to.be.revertedWithCustomError(
       oracle,
       'ZeroAddress'
     );
 
-    await expect(oracle.setPair(quote, ZERO_ADDRESS, base, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWithCustomError(
+    await expect(oracle.setPair(quote, ZeroAddress, base, ZeroAddress, ZeroAddress)).to.be.revertedWithCustomError(
       oracle,
       'ZeroAddress'
     );
 
-    await expect(oracle.setPair(quote, interm, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)).to.be.revertedWithCustomError(
+    await expect(oracle.setPair(quote, interm, ZeroAddress, ZeroAddress, ZeroAddress)).to.be.revertedWithCustomError(
       oracle,
       'ZeroAddress'
     );
 
-    await expect(oracle.setPair(quote, interm, base, ZERO_ADDRESS, oracle1)).to.be.revertedWithCustomError(
+    await expect(oracle.setPair(quote, interm, base, ZeroAddress, oracle1)).to.be.revertedWithCustomError(
       oracle,
       'ZeroAddress'
     );
 
-    await expect(oracle.setPair(quote, interm, base, oracle1, ZERO_ADDRESS)).to.be.revertedWithCustomError(
+    await expect(oracle.setPair(quote, interm, base, oracle1, ZeroAddress)).to.be.revertedWithCustomError(
       oracle,
       'ZeroAddress'
     );

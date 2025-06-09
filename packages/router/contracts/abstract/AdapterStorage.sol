@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 
@@ -21,7 +21,7 @@ abstract contract AdapterStorage is IMarginlyAdapter, Ownable2Step {
 
   mapping(address => mapping(address => address)) public getPool;
 
-  constructor(PoolInput[] memory pools) {
+  constructor(PoolInput[] memory pools) Ownable(msg.sender) {
     PoolInput memory input;
     uint256 length = pools.length;
     for (uint256 i; i < length; ) {
@@ -56,7 +56,7 @@ abstract contract AdapterStorage is IMarginlyAdapter, Ownable2Step {
     if (pool == address(0)) revert UnknownPool();
   }
 
-  function renounceOwnership() public override onlyOwner {
+  function renounceOwnership() public view override onlyOwner {
     revert Forbidden();
   }
 }

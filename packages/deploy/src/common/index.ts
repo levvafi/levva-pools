@@ -170,7 +170,7 @@ export class TimeSpan {
 
   public toSeconds(): BigNumber {
     if (this.measure === 'min') {
-      return this.value.mul(60);
+      return this.value*(60);
     } else if (this.measure === 'sec') {
       return this.value;
     } else {

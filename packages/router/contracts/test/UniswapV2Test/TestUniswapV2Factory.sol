@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.19;
+pragma solidity 0.8.28;
 
 import '@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol';
 import './TestUniswapV2Pair.sol';
