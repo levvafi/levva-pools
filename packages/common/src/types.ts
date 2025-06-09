@@ -1,3 +1,44 @@
+import { ethers } from 'ethers';
+
+export class EthAddress {
+  private static zeroRegex = /^0x0{40}$/;
+
+  private readonly address: `0x${string}`;
+
+  private constructor(address: `0x${string}`) {
+    this.address = address;
+  }
+
+  public static parse(str: string): EthAddress {
+    return new EthAddress(ethers.getAddress(str) as `0x${string}`);
+  }
+
+  public static isValidAddress(str: string): boolean {
+    return ethers.isAddress(str);
+  }
+
+  public toString(): `0x${string}` {
+    return this.address;
+  }
+
+  public isZero(): boolean {
+    return this.address.match(EthAddress.zeroRegex) !== null;
+  }
+
+  public compare(other: EthAddress): number {
+    const a = this.address.toLowerCase();
+    const b = other.address.toLowerCase();
+
+    if (a < b) {
+      return -1;
+    } else if (a == b) {
+      return 0;
+    } else {
+      return 1;
+    }
+  }
+}
+
 export interface Fp96 {
   inner: bigint;
 }
