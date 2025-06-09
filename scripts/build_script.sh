@@ -22,10 +22,6 @@ echo "build common"
 yarn workspace @marginly/common install
 yarn workspace @marginly/common build
 
-echo "build cli-common"
-yarn workspace @marginly/cli-common install
-yarn workspace @marginly/cli-common build
-
 echo "build logger"
 yarn workspace @marginly/logger install
 yarn workspace @marginly/logger build
