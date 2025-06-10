@@ -25,7 +25,7 @@ import './libraries/FP96.sol';
 import './libraries/MarginlyErrors.sol';
 import './dataTypes/Call.sol';
 
-contract MarginlyPool is IMarginlyPool {
+contract MarginlyPoolLegacy is IMarginlyPool {
   using FP96 for FP96.FixedPoint;
   using MaxBinaryHeapLib for MaxBinaryHeapLib.Heap;
   using LowGasSafeMath for uint256;
@@ -174,8 +174,8 @@ contract MarginlyPool is IMarginlyPool {
     _;
   }
 
-  /// @inheritdoc IMarginlyPoolOwnerActions
-  function setParameters(MarginlyParams calldata _params) external override onlyFactoryOwner {
+  // /// @inheritdoc IMarginlyPoolOwnerActions
+  function setParameters(MarginlyParams calldata _params) external onlyFactoryOwner {
     _setParameters(_params);
   }
 
@@ -822,7 +822,8 @@ contract MarginlyPool is IMarginlyPool {
 
     {
       uint256 currentQuoteCollateral = calcRealQuoteCollateral(positionDisQuoteCollateral, positionDisBaseDebt);
-      if (currentQuoteCollateral < basePrice.mul(params.positionMinAmount)) revert MarginlyErrors.LessThanMinimalAmount();
+      if (currentQuoteCollateral < basePrice.mul(params.positionMinAmount))
+        revert MarginlyErrors.LessThanMinimalAmount();
     }
 
     // quoteOutMinimum is defined by user input limitPriceX96
@@ -1290,7 +1291,7 @@ contract MarginlyPool is IMarginlyPool {
     );
   }
 
-  /// @inheritdoc IMarginlyPoolOwnerActions
+  // /// @inheritdoc IMarginlyPoolOwnerActions
   function shutDown(uint256 swapCalldata) external onlyFactoryOwner lock {
     if (mode != Mode.Regular) revert MarginlyErrors.EmergencyMode();
     accrueInterest();
@@ -1482,8 +1483,8 @@ contract MarginlyPool is IMarginlyPool {
     TransferHelper.safeTransfer(token, recipient, value);
   }
 
-  /// @inheritdoc IMarginlyPoolOwnerActions
-  function sweepETH() external override onlyFactoryOwner {
+  // /// @inheritdoc IMarginlyPoolOwnerActions
+  function sweepETH() external onlyFactoryOwner {
     if (address(this).balance > 0) {
       TransferHelper.safeTransferETH(msg.sender, address(this).balance);
     }
