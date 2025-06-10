@@ -3,7 +3,7 @@ import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { MarginlyParamsStruct } from '../typechain-types/contracts/MarginlyFactory';
 import { createMarginlyFactory } from './shared/fixtures';
 import snapshotGasCost from 'optifat-snapshot-gas-cost';
-import { MarginlyPool } from '../typechain-types';
+import { LevvaTradingPool } from '../typechain-types';
 import { ethers } from 'hardhat';
 import { PositionType } from './shared/utils';
 import { ZeroAddress } from 'ethers';
@@ -41,8 +41,8 @@ describe('MarginlyFactory', () => {
     );
     await snapshotGasCost(factory.createPool(quoteToken, baseToken, priceOracle, defaultSwapCallData, params));
 
-    const poolFactory = await ethers.getContractFactory('MarginlyPool');
-    const pool = poolFactory.attach(poolAddress) as MarginlyPool;
+    const poolFactory = await ethers.getContractFactory('LevvaTradingPool');
+    const pool = poolFactory.attach(poolAddress) as LevvaTradingPool;
 
     const techPositionOwner = await factory.techPositionOwner();
     const techPosition = await pool.positions(techPositionOwner);

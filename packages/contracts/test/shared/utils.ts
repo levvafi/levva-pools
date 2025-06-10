@@ -183,8 +183,8 @@ function fp96FromRatio(nom: bigint, denom: bigint): bigint {
 
 export async function calcAccruedRateCoeffs(marginlyPool: MarginlyPool, prevState: MarginlyPoolState) {
   const params = prevState.params;
-  const leverageShortX96 = prevState.systemLeverage.shortX96;
-  const leverageLongX96 = prevState.systemLeverage.longX96;
+  const leverageShortX96 = prevState.systemLeverageShort;
+  const leverageLongX96 = prevState.systemLeverageLong;
 
   const lastReinitOnPrevBlock = prevState.lastReinitTimestampSeconds;
   const lastReinitTimestamp = await marginlyPool.lastReinitTimestampSeconds();
@@ -304,7 +304,8 @@ type MarginlyPoolState = {
     positionMinAmount: bigint;
     quoteLimit: bigint;
   };
-  systemLeverage: [bigint, bigint] & { shortX96: bigint; longX96: bigint };
+  systemLeverageLong: bigint;
+  systemLeverageShort: bigint;
   lastReinitTimestampSeconds: bigint;
   discountedBaseDebt: bigint;
   discountedQuoteDebt: bigint;
@@ -319,7 +320,8 @@ export async function getMarginlyPoolState(marginlyPool: MarginlyPool): Promise<
   const baseCollateralCoeff = await marginlyPool.baseCollateralCoeff();
   const techPosition = await marginlyPool.positions(TechnicalPositionOwner);
   const lastReinitTimestampSeconds = await marginlyPool.lastReinitTimestampSeconds();
-  const systemLeverage = await marginlyPool.systemLeverage();
+  const systemLeverageLong = await marginlyPool.longX96Leverage();
+  const systemLeverageShort = await marginlyPool.shortX96Leverage();
   const params = await marginlyPool.params();
   const discountedBaseDebt = await marginlyPool.discountedBaseDebt();
   const discountedQuoteDebt = await marginlyPool.discountedQuoteDebt();
@@ -333,7 +335,8 @@ export async function getMarginlyPoolState(marginlyPool: MarginlyPool): Promise<
     baseCollateralCoeff,
     techPosition,
     params,
-    systemLeverage,
+    systemLeverageLong,
+    systemLeverageShort,
     lastReinitTimestampSeconds,
     discountedBaseDebt,
     discountedQuoteDebt,

@@ -71,8 +71,9 @@ describe('MarginlyKeeperAave', () => {
   });
 
   it('Should liquidate long position', async () => {
-    const { marginlyKeeper, swapRouter, baseToken, quoteToken, marginlyPool } =
-      await loadFixture(createMarginlyKeeperContract);
+    const { marginlyKeeper, swapRouter, baseToken, quoteToken, marginlyPool } = await loadFixture(
+      createMarginlyKeeperContract
+    );
     const [, badPosition, liquidator] = await ethers.getSigners();
     const decimals = await baseToken.decimals();
     const price = 1500; // 1 ETH = 1500 USDC
