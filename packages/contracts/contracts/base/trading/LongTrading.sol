@@ -20,7 +20,7 @@ abstract contract LongTrading is Liquidations {
   FP96.FixedPoint public quoteDebtCoeff;
 
   /// @dev Leverage of all long positions in the system
-  uint256 public longX96Leverage;
+  uint256 public longLeverageX96;
 
   ///@dev Heap of long positions, root - the worst long position. Sort key - leverage calculated with discounted collateral, debt
   MaxBinaryHeapLib.Heap internal longHeap;
@@ -119,6 +119,92 @@ abstract contract LongTrading is Liquidations {
 
     uint32 heapIndex = position.heapPosition - 1;
     longHeap.remove(positions, heapIndex);
+  }
+
+  function _repayQuoteDebt(uint256 amount, Position storage position) internal override {
+    FP96.FixedPoint memory _quoteDebtCoeff = quoteDebtCoeff;
+    uint256 positionDiscountedQuoteAmountPrev = position.discountedQuoteAmount;
+    uint256 realQuoteDebt = _quoteDebtCoeff.mul(positionDiscountedQuoteAmountPrev);
+    uint256 discountedQuoteDebtDelta;
+
+    if (amount >= realQuoteDebt) {
+      uint256 newRealQuoteCollateral = amount.sub(realQuoteDebt);
+      if (amount != realQuoteDebt) {
+        if (_newPoolQuoteBalance(newRealQuoteCollateral) > params.quoteLimit) revert MarginlyErrors.ExceedsLimit();
+      }
+
+      longHeap.remove(positions, position.heapPosition - 1);
+      // Long position, debt <= depositAmount, increase collateral on delta, move position to Lend
+      // quoteCollateralChange = (amount - discountedDebt)/ quoteCollateralCoef
+      uint256 discountedQuoteCollateralDelta = quoteCollateralCoeff.recipMul(newRealQuoteCollateral);
+      discountedQuoteDebtDelta = positionDiscountedQuoteAmountPrev;
+      position._type = PositionType.Lend;
+      position.discountedQuoteAmount = discountedQuoteCollateralDelta;
+
+      // update aggregates
+      discountedQuoteCollateral = discountedQuoteCollateral.add(discountedQuoteCollateralDelta);
+    } else {
+      // Long position, debt > depositAmount, decrease debt on delta
+      discountedQuoteDebtDelta = _quoteDebtCoeff.recipMul(amount);
+      position.discountedQuoteAmount = positionDiscountedQuoteAmountPrev.sub(discountedQuoteDebtDelta);
+    }
+
+    uint256 discountedBaseCollDelta = baseCollateralCoeff.recipMul(baseDelevCoeff.mul(discountedQuoteDebtDelta));
+    position.discountedBaseAmount = position.discountedBaseAmount.sub(discountedBaseCollDelta);
+    discountedQuoteDebt = discountedQuoteDebt.sub(discountedQuoteDebtDelta);
+    discountedBaseCollateral = discountedBaseCollateral.sub(discountedBaseCollDelta);
+  }
+
+  /// @notice sells all the base tokens from lend position for quote ones
+  /// @dev no liquidity limit check since this function goes prior to 'short' call and it fail there anyway
+  /// @dev you may consider adding that check here if this method is used in any other way
+  function _sellBaseForQuote(Position storage position, uint256 limitPriceX96, uint256 swapCalldata) internal override {
+    PositionType _type = position._type;
+    if (_type == PositionType.Uninitialized) revert MarginlyErrors.UninitializedPosition();
+    if (_type == PositionType.Short) return;
+
+    bool isLong = _type == PositionType.Long;
+
+    uint256 posDiscountedBaseColl = position.discountedBaseAmount;
+    uint256 posDiscountedQuoteDebt = isLong ? position.discountedQuoteAmount : 0;
+    uint256 baseAmountIn = _calcRealBaseCollateral(posDiscountedBaseColl, posDiscountedQuoteDebt);
+    if (baseAmountIn == 0) return;
+
+    uint256 quoteAmountOut = _swapExactInput(
+      false,
+      baseAmountIn,
+      Math.mulDiv(limitPriceX96, baseAmountIn, FP96.Q96),
+      swapCalldata
+    );
+    uint256 fee = Math.mulDiv(params.swapFee, quoteAmountOut, WHOLE_ONE);
+    _chargeFee(fee);
+
+    uint256 quoteOutSubFee = quoteAmountOut.sub(fee);
+    uint256 realQuoteDebt = quoteDebtCoeff.mul(posDiscountedQuoteDebt);
+    uint256 discountedQuoteCollateralDelta = quoteCollateralCoeff.recipMul(quoteOutSubFee.sub(realQuoteDebt));
+
+    discountedBaseCollateral -= posDiscountedBaseColl;
+    position.discountedBaseAmount = 0;
+    discountedQuoteCollateral += discountedQuoteCollateralDelta;
+    if (isLong) {
+      discountedQuoteDebt -= posDiscountedQuoteDebt;
+      position.discountedQuoteAmount = discountedQuoteCollateralDelta;
+
+      position._type = PositionType.Lend;
+      uint32 heapIndex = position.heapPosition - 1;
+      longHeap.remove(positions, heapIndex);
+      emit QuoteDebtRepaid(msg.sender, realQuoteDebt, posDiscountedQuoteDebt);
+    } else {
+      position.discountedQuoteAmount += discountedQuoteCollateralDelta;
+    }
+
+    emit SellBaseForQuote(
+      msg.sender,
+      baseAmountIn,
+      quoteOutSubFee,
+      posDiscountedBaseColl,
+      discountedQuoteCollateralDelta
+    );
   }
 
   function _liquidateLong(Position storage position, FP96.FixedPoint memory basePrice) internal override {
@@ -222,7 +308,7 @@ abstract contract LongTrading is Liquidations {
 
   function _updateSystemLeverageLong(FP96.FixedPoint memory basePrice) internal virtual override {
     if (discountedBaseCollateral == 0) {
-      longX96Leverage = uint128(FP96.Q96);
+      longLeverageX96 = uint128(FP96.Q96);
       return;
     }
 
@@ -230,7 +316,7 @@ abstract contract LongTrading is Liquidations {
     uint256 realQuoteDebt = quoteDebtCoeff.mul(discountedQuoteDebt);
     uint128 leverageX96 = uint128(Math.mulDiv(FP96.Q96, realBaseCollateral, realBaseCollateral.sub(realQuoteDebt)));
     uint128 maxLeverageX96 = uint128(params.maxLeverage) << FP96.RESOLUTION;
-    longX96Leverage = leverageX96 < maxLeverageX96 ? leverageX96 : maxLeverageX96;
+    longLeverageX96 = leverageX96 < maxLeverageX96 ? leverageX96 : maxLeverageX96;
   }
 
   function _accrueInterestLong(
@@ -243,7 +329,7 @@ abstract contract LongTrading is Liquidations {
       FP96.FixedPoint memory quoteDebtCoeffPrev = quoteDebtCoeff;
       uint256 realQuoteDebtPrev = quoteDebtCoeffPrev.mul(discountedQuoteDebt);
       FP96.FixedPoint memory onePlusIR = interestRate
-        .mul(FP96.FixedPoint({inner: longX96Leverage}))
+        .mul(FP96.FixedPoint({inner: longLeverageX96}))
         .div(secondsInYear)
         .add(FP96.one());
 

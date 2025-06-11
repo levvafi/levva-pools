@@ -20,7 +20,7 @@ abstract contract ShortFarming is Liquidations {
   FP96.FixedPoint public baseDebtCoeff;
 
   /// @dev Leverage of all short positions in the system
-  uint256 public shortX96Leverage = FP96.one().inner;
+  uint256 public shortLeverageX96 = FP96.one().inner;
 
   error ShortUnavailable();
 
@@ -31,6 +31,53 @@ abstract contract ShortFarming is Liquidations {
 
   function _closeShortPosition(uint256, Position storage, uint256) internal pure returns (uint256, uint256) {
     revert ShortUnavailable();
+  }
+
+  function _repayBaseDebt(uint256, FP96.FixedPoint memory, Position storage) internal pure override {
+    revert ShortUnavailable();
+  }
+
+  /// @notice sells all the quote tokens from lend position for base ones
+  /// @dev no liquidity limit check since this function goes prior to 'long' call and it fail there anyway
+  /// @dev you may consider adding that check here if this method is used in any other way
+  function _sellQuoteForBase(Position storage position, uint256 limitPriceX96, uint256 swapCalldata) internal override {
+    PositionType _type = position._type;
+    if (_type == PositionType.Uninitialized) revert MarginlyErrors.UninitializedPosition();
+    if (_type == PositionType.Long) return;
+
+    bool isShort = _type == PositionType.Short;
+
+    uint256 posDiscountedQuoteColl = position.discountedQuoteAmount;
+    uint256 posDiscountedBaseDebt = isShort ? position.discountedBaseAmount : 0;
+    uint256 quoteAmountIn = _calcRealQuoteCollateral(posDiscountedQuoteColl, posDiscountedBaseDebt);
+    if (quoteAmountIn == 0) return;
+
+    uint256 fee = Math.mulDiv(params.swapFee, quoteAmountIn, WHOLE_ONE);
+    uint256 quoteInSubFee = quoteAmountIn.sub(fee);
+
+    uint256 baseAmountOut = _swapExactInput(
+      true,
+      quoteInSubFee,
+      Math.mulDiv(FP96.Q96, quoteInSubFee, limitPriceX96),
+      swapCalldata
+    );
+    _chargeFee(fee);
+
+    uint256 realBaseDebt = baseDebtCoeff.mul(posDiscountedBaseDebt);
+    uint256 discountedBaseCollateralDelta = baseCollateralCoeff.recipMul(baseAmountOut.sub(realBaseDebt));
+
+    discountedQuoteCollateral -= posDiscountedQuoteColl;
+    position.discountedQuoteAmount = 0;
+    discountedBaseCollateral += discountedBaseCollateralDelta;
+    position.discountedBaseAmount += discountedBaseCollateralDelta;
+
+    emit SellQuoteForBase(
+      msg.sender,
+      quoteInSubFee,
+      baseAmountOut,
+      posDiscountedQuoteColl,
+      discountedBaseCollateralDelta
+    );
   }
 
   function _liquidateShort(Position storage, FP96.FixedPoint memory) internal pure override {
@@ -60,18 +107,6 @@ abstract contract ShortFarming is Liquidations {
 
   function _deleverageShort(uint256, uint256) internal virtual override {
     return;
-  }
-
-  function _calcRealBaseDebtTotal() internal view virtual override returns (uint256) {
-    return 0;
-  }
-
-  function _calcRealBaseDebt(uint256) internal pure virtual override returns (uint256) {
-    return 0;
-  }
-
-  function _getWorstShortPositionOwner() internal pure virtual override returns (address) {
-    return address(0);
   }
 
   function _updateHeapShort(Position storage) internal pure virtual override {

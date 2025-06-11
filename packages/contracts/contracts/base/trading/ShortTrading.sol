@@ -20,7 +20,7 @@ abstract contract ShortTrading is Liquidations {
   FP96.FixedPoint public baseDebtCoeff;
 
   /// @dev Leverage of all short positions in the system
-  uint256 public shortX96Leverage;
+  uint256 public shortLeverageX96;
 
   ///@dev Heap of short positions, root - the worst long position. Sort key - leverage calculated with discounted collateral, debt
   MaxBinaryHeapLib.Heap internal shortHeap;
@@ -122,6 +122,98 @@ abstract contract ShortTrading is Liquidations {
 
     uint32 heapIndex = position.heapPosition - 1;
     shortHeap.remove(positions, heapIndex);
+  }
+
+  function _repayBaseDebt(
+    uint256 amount,
+    FP96.FixedPoint memory basePrice,
+    Position storage position
+  ) internal override {
+    FP96.FixedPoint memory _baseDebtCoeff = baseDebtCoeff;
+    uint256 positionDiscountedBaseAmountPrev = position.discountedBaseAmount;
+    uint256 realBaseDebt = _calcRealBaseDebt(positionDiscountedBaseAmountPrev);
+    uint256 discountedBaseDebtDelta;
+
+    if (amount >= realBaseDebt) {
+      uint256 newRealBaseCollateral = amount.sub(realBaseDebt);
+      if (amount != realBaseDebt) {
+        if (basePrice.mul(_newPoolBaseBalance(newRealBaseCollateral)) > params.quoteLimit) {
+          revert MarginlyErrors.ExceedsLimit();
+        }
+      }
+
+      shortHeap.remove(positions, position.heapPosition - 1);
+      // Short position debt <= depositAmount, increase collateral on delta, change position to Lend
+      // discountedBaseCollateralDelta = (amount - realDebt)/ baseCollateralCoeff
+      uint256 discountedBaseCollateralDelta = baseCollateralCoeff.recipMul(newRealBaseCollateral);
+      discountedBaseDebtDelta = positionDiscountedBaseAmountPrev;
+      position._type = PositionType.Lend;
+      position.discountedBaseAmount = discountedBaseCollateralDelta;
+
+      // update aggregates
+      discountedBaseCollateral = discountedBaseCollateral.add(discountedBaseCollateralDelta);
+    } else {
+      // Short position, debt > depositAmount, decrease debt
+      discountedBaseDebtDelta = _baseDebtCoeff.recipMul(amount);
+      position.discountedBaseAmount = positionDiscountedBaseAmountPrev.sub(discountedBaseDebtDelta);
+    }
+
+    uint256 discountedQuoteCollDelta = quoteCollateralCoeff.recipMul(quoteDelevCoeff.mul(discountedBaseDebtDelta));
+    position.discountedQuoteAmount = position.discountedQuoteAmount.sub(discountedQuoteCollDelta);
+    discountedBaseDebt = discountedBaseDebt.sub(discountedBaseDebtDelta);
+    discountedQuoteCollateral = discountedQuoteCollateral.sub(discountedQuoteCollDelta);
+  }
+
+  /// @notice sells all the quote tokens from lend position for base ones
+  /// @dev no liquidity limit check since this function goes prior to 'long' call and it fail there anyway
+  /// @dev you may consider adding that check here if this method is used in any other way
+  function _sellQuoteForBase(Position storage position, uint256 limitPriceX96, uint256 swapCalldata) internal override {
+    PositionType _type = position._type;
+    if (_type == PositionType.Uninitialized) revert MarginlyErrors.UninitializedPosition();
+    if (_type == PositionType.Long) return;
+
+    bool isShort = _type == PositionType.Short;
+
+    uint256 posDiscountedQuoteColl = position.discountedQuoteAmount;
+    uint256 posDiscountedBaseDebt = isShort ? position.discountedBaseAmount : 0;
+    uint256 quoteAmountIn = _calcRealQuoteCollateral(posDiscountedQuoteColl, posDiscountedBaseDebt);
+    if (quoteAmountIn == 0) return;
+
+    uint256 fee = Math.mulDiv(params.swapFee, quoteAmountIn, WHOLE_ONE);
+    uint256 quoteInSubFee = quoteAmountIn.sub(fee);
+
+    uint256 baseAmountOut = _swapExactInput(
+      true,
+      quoteInSubFee,
+      Math.mulDiv(FP96.Q96, quoteInSubFee, limitPriceX96),
+      swapCalldata
+    );
+    _chargeFee(fee);
+
+    uint256 realBaseDebt = baseDebtCoeff.mul(posDiscountedBaseDebt);
+    uint256 discountedBaseCollateralDelta = baseCollateralCoeff.recipMul(baseAmountOut.sub(realBaseDebt));
+
+    discountedQuoteCollateral -= posDiscountedQuoteColl;
+    position.discountedQuoteAmount = 0;
+    discountedBaseCollateral += discountedBaseCollateralDelta;
+    if (isShort) {
+      discountedBaseDebt -= posDiscountedBaseDebt;
+      position.discountedBaseAmount = discountedBaseCollateralDelta;
+
+      position._type = PositionType.Lend;
+      uint32 heapIndex = position.heapPosition - 1;
+      shortHeap.remove(positions, heapIndex);
+      emit BaseDebtRepaid(msg.sender, realBaseDebt, posDiscountedBaseDebt);
+    } else {
+      position.discountedBaseAmount += discountedBaseCollateralDelta;
+    }
+    emit SellQuoteForBase(
+      msg.sender,
+      quoteInSubFee,
+      baseAmountOut,
+      posDiscountedQuoteColl,
+      discountedBaseCollateralDelta
+    );
   }
 
   function _liquidateShort(Position storage position, FP96.FixedPoint memory basePrice) internal override {
@@ -231,7 +323,7 @@ abstract contract ShortTrading is Liquidations {
 
   function _updateSystemLeverageShort(FP96.FixedPoint memory basePrice) internal virtual override {
     if (discountedQuoteCollateral == 0) {
-      shortX96Leverage = uint128(FP96.Q96);
+      shortLeverageX96 = uint128(FP96.Q96);
       return;
     }
 
@@ -239,7 +331,7 @@ abstract contract ShortTrading is Liquidations {
     uint256 realBaseDebt = baseDebtCoeff.mul(basePrice).mul(discountedBaseDebt);
     uint128 leverageX96 = uint128(Math.mulDiv(FP96.Q96, realQuoteCollateral, realQuoteCollateral.sub(realBaseDebt)));
     uint128 maxLeverageX96 = uint128(params.maxLeverage) << FP96.RESOLUTION;
-    shortX96Leverage = leverageX96 < maxLeverageX96 ? leverageX96 : maxLeverageX96;
+    shortLeverageX96 = leverageX96 < maxLeverageX96 ? leverageX96 : maxLeverageX96;
   }
 
   function _accrueInterestShort(
@@ -252,7 +344,7 @@ abstract contract ShortTrading is Liquidations {
       FP96.FixedPoint memory baseDebtCoeffPrev = baseDebtCoeff;
       uint256 realBaseDebtPrev = baseDebtCoeffPrev.mul(discountedBaseDebt);
       FP96.FixedPoint memory onePlusIR = interestRate
-        .mul(FP96.FixedPoint({inner: shortX96Leverage}))
+        .mul(FP96.FixedPoint({inner: shortLeverageX96}))
         .div(secondsInYear)
         .add(FP96.one());
 

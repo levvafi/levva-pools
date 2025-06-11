@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
-import '@uniswap/v3-core/contracts/libraries/LowGasSafeMath.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/access/Ownable2Step.sol';
-import '@openzeppelin/contracts/utils/Address.sol';
-
-import '@marginly/router/contracts/interfaces/IMarginlyRouter.sol';
-
 import '../interfaces/IMarginlyPool.sol';
 import '../interfaces/IMarginlyFactory.sol';
 import '../interfaces/IPriceOracle.sol';
@@ -17,27 +10,43 @@ abstract contract LevvaVirtual is IMarginlyPool {
   // ============ Levva math methods =============
   // =============================================
 
-  function _calcRealBaseCollateralTotal() internal view virtual returns (uint256);
+  function _calcRealBaseCollateralTotal() internal view virtual returns (uint256) {
+    return 0;
+  }
 
-  function _calcRealQuoteCollateralTotal() internal view virtual returns (uint256);
+  function _calcRealQuoteCollateralTotal() internal view virtual returns (uint256) {
+    return 0;
+  }
 
-  function _calcRealBaseDebtTotal() internal view virtual returns (uint256);
+  function _calcRealBaseDebtTotal() internal view virtual returns (uint256) {
+    return 0;
+  }
 
-  function _calcRealQuoteDebtTotal() internal view virtual returns (uint256);
+  function _calcRealQuoteDebtTotal() internal view virtual returns (uint256) {
+    return 0;
+  }
 
   function _calcRealBaseCollateral(
-    uint256 disBaseCollateral,
+    uint256 /*disBaseCollateral*/,
     uint256 /*disQuoteDebt*/
-  ) internal view virtual returns (uint256);
+  ) internal view virtual returns (uint256) {
+    return 0;
+  }
 
   function _calcRealQuoteCollateral(
-    uint256 disQuoteCollateral,
-    uint256 disBaseDebt
-  ) internal view virtual returns (uint256);
+    uint256 /*disQuoteCollateral*/,
+    uint256 /*disBaseDebt*/
+  ) internal view virtual returns (uint256) {
+    return 0;
+  }
 
-  function _calcRealBaseDebt(uint256 disQuoteDebt) internal view virtual returns (uint256);
+  function _calcRealBaseDebt(uint256 /*disQuoteDebt*/) internal view virtual returns (uint256) {
+    return 0;
+  }
 
-  function _calcRealQuoteDebt(uint256 disQuoteDebt) internal view virtual returns (uint256);
+  function _calcRealQuoteDebt(uint256 /*disQuoteDebt*/) internal view virtual returns (uint256) {
+    return 0;
+  }
 
   // =============================================
   // ========= Interest rate calculations ========
@@ -122,8 +131,4 @@ abstract contract LevvaVirtual is IMarginlyPool {
   function _updateSystemLeverageLong(FP96.FixedPoint memory basePrice) internal virtual;
 
   function _updateSystemLeverageShort(FP96.FixedPoint memory basePrice) internal virtual;
-
-  function _syncBaseBalance() internal virtual;
-
-  function _syncQuoteBalance() internal virtual;
 }

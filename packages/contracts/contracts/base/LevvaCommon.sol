@@ -215,6 +215,40 @@ abstract contract LevvaCommon is LevvaVirtual {
     );
   }
 
+  /// @dev Changes tech position base collateral so total calculated base balance to be equal to actual
+  function _syncBaseBalance() internal {
+    uint256 baseBalance = _getBalance(baseToken);
+    uint256 actualBaseCollateral = _calcRealBaseDebtTotal().add(baseBalance);
+    uint256 baseCollateral = _calcRealBaseCollateralTotal();
+    Position storage techPosition = _getTechPosition();
+    if (actualBaseCollateral > baseCollateral) {
+      uint256 discountedBaseDelta = baseCollateralCoeff.recipMul(actualBaseCollateral.sub(baseCollateral));
+      techPosition.discountedBaseAmount += discountedBaseDelta;
+      discountedBaseCollateral += discountedBaseDelta;
+    } else {
+      uint256 discountedBaseDelta = baseCollateralCoeff.recipMul(baseCollateral.sub(actualBaseCollateral));
+      techPosition.discountedBaseAmount -= discountedBaseDelta;
+      discountedBaseCollateral -= discountedBaseDelta;
+    }
+  }
+
+  /// @dev Changes tech position quote collateral so total calculated quote balance to be equal to actual
+  function _syncQuoteBalance() internal {
+    uint256 quoteBalance = _getBalance(quoteToken);
+    uint256 actualQuoteCollateral = _calcRealQuoteDebtTotal().add(quoteBalance);
+    uint256 quoteCollateral = _calcRealQuoteCollateralTotal();
+    Position storage techPosition = _getTechPosition();
+    if (actualQuoteCollateral > quoteCollateral) {
+      uint256 discountedQuoteDelta = quoteCollateralCoeff.recipMul(actualQuoteCollateral.sub(quoteCollateral));
+      techPosition.discountedQuoteAmount += discountedQuoteDelta;
+      discountedQuoteCollateral += discountedQuoteDelta;
+    } else {
+      uint256 discountedQuoteDelta = quoteCollateralCoeff.recipMul(quoteCollateral.sub(actualQuoteCollateral));
+      techPosition.discountedQuoteAmount -= discountedQuoteDelta;
+      discountedQuoteCollateral -= discountedQuoteDelta;
+    }
+  }
+
   /// @dev returns ERC20 token balance of this contract
   function _getBalance(address erc20Token) internal view returns (uint256) {
     return IERC20(erc20Token).balanceOf(address(this));
@@ -253,10 +287,6 @@ abstract contract LevvaCommon is LevvaVirtual {
     return quoteCollateralCoeff.mul(discountedQuoteCollateral);
   }
 
-  function _calcRealBaseDebtTotal() internal view virtual override returns (uint256);
-
-  function _calcRealQuoteDebtTotal() internal view virtual override returns (uint256);
-
   function _calcRealBaseCollateral(
     uint256 disBaseCollateral,
     uint256 /*disQuoteDebt*/
@@ -270,8 +300,4 @@ abstract contract LevvaCommon is LevvaVirtual {
   ) internal view virtual override returns (uint256) {
     return quoteCollateralCoeff.mul(disQuoteCollateral);
   }
-
-  function _calcRealBaseDebt(uint256 disQuoteDebt) internal view virtual override returns (uint256);
-
-  function _calcRealQuoteDebt(uint256 disQuoteDebt) internal view virtual override returns (uint256);
 }
