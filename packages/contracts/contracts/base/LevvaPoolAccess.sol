@@ -8,11 +8,11 @@ import '@openzeppelin/contracts/utils/Address.sol';
 
 import '@marginly/router/contracts/interfaces/IMarginlyRouter.sol';
 
-import './LevvaCommon.sol';
+import './LevvaPoolCommon.sol';
 import '../interfaces/IMarginlyFactory.sol';
 import '../interfaces/IPriceOracle.sol';
 
-abstract contract LevvaPoolAccess is LevvaCommon {
+abstract contract LevvaPoolAccess is LevvaPoolCommon {
   using FP96 for FP96.FixedPoint;
   using LowGasSafeMath for uint256;
 

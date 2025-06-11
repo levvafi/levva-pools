@@ -20,7 +20,7 @@ contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
   ) external virtual {
     if (factory != address(0)) revert MarginlyErrors.Forbidden();
 
-    __LevvaCommon_init(_quoteToken, _baseToken, _priceOracle, _defaultSwapCallData, _params);
+    __LevvaPoolCommon_init(_quoteToken, _baseToken, _priceOracle, _defaultSwapCallData, _params);
     __LongTrading_init();
     __ShortTrading_init();
   }
@@ -125,81 +125,85 @@ contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
     emit ClosePosition(msg.sender, collateralToken, realCollateralDelta, swapPriceX96, discountedCollateralDelta);
   }
 
-  function _calcRealBaseCollateralTotal() internal view override(LevvaCommon, LongTrading) returns (uint256) {
+  function _calcRealBaseCollateralTotal() internal view override(LevvaPoolCommon, LongTrading) returns (uint256) {
     return LongTrading._calcRealBaseCollateralTotal();
   }
 
-  function _calcRealQuoteCollateralTotal() internal view override(LevvaCommon, ShortTrading) returns (uint256) {
+  function _calcRealQuoteCollateralTotal() internal view override(LevvaPoolCommon, ShortTrading) returns (uint256) {
     return ShortTrading._calcRealQuoteCollateralTotal();
   }
 
-  function _calcRealBaseDebtTotal() internal view override(LevvaVirtual, ShortTrading) returns (uint256) {
+  function _calcRealBaseDebtTotal() internal view override(LevvaPoolVirtual, ShortTrading) returns (uint256) {
     return ShortTrading._calcRealBaseDebtTotal();
   }
 
-  function _calcRealQuoteDebtTotal() internal view override(LevvaVirtual, LongTrading) returns (uint256) {
+  function _calcRealQuoteDebtTotal() internal view override(LevvaPoolVirtual, LongTrading) returns (uint256) {
     return LongTrading._calcRealQuoteDebtTotal();
   }
 
   function _calcRealBaseCollateral(
     uint256 disBaseCollateral,
     uint256 disQuoteDebt
-  ) internal view override(LevvaCommon, LongTrading) returns (uint256) {
+  ) internal view override(LevvaPoolCommon, LongTrading) returns (uint256) {
     return LongTrading._calcRealBaseCollateral(disBaseCollateral, disQuoteDebt);
   }
 
   function _calcRealQuoteCollateral(
     uint256 disQuoteCollateral,
     uint256 disBaseDebt
-  ) internal view override(LevvaCommon, ShortTrading) returns (uint256) {
+  ) internal view override(LevvaPoolCommon, ShortTrading) returns (uint256) {
     return ShortTrading._calcRealQuoteCollateral(disQuoteCollateral, disBaseDebt);
   }
 
-  function _calcRealBaseDebt(uint256 disBaseDebt) internal view override(LevvaVirtual, ShortTrading) returns (uint256) {
+  function _calcRealBaseDebt(
+    uint256 disBaseDebt
+  ) internal view override(LevvaPoolVirtual, ShortTrading) returns (uint256) {
     return ShortTrading._calcRealBaseDebt(disBaseDebt);
   }
 
   function _calcRealQuoteDebt(
     uint256 disQuoteDebt
-  ) internal view override(LevvaVirtual, LongTrading) returns (uint256) {
+  ) internal view override(LevvaPoolVirtual, LongTrading) returns (uint256) {
     return LongTrading._calcRealQuoteDebt(disQuoteDebt);
   }
 
-  function _updateBaseCollateralCoeffs(FP96.FixedPoint memory factor) internal override(LevvaCommon, LongTrading) {
+  function _updateBaseCollateralCoeffs(FP96.FixedPoint memory factor) internal override(LevvaPoolCommon, LongTrading) {
     return LongTrading._updateBaseCollateralCoeffs(factor);
   }
 
-  function _updateQuoteCollateralCoeffs(FP96.FixedPoint memory factor) internal override(LevvaCommon, ShortTrading) {
+  function _updateQuoteCollateralCoeffs(
+    FP96.FixedPoint memory factor
+  ) internal override(LevvaPoolCommon, ShortTrading) {
     return ShortTrading._updateQuoteCollateralCoeffs(factor);
   }
 
   function _deleverageLong(
     uint256 realQuoteCollateral,
     uint256 realBaseDebt
-  ) internal override(LongTrading, LevvaVirtual) {
+  ) internal override(LongTrading, LevvaPoolVirtual) {
     LongTrading._deleverageLong(realQuoteCollateral, realBaseDebt);
   }
 
   function _deleverageShort(
     uint256 realBaseCollateral,
     uint256 realQuoteDebt
-  ) internal override(ShortTrading, LevvaVirtual) {
+  ) internal override(ShortTrading, LevvaPoolVirtual) {
     ShortTrading._deleverageShort(realBaseCollateral, realQuoteDebt);
   }
 
-  function _getWorstLongPositionOwner() internal view override(LongTrading, LevvaVirtual) returns (address) {
+  function _getWorstLongPositionOwner() internal view override(LongTrading, LevvaPoolVirtual) returns (address) {
     return LongTrading._getWorstLongPositionOwner();
   }
 
-  function _getWorstShortPositionOwner() internal view override(ShortTrading, LevvaVirtual) returns (address) {
+  function _getWorstShortPositionOwner() internal view override(ShortTrading, LevvaPoolVirtual) returns (address) {
     return ShortTrading._getWorstShortPositionOwner();
   }
 
-  function _updateHeapLong(Position storage position) internal override(LongTrading, LevvaVirtual) {
+  function _updateHeapLong(Position storage position) internal override(LongTrading, LevvaPoolVirtual) {
     return LongTrading._updateHeapLong(position);
   }
 
-  function _updateHeapShort(Position storage position) internal override(ShortTrading, LevvaVirtual) {
+  function _updateHeapShort(Position storage position) internal override(ShortTrading, LevvaPoolVirtual) {
     return ShortTrading._updateHeapShort(position);
   }
 }

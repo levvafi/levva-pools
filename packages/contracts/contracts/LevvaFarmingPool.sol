@@ -20,7 +20,7 @@ contract LevvaFarmingPool is LongFarming, ShortFarming, Emergency {
   ) external virtual {
     if (factory != address(0)) revert MarginlyErrors.Forbidden();
 
-    __LevvaCommon_init(_quoteToken, _baseToken, _priceOracle, _defaultSwapCallData, _params);
+    __LevvaPoolCommon_init(_quoteToken, _baseToken, _priceOracle, _defaultSwapCallData, _params);
     __LongFarming_init();
   }
 
@@ -124,43 +124,43 @@ contract LevvaFarmingPool is LongFarming, ShortFarming, Emergency {
     emit ClosePosition(msg.sender, collateralToken, realCollateralDelta, swapPriceX96, discountedCollateralDelta);
   }
 
-  function _calcRealBaseCollateralTotal() internal view override(LevvaCommon, LongFarming) returns (uint256) {
+  function _calcRealBaseCollateralTotal() internal view override(LevvaPoolCommon, LongFarming) returns (uint256) {
     return LongFarming._calcRealBaseCollateralTotal();
   }
 
-  function _calcRealQuoteDebtTotal() internal view override(LevvaVirtual, LongFarming) returns (uint256) {
+  function _calcRealQuoteDebtTotal() internal view override(LevvaPoolVirtual, LongFarming) returns (uint256) {
     return LongFarming._calcRealQuoteDebtTotal();
   }
 
   function _calcRealBaseCollateral(
     uint256 disBaseCollateral,
     uint256 disQuoteDebt
-  ) internal view override(LevvaCommon, LongFarming) returns (uint256) {
+  ) internal view override(LevvaPoolCommon, LongFarming) returns (uint256) {
     return LongFarming._calcRealBaseCollateral(disBaseCollateral, disQuoteDebt);
   }
 
   function _calcRealQuoteDebt(
     uint256 disQuoteDebt
-  ) internal view override(LevvaVirtual, LongFarming) returns (uint256) {
+  ) internal view override(LevvaPoolVirtual, LongFarming) returns (uint256) {
     return LongFarming._calcRealQuoteDebt(disQuoteDebt);
   }
 
-  function _updateBaseCollateralCoeffs(FP96.FixedPoint memory factor) internal override(LevvaCommon, LongFarming) {
+  function _updateBaseCollateralCoeffs(FP96.FixedPoint memory factor) internal override(LevvaPoolCommon, LongFarming) {
     return LongFarming._updateBaseCollateralCoeffs(factor);
   }
 
   function _deleverageLong(
     uint256 realQuoteCollateral,
     uint256 realBaseDebt
-  ) internal override(LongFarming, LevvaVirtual) {
+  ) internal override(LongFarming, LevvaPoolVirtual) {
     LongFarming._deleverageLong(realQuoteCollateral, realBaseDebt);
   }
 
-  function _getWorstLongPositionOwner() internal view override(LongFarming, LevvaVirtual) returns (address) {
+  function _getWorstLongPositionOwner() internal view override(LongFarming, LevvaPoolVirtual) returns (address) {
     return LongFarming._getWorstLongPositionOwner();
   }
 
-  function _updateHeapLong(Position storage position) internal override(LongFarming, LevvaVirtual) {
+  function _updateHeapLong(Position storage position) internal override(LongFarming, LevvaPoolVirtual) {
     return LongFarming._updateHeapLong(position);
   }
 }

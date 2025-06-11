@@ -5,7 +5,7 @@ import '../interfaces/IMarginlyPool.sol';
 import '../interfaces/IMarginlyFactory.sol';
 import '../interfaces/IPriceOracle.sol';
 
-abstract contract LevvaVirtual is IMarginlyPool {
+abstract contract LevvaPoolVirtual is IMarginlyPool {
   // =============================================
   // ============ Levva math methods =============
   // =============================================

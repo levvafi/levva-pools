@@ -9,9 +9,9 @@ import '@openzeppelin/contracts/utils/Address.sol';
 import '../interfaces/IWETH9.sol';
 import '../dataTypes/Position.sol';
 import '../libraries/FP96.sol';
-import './LevvaCommon.sol';
+import './LevvaPoolCommon.sol';
 
-abstract contract Funding is LevvaCommon {
+abstract contract Funding is LevvaPoolCommon {
   using FP96 for FP96.FixedPoint;
   using LowGasSafeMath for uint256;
 

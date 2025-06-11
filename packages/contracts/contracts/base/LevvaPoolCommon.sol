@@ -8,12 +8,12 @@ import '@openzeppelin/contracts/utils/Address.sol';
 
 import '@marginly/router/contracts/interfaces/IMarginlyRouter.sol';
 
-import './LevvaVirtual.sol';
+import './LevvaPoolVirtual.sol';
 import '../interfaces/IMarginlyFactory.sol';
 import '../interfaces/IPriceOracle.sol';
 import '../libraries/FP48.sol';
 
-abstract contract LevvaCommon is LevvaVirtual {
+abstract contract LevvaPoolCommon is LevvaPoolVirtual {
   using FP96 for FP96.FixedPoint;
   using LowGasSafeMath for uint256;
 
@@ -53,7 +53,7 @@ abstract contract LevvaCommon is LevvaVirtual {
   /// @dev Aggregate for quote collateral time change calculations
   FP96.FixedPoint public quoteCollateralCoeff;
 
-  function __LevvaCommon_init(
+  function __LevvaPoolCommon_init(
     address _quoteToken,
     address _baseToken,
     address _priceOracle,
