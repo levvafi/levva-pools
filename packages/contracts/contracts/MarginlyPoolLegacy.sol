@@ -174,7 +174,7 @@ contract MarginlyPoolLegacy is IMarginlyPool {
     _;
   }
 
-  // /// @inheritdoc IMarginlyPoolOwnerActions
+  /// @inheritdoc IMarginlyPoolOwnerActions
   function setParameters(MarginlyParams calldata _params) external onlyFactoryOwner {
     _setParameters(_params);
   }
@@ -1291,7 +1291,7 @@ contract MarginlyPoolLegacy is IMarginlyPool {
     );
   }
 
-  // /// @inheritdoc IMarginlyPoolOwnerActions
+  /// @inheritdoc IMarginlyPoolOwnerActions
   function shutDown(uint256 swapCalldata) external onlyFactoryOwner lock {
     if (mode != Mode.Regular) revert MarginlyErrors.EmergencyMode();
     accrueInterest();
@@ -1483,7 +1483,7 @@ contract MarginlyPoolLegacy is IMarginlyPool {
     TransferHelper.safeTransfer(token, recipient, value);
   }
 
-  // /// @inheritdoc IMarginlyPoolOwnerActions
+  /// @inheritdoc IMarginlyPoolOwnerActions
   function sweepETH() external onlyFactoryOwner {
     if (address(this).balance > 0) {
       TransferHelper.safeTransferETH(msg.sender, address(this).balance);
