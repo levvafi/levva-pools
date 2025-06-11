@@ -4,7 +4,7 @@ pragma solidity 0.8.28;
 import '@uniswap/v3-core/contracts/libraries/LowGasSafeMath.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
 
-import './Liquidations.sol';
+import '../Liquidations.sol';
 
 abstract contract ShortTrading is Liquidations {
   using FP96 for FP96.FixedPoint;

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
-import './base/trading/LongTrading.sol';
-import './base/trading/ShortTrading.sol';
+import './base/farming/LongFarming.sol';
+import './base/farming/ShortFarming.sol';
 import './base/Emergency.sol';
 
-contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
+contract LevvaFarmingPool is LongFarming, ShortFarming, Emergency {
   using FP96 for FP96.FixedPoint;
   using LowGasSafeMath for uint256;
   using MaxBinaryHeapLib for MaxBinaryHeapLib.Heap;
@@ -21,8 +21,7 @@ contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
     if (factory != address(0)) revert MarginlyErrors.Forbidden();
 
     __LevvaCommon_init(_quoteToken, _baseToken, _priceOracle, _defaultSwapCallData, _params);
-    __LongTrading_init();
-    __ShortTrading_init();
+    __LongFarming_init();
   }
 
   /// @param flag unwrapETH in case of withdraw calls or syncBalance in case of reinit call
@@ -99,9 +98,9 @@ contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
   function getHeapPosition(
     uint32 index,
     bool _short
-  ) external view returns (bool success, MaxBinaryHeapLib.Node memory) {
+  ) external view returns (bool success, MaxBinaryHeapLib.Node memory node) {
     if (_short) {
-      return shortHeap.getNodeByIndex(index);
+      return (false, node);
     } else {
       return longHeap.getNodeByIndex(index);
     }
@@ -125,44 +124,8 @@ contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
     emit ClosePosition(msg.sender, collateralToken, realCollateralDelta, swapPriceX96, discountedCollateralDelta);
   }
 
-  function _repayBaseDebt(
-    uint256 amount,
-    FP96.FixedPoint memory basePrice,
-    Position storage position
-  ) internal override {
-    FP96.FixedPoint memory _baseDebtCoeff = baseDebtCoeff;
-    uint256 positionDiscountedBaseAmountPrev = position.discountedBaseAmount;
-    uint256 realBaseDebt = _calcRealBaseDebt(positionDiscountedBaseAmountPrev);
-    uint256 discountedBaseDebtDelta;
-
-    if (amount >= realBaseDebt) {
-      uint256 newRealBaseCollateral = amount.sub(realBaseDebt);
-      if (amount != realBaseDebt) {
-        if (basePrice.mul(_newPoolBaseBalance(newRealBaseCollateral)) > params.quoteLimit) {
-          revert MarginlyErrors.ExceedsLimit();
-        }
-      }
-
-      shortHeap.remove(positions, position.heapPosition - 1);
-      // Short position debt <= depositAmount, increase collateral on delta, change position to Lend
-      // discountedBaseCollateralDelta = (amount - realDebt)/ baseCollateralCoeff
-      uint256 discountedBaseCollateralDelta = baseCollateralCoeff.recipMul(newRealBaseCollateral);
-      discountedBaseDebtDelta = positionDiscountedBaseAmountPrev;
-      position._type = PositionType.Lend;
-      position.discountedBaseAmount = discountedBaseCollateralDelta;
-
-      // update aggregates
-      discountedBaseCollateral = discountedBaseCollateral.add(discountedBaseCollateralDelta);
-    } else {
-      // Short position, debt > depositAmount, decrease debt
-      discountedBaseDebtDelta = _baseDebtCoeff.recipMul(amount);
-      position.discountedBaseAmount = positionDiscountedBaseAmountPrev.sub(discountedBaseDebtDelta);
-    }
-
-    uint256 discountedQuoteCollDelta = quoteCollateralCoeff.recipMul(quoteDelevCoeff.mul(discountedBaseDebtDelta));
-    position.discountedQuoteAmount = position.discountedQuoteAmount.sub(discountedQuoteCollDelta);
-    discountedBaseDebt = discountedBaseDebt.sub(discountedBaseDebtDelta);
-    discountedQuoteCollateral = discountedQuoteCollateral.sub(discountedQuoteCollDelta);
+  function _repayBaseDebt(uint256, FP96.FixedPoint memory, Position storage) internal pure override {
+    revert();
   }
 
   function _repayQuoteDebt(uint256 amount, Position storage position) internal override {
@@ -199,80 +162,46 @@ contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
     discountedBaseCollateral = discountedBaseCollateral.sub(discountedBaseCollDelta);
   }
 
-  function _calcRealBaseCollateralTotal() internal view override(LevvaCommon, LongTrading) returns (uint256) {
-    return LongTrading._calcRealBaseCollateralTotal();
+  function _calcRealBaseCollateralTotal() internal view override(LevvaCommon, LongFarming) returns (uint256) {
+    return LongFarming._calcRealBaseCollateralTotal();
   }
 
-  function _calcRealQuoteCollateralTotal() internal view override(LevvaCommon, ShortTrading) returns (uint256) {
-    return ShortTrading._calcRealQuoteCollateralTotal();
-  }
-
-  function _calcRealBaseDebtTotal() internal view override(LevvaCommon, ShortTrading) returns (uint256) {
-    return ShortTrading._calcRealBaseDebtTotal();
-  }
-
-  function _calcRealQuoteDebtTotal() internal view override(LevvaCommon, LongTrading) returns (uint256) {
-    return LongTrading._calcRealQuoteDebtTotal();
+  function _calcRealQuoteDebtTotal() internal view override(LevvaCommon, LongFarming) returns (uint256) {
+    return LongFarming._calcRealQuoteDebtTotal();
   }
 
   function _calcRealBaseCollateral(
     uint256 disBaseCollateral,
     uint256 disQuoteDebt
-  ) internal view override(LevvaCommon, LongTrading) returns (uint256) {
-    return LongTrading._calcRealBaseCollateral(disBaseCollateral, disQuoteDebt);
+  ) internal view override(LevvaCommon, LongFarming) returns (uint256) {
+    return LongFarming._calcRealBaseCollateral(disBaseCollateral, disQuoteDebt);
   }
 
-  function _calcRealQuoteCollateral(
-    uint256 disQuoteCollateral,
-    uint256 disBaseDebt
-  ) internal view override(LevvaCommon, ShortTrading) returns (uint256) {
-    return ShortTrading._calcRealQuoteCollateral(disQuoteCollateral, disBaseDebt);
+  function _calcRealQuoteDebt(uint256 disQuoteDebt) internal view override(LevvaCommon, LongFarming) returns (uint256) {
+    return LongFarming._calcRealQuoteDebt(disQuoteDebt);
   }
 
-  function _calcRealBaseDebt(uint256 disBaseDebt) internal view override(LevvaCommon, ShortTrading) returns (uint256) {
-    return ShortTrading._calcRealBaseDebt(disBaseDebt);
-  }
-
-  function _calcRealQuoteDebt(uint256 disQuoteDebt) internal view override(LevvaCommon, LongTrading) returns (uint256) {
-    return LongTrading._calcRealQuoteDebt(disQuoteDebt);
-  }
-
-  function _updateBaseCollateralCoeffs(FP96.FixedPoint memory factor) internal override(LevvaCommon, LongTrading) {
-    return LongTrading._updateBaseCollateralCoeffs(factor);
-  }
-
-  function _updateQuoteCollateralCoeffs(FP96.FixedPoint memory factor) internal override(LevvaCommon, ShortTrading) {
-    return ShortTrading._updateQuoteCollateralCoeffs(factor);
+  function _updateBaseCollateralCoeffs(FP96.FixedPoint memory factor) internal override(LevvaCommon, LongFarming) {
+    return LongFarming._updateBaseCollateralCoeffs(factor);
   }
 
   function _deleverageLong(
     uint256 realQuoteCollateral,
     uint256 realBaseDebt
-  ) internal override(LongTrading, LevvaVirtual) {
-    LongTrading._deleverageLong(realQuoteCollateral, realBaseDebt);
+  ) internal override(LongFarming, LevvaVirtual) {
+    LongFarming._deleverageLong(realQuoteCollateral, realBaseDebt);
   }
 
-  function _deleverageShort(
-    uint256 realBaseCollateral,
-    uint256 realQuoteDebt
-  ) internal override(ShortTrading, LevvaVirtual) {
-    ShortTrading._deleverageShort(realBaseCollateral, realQuoteDebt);
+  function _getWorstLongPositionOwner() internal view override(LongFarming, LevvaVirtual) returns (address) {
+    return LongFarming._getWorstLongPositionOwner();
   }
 
-  function _getWorstLongPositionOwner() internal view override(LongTrading, LevvaVirtual) returns (address) {
-    return LongTrading._getWorstLongPositionOwner();
+  function _getWorstShortPositionOwner() internal pure override(ShortFarming, LevvaVirtual) returns (address) {
+    return ShortFarming._getWorstShortPositionOwner();
   }
 
-  function _getWorstShortPositionOwner() internal view override(ShortTrading, LevvaVirtual) returns (address) {
-    return ShortTrading._getWorstShortPositionOwner();
-  }
-
-  function _updateHeapLong(Position storage position) internal override(LongTrading, LevvaVirtual) {
-    return LongTrading._updateHeapLong(position);
-  }
-
-  function _updateHeapShort(Position storage position) internal override(ShortTrading, LevvaVirtual) {
-    return ShortTrading._updateHeapShort(position);
+  function _updateHeapLong(Position storage position) internal override(LongFarming, LevvaVirtual) {
+    return LongFarming._updateHeapLong(position);
   }
 
   /// @notice sells all the base tokens from lend position for quote ones
@@ -359,17 +288,8 @@ contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
     discountedQuoteCollateral -= posDiscountedQuoteColl;
     position.discountedQuoteAmount = 0;
     discountedBaseCollateral += discountedBaseCollateralDelta;
-    if (isShort) {
-      discountedBaseDebt -= posDiscountedBaseDebt;
-      position.discountedBaseAmount = discountedBaseCollateralDelta;
+    position.discountedBaseAmount += discountedBaseCollateralDelta;
 
-      position._type = PositionType.Lend;
-      uint32 heapIndex = position.heapPosition - 1;
-      shortHeap.remove(positions, heapIndex);
-      emit BaseDebtRepaid(msg.sender, realBaseDebt, posDiscountedBaseDebt);
-    } else {
-      position.discountedBaseAmount += discountedBaseCollateralDelta;
-    }
     emit SellQuoteForBase(
       msg.sender,
       quoteInSubFee,

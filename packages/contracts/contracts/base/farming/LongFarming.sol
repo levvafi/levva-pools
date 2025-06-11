@@ -4,9 +4,9 @@ pragma solidity 0.8.28;
 import '@uniswap/v3-core/contracts/libraries/LowGasSafeMath.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
 
-import './Liquidations.sol';
+import '../Liquidations.sol';
 
-abstract contract LongTrading is Liquidations {
+abstract contract LongFarming is Liquidations {
   using FP96 for FP96.FixedPoint;
   using MaxBinaryHeapLib for MaxBinaryHeapLib.Heap;
   using LowGasSafeMath for uint256;
@@ -25,7 +25,7 @@ abstract contract LongTrading is Liquidations {
   ///@dev Heap of long positions, root - the worst long position. Sort key - leverage calculated with discounted collateral, debt
   MaxBinaryHeapLib.Heap internal longHeap;
 
-  function __LongTrading_init() internal {
+  function __LongFarming_init() internal {
     quoteDebtCoeff = FP96.one();
   }
 
@@ -90,32 +90,27 @@ abstract contract LongTrading is Liquidations {
     uint256 swapCalldata
   ) internal returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta) {
     uint256 positionDiscountedQuoteDebtPrev = position.discountedQuoteAmount;
-    uint256 realBaseCollateral = _calcRealBaseCollateral(position.discountedBaseAmount, position.discountedQuoteAmount);
+    discountedCollateralDelta = position.discountedBaseAmount;
+    uint256 discountedDebtDelta = position.discountedQuoteAmount;
+    realCollateralDelta = _calcRealBaseCollateral(discountedCollateralDelta, discountedDebtDelta);
     uint256 realQuoteDebt = quoteDebtCoeff.mul(positionDiscountedQuoteDebtPrev, Math.Rounding.Ceil);
 
-    uint256 realFeeAmount = Math.mulDiv(params.swapFee, realQuoteDebt, WHOLE_ONE);
-    uint256 exactQuoteOut = realQuoteDebt.add(realFeeAmount);
+    uint256 milSlippageAmount = FP96.fromRatio(WHOLE_ONE - params.mcSlippage, WHOLE_ONE).mul(
+      limitPriceX96.mul(realCollateralDelta)
+    );
 
-    {
-      // baseInMaximum is defined by user input limitPriceX96
-      uint256 baseInMaximum = Math.mulDiv(FP96.Q96, exactQuoteOut, limitPriceX96);
+    uint256 quoteOutMinimum = milSlippageAmount > realQuoteDebt ? milSlippageAmount : realQuoteDebt;
+    uint256 exactQuoteOut = _swapExactInput(false, realCollateralDelta, quoteOutMinimum, swapCalldata);
 
-      realCollateralDelta = _swapExactOutput(false, realBaseCollateral, exactQuoteOut, swapCalldata);
-      if (realCollateralDelta > baseInMaximum) revert MarginlyErrors.SlippageLimit();
+    uint256 realFeeAmount = Math.mulDiv(params.swapFee, exactQuoteOut, WHOLE_ONE);
+    _chargeFee(realFeeAmount);
 
-      _chargeFee(realFeeAmount);
-
-      discountedCollateralDelta = baseCollateralCoeff.recipMul(
-        realCollateralDelta.add(baseDelevCoeff.mul(position.discountedQuoteAmount))
-      );
-    }
+    position.discountedBaseAmount = quoteCollateralCoeff.recipMul(exactQuoteOut.sub(realFeeAmount).sub(realQuoteDebt));
+    position.discountedBaseAmount = 0;
+    position._type = PositionType.Lend;
 
     discountedBaseCollateral = discountedBaseCollateral.sub(discountedCollateralDelta);
-    discountedQuoteDebt = discountedQuoteDebt.sub(positionDiscountedQuoteDebtPrev);
-
-    position.discountedBaseAmount = position.discountedBaseAmount.sub(discountedCollateralDelta);
-    position.discountedQuoteAmount = 0;
-    position._type = PositionType.Lend;
+    discountedQuoteDebt = discountedQuoteDebt.sub(discountedCollateralDelta);
 
     uint32 heapIndex = position.heapPosition - 1;
     longHeap.remove(positions, heapIndex);
