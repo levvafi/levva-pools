@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
 import {
   MarginlyFactory,
-  MarginlyPool,
+  LevvaTradingPool,
   TestUniswapFactory,
   TestUniswapPool,
   TestERC20,
@@ -94,8 +94,8 @@ export async function createSwapRoute(uniswapPool: string): Promise<{ swapRouter
   };
 }
 
-export async function createMarginlyPoolImplementation(): Promise<{ poolImplementation: MarginlyPool }> {
-  const factory = await ethers.getContractFactory('MarginlyPool');
+export async function createMarginlyPoolImplementation(): Promise<{ poolImplementation: LevvaTradingPool }> {
+  const factory = await ethers.getContractFactory('LevvaTradingPool');
   return {
     poolImplementation: await factory.deploy(),
   };
@@ -142,7 +142,7 @@ export function createMarginlyPoolQuoteTokenIsWETH() {
 }
 
 async function createMarginlyPoolInternal(baseTokenIsWETH: boolean): Promise<{
-  marginlyPool: MarginlyPool;
+  marginlyPool: LevvaTradingPool;
   factoryOwner: SignerWithAddress;
   uniswapPoolInfo: UniswapPoolInfo;
   quoteContract: TestERC20;
@@ -176,8 +176,8 @@ async function createMarginlyPoolInternal(baseTokenIsWETH: boolean): Promise<{
   );
   await factory.createPool(quoteToken, baseToken, priceOracle, defaultSwapCallData, params);
 
-  const poolFactory = await ethers.getContractFactory('MarginlyPool');
-  const pool = poolFactory.attach(poolAddress) as MarginlyPool;
+  const poolFactory = await ethers.getContractFactory('LevvaTradingPool');
+  const pool = poolFactory.attach(poolAddress) as LevvaTradingPool;
 
   // mint for the first five signers and approve spend for marginlyPool
   const amountToDeposit = 5000n * 10n ** (await uniswapPoolInfo.token0.decimals());
@@ -226,7 +226,7 @@ async function createMarginlyPoolInternal(baseTokenIsWETH: boolean): Promise<{
  * 5 short positions and 5 long positions
  */
 export async function getInitializedPool(): Promise<{
-  marginlyPool: MarginlyPool;
+  marginlyPool: LevvaTradingPool;
   factoryOwner: SignerWithAddress;
   uniswapPoolInfo: UniswapPoolInfo;
   wallets: SignerWithAddress[];
@@ -288,7 +288,7 @@ export async function getInitializedPool(): Promise<{
 
 // pool with non-zero deleverage coeffs
 export async function getDeleveragedPool(): Promise<{
-  marginlyPool: MarginlyPool;
+  marginlyPool: LevvaTradingPool;
   factoryOwner: SignerWithAddress;
   uniswapPoolInfo: UniswapPoolInfo;
   wallets: SignerWithAddress[];

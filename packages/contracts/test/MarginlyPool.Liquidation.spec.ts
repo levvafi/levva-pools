@@ -234,7 +234,7 @@ describe('MarginlyPool.Liquidation', () => {
       await marginlyPool.discountedQuoteDebt(),
       await marginlyPool.discountedBaseCollateral()
     );
-    expect((await marginlyPool.systemLeverage()).longX96).to.be.equal(expectedLongLeverageX96);
+    expect(await marginlyPool.longLeverageX96()).to.be.equal(expectedLongLeverageX96);
 
     const expectedShortLeverageX96 = calcLeverageShort(
       basePrice.inner,
@@ -243,7 +243,7 @@ describe('MarginlyPool.Liquidation', () => {
       await marginlyPool.discountedQuoteCollateral(),
       await marginlyPool.discountedBaseDebt()
     );
-    expect((await marginlyPool.systemLeverage()).shortX96).to.be.equal(expectedShortLeverageX96);
+    expect(await marginlyPool.shortLeverageX96()).to.be.equal(expectedShortLeverageX96);
     expect(await token0.balanceOf(marginlyPool)).to.be.equal(token0BalanceBefore + quoteAmount);
     expect(await token1.balanceOf(marginlyPool)).to.be.equal(token1BalanceBefore + baseAmount);
   });
@@ -326,7 +326,7 @@ describe('MarginlyPool.Liquidation', () => {
       await marginlyPool.discountedQuoteDebt(),
       await marginlyPool.discountedBaseCollateral()
     );
-    expect(await (await marginlyPool.systemLeverage()).longX96).to.be.equal(expectedLongLeverageX96);
+    expect(await marginlyPool.longLeverageX96()).to.be.equal(expectedLongLeverageX96);
 
     const expectedShortLeverageX96 = calcLeverageShort(
       basePrice.inner,
@@ -335,7 +335,7 @@ describe('MarginlyPool.Liquidation', () => {
       await marginlyPool.discountedQuoteCollateral(),
       await marginlyPool.discountedBaseDebt()
     );
-    expect((await marginlyPool.systemLeverage()).shortX96).to.be.equal(expectedShortLeverageX96);
+    expect(await marginlyPool.shortLeverageX96()).to.be.equal(expectedShortLeverageX96);
     expect(await token0.balanceOf(marginlyPool)).to.be.equal(token0BalanceBefore + quoteAmount);
     expect(await token1.balanceOf(marginlyPool)).to.be.equal(token1BalanceBefore + baseAmount);
   });
@@ -416,7 +416,7 @@ describe('MarginlyPool.Liquidation', () => {
       await marginlyPool.discountedQuoteDebt(),
       await marginlyPool.discountedBaseCollateral()
     );
-    expect(await (await marginlyPool.systemLeverage()).longX96).to.be.equal(expectedLongLeverageX96);
+    expect(await marginlyPool.longLeverageX96()).to.be.equal(expectedLongLeverageX96);
 
     const expectedShortLeverageX96 = calcLeverageShort(
       basePrice.inner,
@@ -425,7 +425,7 @@ describe('MarginlyPool.Liquidation', () => {
       await marginlyPool.discountedQuoteCollateral(),
       await marginlyPool.discountedBaseDebt()
     );
-    expect((await marginlyPool.systemLeverage()).shortX96).to.be.equal(expectedShortLeverageX96);
+    expect(await marginlyPool.shortLeverageX96()).to.be.equal(expectedShortLeverageX96);
     expect(await token0.balanceOf(marginlyPool)).to.be.equal(token0BalanceBefore + quoteAmount);
     expect(await token1.balanceOf(marginlyPool)).to.be.equal(token1BalanceBefore + baseAmount);
   });
@@ -507,7 +507,7 @@ describe('MarginlyPool.Liquidation', () => {
       await marginlyPool.discountedQuoteDebt(),
       await marginlyPool.discountedBaseCollateral()
     );
-    expect(await (await marginlyPool.systemLeverage()).longX96).to.be.equal(expectedLongLeverageX96);
+    expect(await marginlyPool.longLeverageX96()).to.be.equal(expectedLongLeverageX96);
 
     const expectedShortLeverageX96 = calcLeverageShort(
       basePrice.inner,
@@ -516,7 +516,7 @@ describe('MarginlyPool.Liquidation', () => {
       await marginlyPool.discountedQuoteCollateral(),
       await marginlyPool.discountedBaseDebt()
     );
-    expect((await marginlyPool.systemLeverage()).shortX96).to.be.equal(expectedShortLeverageX96);
+    expect(await marginlyPool.shortLeverageX96()).to.be.equal(expectedShortLeverageX96);
     expect(await token0.balanceOf(marginlyPool)).to.be.equal(token0BalanceBefore + quoteAmount);
     expect(await token1.balanceOf(marginlyPool)).to.be.equal(token1BalanceBefore + baseAmount);
   });

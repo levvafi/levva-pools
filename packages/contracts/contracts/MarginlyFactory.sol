@@ -6,10 +6,9 @@ import '@openzeppelin/contracts/proxy/Clones.sol';
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 
 import './interfaces/IMarginlyFactory.sol';
+import './interfaces/IMarginlyPool.sol';
 import './dataTypes/MarginlyParams.sol';
 import './libraries/MarginlyErrors.sol';
-
-import './MarginlyPool.sol';
 
 /// @title Marginly contract factory
 /// @notice Deploys Marginly and manages ownership and control over pool

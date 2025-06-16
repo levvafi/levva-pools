@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import { HDNodeWallet } from 'ethers';
-import { MarginlyPool } from '../../typechain-types';
+import { LevvaTradingPool } from '../../typechain-types';
 import { expect } from 'chai';
 import { TechnicalPositionOwner } from './fixtures';
 
@@ -181,10 +181,10 @@ function fp96FromRatio(nom: bigint, denom: bigint): bigint {
   return (nom * FP96.one) / denom;
 }
 
-export async function calcAccruedRateCoeffs(marginlyPool: MarginlyPool, prevState: MarginlyPoolState) {
+export async function calcAccruedRateCoeffs(marginlyPool: LevvaTradingPool, prevState: MarginlyPoolState) {
   const params = prevState.params;
-  const leverageShortX96 = prevState.systemLeverage.shortX96;
-  const leverageLongX96 = prevState.systemLeverage.longX96;
+  const leverageShortX96 = prevState.systemLeverageShort;
+  const leverageLongX96 = prevState.systemLeverageLong;
 
   const lastReinitOnPrevBlock = prevState.lastReinitTimestampSeconds;
   const lastReinitTimestamp = await marginlyPool.lastReinitTimestampSeconds();
@@ -258,7 +258,7 @@ export async function calcAccruedRateCoeffs(marginlyPool: MarginlyPool, prevStat
   return result;
 }
 
-export async function assertAccruedRateCoeffs(marginlyPool: MarginlyPool, prevState: MarginlyPoolState) {
+export async function assertAccruedRateCoeffs(marginlyPool: LevvaTradingPool, prevState: MarginlyPoolState) {
   const baseDebtCoeff = await marginlyPool.baseDebtCoeff();
   const quoteDebtCoeff = await marginlyPool.quoteDebtCoeff();
   const quoteCollateralCoeff = await marginlyPool.quoteCollateralCoeff();
@@ -304,7 +304,8 @@ type MarginlyPoolState = {
     positionMinAmount: bigint;
     quoteLimit: bigint;
   };
-  systemLeverage: [bigint, bigint] & { shortX96: bigint; longX96: bigint };
+  systemLeverageLong: bigint;
+  systemLeverageShort: bigint;
   lastReinitTimestampSeconds: bigint;
   discountedBaseDebt: bigint;
   discountedQuoteDebt: bigint;
@@ -312,14 +313,15 @@ type MarginlyPoolState = {
   discountedQuoteCollateral: bigint;
 };
 
-export async function getMarginlyPoolState(marginlyPool: MarginlyPool): Promise<MarginlyPoolState> {
+export async function getMarginlyPoolState(marginlyPool: LevvaTradingPool): Promise<MarginlyPoolState> {
   const baseDebtCoeff = await marginlyPool.baseDebtCoeff();
   const quoteDebtCoeff = await marginlyPool.quoteDebtCoeff();
   const quoteCollateralCoeff = await marginlyPool.quoteCollateralCoeff();
   const baseCollateralCoeff = await marginlyPool.baseCollateralCoeff();
   const techPosition = await marginlyPool.positions(TechnicalPositionOwner);
   const lastReinitTimestampSeconds = await marginlyPool.lastReinitTimestampSeconds();
-  const systemLeverage = await marginlyPool.systemLeverage();
+  const systemLeverageLong = await marginlyPool.longLeverageX96();
+  const systemLeverageShort = await marginlyPool.shortLeverageX96();
   const params = await marginlyPool.params();
   const discountedBaseDebt = await marginlyPool.discountedBaseDebt();
   const discountedQuoteDebt = await marginlyPool.discountedQuoteDebt();
@@ -333,7 +335,8 @@ export async function getMarginlyPoolState(marginlyPool: MarginlyPool): Promise<
     baseCollateralCoeff,
     techPosition,
     params,
-    systemLeverage,
+    systemLeverageLong,
+    systemLeverageShort,
     lastReinitTimestampSeconds,
     discountedBaseDebt,
     discountedQuoteDebt,

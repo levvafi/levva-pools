@@ -125,7 +125,7 @@ const config = {
     disambiguatePaths: false,
     runOnCompile: true,
     strict: false,
-    only: ['Marginly'],
+    only: ['Marginly', 'Levva'],
     except: ['Mock', 'Test'],
   },
   docgen: {
