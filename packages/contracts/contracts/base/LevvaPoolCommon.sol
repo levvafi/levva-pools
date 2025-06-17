@@ -215,7 +215,9 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
   /// @dev Charge fee (swap or debt fee) in quote token
   /// @param feeAmount amount of token
   function _chargeFee(uint256 feeAmount) internal {
-    SafeERC20.safeTransfer(IERC20(quoteToken), IMarginlyFactory(factory).feeHolder(), feeAmount);
+    if (feeAmount != 0) {
+      SafeERC20.safeTransfer(IERC20(quoteToken), IMarginlyFactory(factory).feeHolder(), feeAmount);
+    }
   }
 
   /// @dev Returns tech position
