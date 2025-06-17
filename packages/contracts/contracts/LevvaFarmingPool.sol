@@ -31,12 +31,12 @@ contract LevvaFarmingPool is LongTrading, ShortFarming, Emergency {
     int256 amount2,
     uint256 limitPriceX96,
     bool flag,
-    address receivePositionAddress,
+    address positionAddress,
     uint256 swapCalldata
   ) external payable override lock {
     if (call == CallType.ReceivePosition) {
       if (amount2 < 0) revert MarginlyErrors.WrongValue();
-      _receivePosition(receivePositionAddress, amount1, uint256(amount2));
+      _receivePosition(positionAddress, amount1, uint256(amount2));
       return;
     } else if (call == CallType.EmergencyWithdraw) {
       _emergencyWithdraw(flag);
@@ -51,7 +51,16 @@ contract LevvaFarmingPool is LongTrading, ShortFarming, Emergency {
       return;
     }
 
-    Position storage position = positions[msg.sender];
+    Position storage position;
+    address positionOwner;
+    if (positionAddress == address(0)) {
+      position = positions[msg.sender];
+      positionOwner = msg.sender;
+    } else {
+      position = positions[positionAddress];
+      if (position._type != PositionType.Uninitialized) revert MarginlyErrors.Forbidden();
+      positionOwner = positionAddress;
+    }
 
     if (_positionHasBadLeverage(position, basePrice)) {
       _liquidate(msg.sender, position, basePrice);
@@ -62,25 +71,25 @@ contract LevvaFarmingPool is LongTrading, ShortFarming, Emergency {
     if (call == CallType.DepositBase) {
       _depositBase(amount1, basePrice, position);
       if (amount2 > 0) {
-        _long(uint256(amount2), limitPriceX96, basePrice, position, swapCalldata);
+        _long(uint256(amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       } else if (amount2 < 0) {
-        _short(uint256(-amount2), limitPriceX96, basePrice, position, swapCalldata);
+        _short(uint256(-amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       }
     } else if (call == CallType.DepositQuote) {
       _depositQuote(amount1, position);
       if (amount2 > 0) {
-        _short(uint256(amount2), limitPriceX96, basePrice, position, swapCalldata);
+        _short(uint256(amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       } else if (amount2 < 0) {
-        _long(uint256(-amount2), limitPriceX96, basePrice, position, swapCalldata);
+        _long(uint256(-amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       }
     } else if (call == CallType.WithdrawBase) {
       _withdrawBase(amount1, flag, basePrice, position);
     } else if (call == CallType.WithdrawQuote) {
       _withdrawQuote(amount1, flag, basePrice, position);
     } else if (call == CallType.Short) {
-      _short(amount1, limitPriceX96, basePrice, position, swapCalldata);
+      _short(amount1, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
     } else if (call == CallType.Long) {
-      _long(amount1, limitPriceX96, basePrice, position, swapCalldata);
+      _long(amount1, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
     } else if (call == CallType.ClosePosition) {
       _closePosition(limitPriceX96, position, swapCalldata);
       if (flag) {

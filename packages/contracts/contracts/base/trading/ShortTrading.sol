@@ -38,6 +38,7 @@ abstract contract ShortTrading is Liquidations {
     uint256 limitPriceX96,
     FP96.FixedPoint memory basePrice,
     Position storage position,
+    address positionOwner,
     uint256 swapCalldata
   ) internal {
     // revert MarginlyErrors.Forbidden();
@@ -76,13 +77,13 @@ abstract contract ShortTrading is Liquidations {
     if (position._type == PositionType.Lend) {
       if (position.heapPosition != 0) revert MarginlyErrors.WrongIndex();
       // init heap with default value 0, it will be updated by 'updateHeap' function later
-      shortHeap.insert(positions, MaxBinaryHeapLib.Node({key: 0, account: msg.sender}));
+      shortHeap.insert(positions, MaxBinaryHeapLib.Node({key: 0, account: positionOwner}));
       position._type = PositionType.Short;
     }
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    // emit Short(msg.sender, realBaseAmount, discountedQuoteChange, discountedBaseDebtChange);
+    // emit Short(positionOwner, realBaseAmount, discountedQuoteChange, discountedBaseDebtChange);
   }
 
   function _closeShortPosition(

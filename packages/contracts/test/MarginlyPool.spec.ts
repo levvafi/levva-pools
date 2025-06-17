@@ -2824,4 +2824,98 @@ describe('MarginlyPool.Base', () => {
       marginlyPool.execute(CallType.ReceivePosition, 0, -1, 0, false, ZeroAddress, uniswapV3Swapdata())
     ).to.be.revertedWithCustomError(marginlyPool, 'WrongValue');
   });
+
+  describe('Position transfer', () => {
+    it('Deposit base and transfer', async () => {
+      const { marginlyPool } = await loadFixture(createMarginlyPool);
+      const [, bundler, user] = await ethers.getSigners();
+
+      const price = (await marginlyPool.getBasePrice()).inner;
+
+      await marginlyPool
+        .connect(bundler)
+        .execute(CallType.DepositBase, 100, 0, price, false, user, uniswapV3Swapdata());
+
+      const bundlerPosition = await marginlyPool.positions(bundler);
+      expect(bundlerPosition._type).to.be.eq(PositionType.Uninitialized);
+      expect(bundlerPosition.discountedBaseAmount).to.be.eq(0);
+      expect(bundlerPosition.discountedQuoteAmount).to.be.eq(0);
+
+      const userPosition = await marginlyPool.positions(user);
+      expect(userPosition._type).to.be.eq(PositionType.Lend);
+      expect(userPosition.discountedBaseAmount).to.be.gt(0);
+      expect(userPosition.discountedQuoteAmount).to.be.eq(0);
+    });
+
+    it('Deposit quote and transfer', async () => {
+      const { marginlyPool } = await loadFixture(createMarginlyPool);
+      const [, bundler, user] = await ethers.getSigners();
+
+      const price = (await marginlyPool.getBasePrice()).inner;
+
+      await marginlyPool
+        .connect(bundler)
+        .execute(CallType.DepositQuote, 100, 0, price, false, user, uniswapV3Swapdata());
+
+      const bundlerPosition = await marginlyPool.positions(bundler);
+      expect(bundlerPosition._type).to.be.eq(PositionType.Uninitialized);
+      expect(bundlerPosition.discountedBaseAmount).to.be.eq(0);
+      expect(bundlerPosition.discountedQuoteAmount).to.be.eq(0);
+
+      const userPosition = await marginlyPool.positions(user);
+      expect(userPosition._type).to.be.eq(PositionType.Lend);
+      expect(userPosition.discountedBaseAmount).to.be.eq(0);
+      expect(userPosition.discountedQuoteAmount).to.be.gt(0);
+    });
+
+    it('Long and transfer', async () => {
+      const { marginlyPool } = await loadFixture(createMarginlyPool);
+      const [, bundler, user, lender] = await ethers.getSigners();
+
+      const price = (await marginlyPool.getBasePrice()).inner;
+
+      await marginlyPool
+        .connect(lender)
+        .execute(CallType.DepositQuote, 10_000, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+
+      await marginlyPool
+        .connect(bundler)
+        .execute(CallType.DepositBase, 100, 100, price, false, user, uniswapV3Swapdata());
+
+      const bundlerPosition = await marginlyPool.positions(bundler);
+      expect(bundlerPosition._type).to.be.eq(PositionType.Uninitialized);
+      expect(bundlerPosition.discountedBaseAmount).to.be.eq(0);
+      expect(bundlerPosition.discountedQuoteAmount).to.be.eq(0);
+
+      const userPosition = await marginlyPool.positions(user);
+      expect(userPosition._type).to.be.eq(PositionType.Long);
+      expect(userPosition.discountedBaseAmount).to.be.gt(0);
+      expect(userPosition.discountedQuoteAmount).to.be.gt(0);
+    });
+
+    it('Short and transfer', async () => {
+      const { marginlyPool } = await loadFixture(createMarginlyPool);
+      const [, bundler, user, lender] = await ethers.getSigners();
+
+      const price = (await marginlyPool.getBasePrice()).inner;
+
+      await marginlyPool
+        .connect(lender)
+        .execute(CallType.DepositBase, 10_000, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+
+      await marginlyPool
+        .connect(bundler)
+        .execute(CallType.DepositQuote, 100, 100, price, false, user, uniswapV3Swapdata());
+
+      const bundlerPosition = await marginlyPool.positions(bundler);
+      expect(bundlerPosition._type).to.be.eq(PositionType.Uninitialized);
+      expect(bundlerPosition.discountedBaseAmount).to.be.eq(0);
+      expect(bundlerPosition.discountedQuoteAmount).to.be.eq(0);
+
+      const userPosition = await marginlyPool.positions(user);
+      expect(userPosition._type).to.be.eq(PositionType.Short);
+      expect(userPosition.discountedBaseAmount).to.be.gt(0);
+      expect(userPosition.discountedQuoteAmount).to.be.gt(0);
+    });
+  });
 });

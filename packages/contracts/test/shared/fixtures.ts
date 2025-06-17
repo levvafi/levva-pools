@@ -118,7 +118,7 @@ export async function createPriceOracleMock(): Promise<MockPriceOracle> {
 
 export async function createMarginlyFactory(
   poolImplementation: string | Addressable | undefined = undefined,
-  baseTokenIsWETH = true,
+  baseTokenIsWETH = true
 ): Promise<{
   factory: MarginlyFactory;
   owner: SignerWithAddress;
@@ -206,7 +206,7 @@ export async function createLevvaFarmingPool(): Promise<{
 
 async function createMarginlyPoolInternal(
   poolImplementation: string | Addressable,
-  baseTokenIsWETH: boolean,
+  baseTokenIsWETH: boolean
 ): Promise<{
   marginlyPoolAddress: string;
   factoryOwner: SignerWithAddress;
@@ -219,7 +219,7 @@ async function createMarginlyPoolInternal(
 }> {
   const { factory, owner, uniswapPoolInfo, swapRouter, priceOracle } = await createMarginlyFactory(
     poolImplementation,
-    baseTokenIsWETH,
+    baseTokenIsWETH
   );
 
   const quoteToken = uniswapPoolInfo.token0.target;

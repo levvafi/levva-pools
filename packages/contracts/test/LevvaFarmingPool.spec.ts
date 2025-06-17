@@ -8,7 +8,7 @@ import { ZeroAddress } from 'ethers';
 describe('Levva Farming pool', () => {
   it('Short forbidden', async () => {
     const { marginlyPool } = await loadFixture(createLevvaFarmingPool);
-    const [_, lender,  user] = await ethers.getSigners();
+    const [_, lender, user] = await ethers.getSigners();
     const price = (await marginlyPool.getBasePrice()).inner;
     const amount = 10_000n;
 
@@ -27,15 +27,13 @@ describe('Levva Farming pool', () => {
       .execute(CallType.DepositQuote, amount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     await expect(
-      marginlyPool
-      .connect(user)
-      .execute(CallType.Short, amount, 0, price, false, ZeroAddress, uniswapV3Swapdata())
+      marginlyPool.connect(user).execute(CallType.Short, amount, 0, price, false, ZeroAddress, uniswapV3Swapdata())
     ).to.be.revertedWithCustomError(marginlyPool, 'ShortUnavailable');
   });
 
   it('Close long position sells all base for quote', async () => {
     const { marginlyPool } = await loadFixture(createLevvaFarmingPool);
-    const [_, lender,  user] = await ethers.getSigners();
+    const [_, lender, user] = await ethers.getSigners();
     const price = (await marginlyPool.getBasePrice()).inner;
     const amount = 10_000n;
 
@@ -66,7 +64,7 @@ describe('Levva Farming pool', () => {
 
   it('Close long position and withdraw', async () => {
     const { marginlyPool, quoteContract } = await loadFixture(createLevvaFarmingPool);
-    const [_, lender,  user] = await ethers.getSigners();
+    const [_, lender, user] = await ethers.getSigners();
     const price = (await marginlyPool.getBasePrice()).inner;
     const amount = 10_000n;
 

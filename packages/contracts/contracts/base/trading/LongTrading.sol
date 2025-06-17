@@ -38,6 +38,7 @@ abstract contract LongTrading is Liquidations {
     uint256 limitPriceX96,
     FP96.FixedPoint memory basePrice,
     Position storage position,
+    address positionOwner,
     uint256 swapCalldata
   ) internal virtual {
     if (basePrice.mul(_newPoolBaseBalance(realBaseAmount)) > params.quoteLimit) revert MarginlyErrors.ExceedsLimit();
@@ -73,13 +74,13 @@ abstract contract LongTrading is Liquidations {
     if (position._type == PositionType.Lend) {
       if (position.heapPosition != 0) revert MarginlyErrors.WrongIndex();
       // init heap with default value 0, it will be updated by 'updateHeap' function later
-      longHeap.insert(positions, MaxBinaryHeapLib.Node({key: 0, account: msg.sender}));
+      longHeap.insert(positions, MaxBinaryHeapLib.Node({key: 0, account: positionOwner}));
       position._type = PositionType.Long;
     }
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    // emit Long(msg.sender, realBaseAmount, discountedQuoteDebtChange, discountedBaseCollateralChange);
+    // emit Long(positionOwner, realBaseAmount, discountedQuoteDebtChange, discountedBaseCollateralChange);
   }
 
   /// @notice Close position
