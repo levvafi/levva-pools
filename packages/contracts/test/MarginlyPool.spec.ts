@@ -3052,5 +3052,58 @@ describe('MarginlyPool.Base', () => {
       expect(userPosition.discountedBaseAmount).to.be.gt(0);
       expect(userPosition.discountedQuoteAmount).to.be.gt(0);
     });
+
+    it('Position transfer forbidden', async () => {
+      const { marginlyPool } = await loadFixture(createMarginlyPool);
+      const [, bundler, lender] = await ethers.getSigners();
+
+      const price = (await marginlyPool.getBasePrice()).inner;
+
+      await marginlyPool
+        .connect(lender)
+        .execute(CallType.DepositBase, 10_000, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+
+      await expect(
+        marginlyPool.connect(bundler).execute(CallType.DepositBase, 100, 0, price, false, lender, uniswapV3Swapdata())
+      ).to.be.revertedWithCustomError(marginlyPool, 'Forbidden');
+
+      await expect(
+        marginlyPool.connect(bundler).execute(CallType.DepositQuote, 100, 0, price, false, lender, uniswapV3Swapdata())
+      ).to.be.revertedWithCustomError(marginlyPool, 'Forbidden');
+
+      await expect(
+        marginlyPool.connect(bundler).execute(CallType.DepositBase, 100, 100, price, false, lender, uniswapV3Swapdata())
+      ).to.be.revertedWithCustomError(marginlyPool, 'Forbidden');
+
+      await expect(
+        marginlyPool
+          .connect(bundler)
+          .execute(CallType.DepositQuote, 100, 100, price, false, lender, uniswapV3Swapdata())
+      ).to.be.revertedWithCustomError(marginlyPool, 'Forbidden');
+
+      await expect(
+        marginlyPool.connect(bundler).execute(CallType.WithdrawBase, 100, 0, price, false, lender, uniswapV3Swapdata())
+      ).to.be.revertedWithCustomError(marginlyPool, 'Forbidden');
+
+      await expect(
+        marginlyPool.connect(bundler).execute(CallType.WithdrawQuote, 100, 0, price, false, lender, uniswapV3Swapdata())
+      ).to.be.revertedWithCustomError(marginlyPool, 'Forbidden');
+
+      await expect(
+        marginlyPool.connect(bundler).execute(CallType.Long, 100, 0, price, false, lender, uniswapV3Swapdata())
+      ).to.be.revertedWithCustomError(marginlyPool, 'Forbidden');
+
+      await expect(
+        marginlyPool.connect(bundler).execute(CallType.Short, 100, 0, price, false, lender, uniswapV3Swapdata())
+      ).to.be.revertedWithCustomError(marginlyPool, 'Forbidden');
+
+      await expect(
+        marginlyPool.connect(bundler).execute(CallType.ClosePosition, 0, 0, price, false, lender, uniswapV3Swapdata())
+      ).to.be.revertedWithCustomError(marginlyPool, 'Forbidden');
+
+      await expect(
+        marginlyPool.connect(bundler).execute(CallType.SellCollateral, 0, 0, price, false, lender, uniswapV3Swapdata())
+      ).to.be.revertedWithCustomError(marginlyPool, 'Forbidden');
+    });
   });
 });

@@ -105,6 +105,13 @@ Object {
 }
 `;
 
+exports[`System initialized: sellCollateral 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 292543,
+}
+`;
+
 exports[`System initialized: short 1`] = `
 Object {
   "calldataByteLength": 228,
@@ -210,6 +217,13 @@ Object {
 }
 `;
 
+exports[`mc happens: long sellCollateral with one mc 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 230052,
+}
+`;
+
 exports[`mc happens: long with one mc 1`] = `
 Object {
   "calldataByteLength": 228,
@@ -221,6 +235,13 @@ exports[`mc happens: long with two mc 1`] = `
 Object {
   "calldataByteLength": 228,
   "gasUsed": 408945,
+}
+`;
+
+exports[`mc happens: sellCollateral with two mc 1`] = `
+Object {
+  "calldataByteLength": 228,
+  "gasUsed": 387453,
 }
 `;
 

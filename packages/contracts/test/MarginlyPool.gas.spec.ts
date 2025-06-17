@@ -178,6 +178,17 @@ describe('System initialized:', async () => {
     );
   });
 
+  it('sellCollateral', async () => {
+    const { marginlyPool, shorters } = await loadFixture(getInitializedPool);
+    const price = (await marginlyPool.getBasePrice()).inner;
+    const borrower = shorters[0];
+    await snapshotGasCost(
+      marginlyPool
+        .connect(borrower)
+        .execute(CallType.SellCollateral, 0, 0, (price * 101n) / 100n, false, ZeroAddress, uniswapV3Swapdata())
+    );
+  });
+
   it('withdrawBase', async () => {
     const { marginlyPool, longers } = await loadFixture(getInitializedPool);
     const price = (await marginlyPool.getBasePrice()).inner;
@@ -372,6 +383,52 @@ describe('mc happens:', async () => {
       await marginlyPool
         .connect(longer2)
         .execute(CallType.ClosePosition, 0, 0, (price * 99n) / 100n, false, ZeroAddress, uniswapV3Swapdata())
+    );
+
+    expect(await marginlyPool.discountedBaseDebt()).to.be.equal(0n);
+  });
+
+  it('long sellCollateral with one mc', async () => {
+    const { marginlyPool } = await loadFixture(createMarginlyPool);
+    const [owner, longer, lender, longer2] = await ethers.getSigners();
+    const price = (await marginlyPool.getBasePrice()).inner;
+
+    const params = await marginlyPool.params();
+    const newParams = {
+      maxLeverage: params.maxLeverage,
+      interestRate: params.interestRate,
+      fee: params.fee,
+      swapFee: params.swapFee,
+      mcSlippage: params.mcSlippage,
+      positionMinAmount: 10n,
+      quoteLimit: params.quoteLimit,
+    };
+    await marginlyPool.connect(owner).setParameters(newParams);
+
+    const lev = (await marginlyPool.params()).maxLeverage - 1n;
+    const longAmount = (lev - 1n) * 1000n;
+
+    await marginlyPool
+      .connect(lender)
+      .execute(CallType.DepositQuote, 3n * longAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+
+    await marginlyPool
+      .connect(longer)
+      .execute(CallType.DepositBase, 1000, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+    await marginlyPool
+      .connect(longer)
+      .execute(CallType.Long, longAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+    await marginlyPool
+      .connect(longer2)
+      .execute(CallType.DepositBase, 1000, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+    await marginlyPool.connect(longer2).execute(CallType.Long, 10, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+
+    await time.increase(24 * 60 * 60);
+
+    await snapshotGasCost(
+      await marginlyPool
+        .connect(longer2)
+        .execute(CallType.SellCollateral, 0, 0, (price * 99n) / 100n, false, ZeroAddress, uniswapV3Swapdata())
     );
 
     expect(await marginlyPool.discountedBaseDebt()).to.be.equal(0n);
@@ -609,6 +666,67 @@ describe('mc happens:', async () => {
       await marginlyPool
         .connect(longer2)
         .execute(CallType.ClosePosition, 0, 0, (price * 99n) / 100n, false, ZeroAddress, uniswapV3Swapdata())
+    );
+    expect((await marginlyPool.positions(shorter.address)).discountedBaseAmount).to.be.equal(0n);
+    expect((await marginlyPool.positions(longer.address)).discountedQuoteAmount).to.be.equal(0n);
+  });
+
+  it('sellCollateral with two mc', async () => {
+    const {
+      marginlyPool,
+      uniswapPoolInfo: { pool },
+    } = await loadFixture(createMarginlyPool);
+    const [owner, longer, longer2, shorter, lender, depositor] = await ethers.getSigners();
+    const price = (await marginlyPool.getBasePrice()).inner;
+    const params = await marginlyPool.params();
+    const newParams = {
+      maxLeverage: params.maxLeverage,
+      interestRate: params.interestRate,
+      fee: params.fee,
+      swapFee: params.swapFee,
+      mcSlippage: params.mcSlippage,
+      positionMinAmount: 10n,
+      quoteLimit: params.quoteLimit,
+    };
+    await marginlyPool.connect(owner).setParameters(newParams);
+    await marginlyPool
+      .connect(longer)
+      .execute(CallType.DepositBase, 1000, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+    await marginlyPool
+      .connect(longer2)
+      .execute(CallType.DepositBase, 1000, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+    await marginlyPool
+      .connect(shorter)
+      .execute(CallType.DepositQuote, 1000, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+    const lev = (await marginlyPool.params()).maxLeverage - 1n;
+    const shortAmount = ((lev - 1n) * 1000n * FP96.one) / price;
+    await marginlyPool
+      .connect(lender)
+      .execute(CallType.DepositBase, 3n * shortAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+    await marginlyPool
+      .connect(shorter)
+      .execute(CallType.Short, shortAmount, 0, (price * 99n) / 100n, false, ZeroAddress, uniswapV3Swapdata());
+    const longAmount = (lev - 1n) * 1000n;
+    await marginlyPool
+      .connect(lender)
+      .execute(
+        CallType.DepositQuote,
+        (20n * longAmount * price) / FP96.one,
+        0,
+        price,
+        false,
+        ZeroAddress,
+        uniswapV3Swapdata()
+      );
+    await marginlyPool.connect(longer2).execute(CallType.Long, 10, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+    await marginlyPool
+      .connect(longer)
+      .execute(CallType.Long, longAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+    await time.increase(180 * 24 * 60 * 60);
+    await snapshotGasCost(
+      await marginlyPool
+        .connect(longer2)
+        .execute(CallType.SellCollateral, 0, 0, (price * 99n) / 100n, false, ZeroAddress, uniswapV3Swapdata())
     );
     expect((await marginlyPool.positions(shorter.address)).discountedBaseAmount).to.be.equal(0n);
     expect((await marginlyPool.positions(longer.address)).discountedQuoteAmount).to.be.equal(0n);
