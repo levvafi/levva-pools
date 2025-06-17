@@ -108,6 +108,36 @@ abstract contract LevvaPoolVirtual is IMarginlyPool {
   // ======= Position funds update methods =======
   // =============================================
 
+  function _long(
+    uint256 realBaseAmount,
+    uint256 limitPriceX96,
+    FP96.FixedPoint memory basePrice,
+    Position storage position,
+    address positionOwner,
+    uint256 swapCalldata
+  ) internal virtual;
+
+  function _short(
+    uint256 realBaseAmount,
+    uint256 limitPriceX96,
+    FP96.FixedPoint memory basePrice,
+    Position storage position,
+    address positionOwner,
+    uint256 swapCalldata
+  ) internal virtual;
+
+  function _closeLongPosition(
+    uint256 limitPriceX96,
+    Position storage position,
+    uint256 swapCalldata
+  ) internal virtual returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta);
+
+  function _closeShortPosition(
+    uint256 limitPriceX96,
+    Position storage position,
+    uint256 swapCalldata
+  ) internal virtual returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta);
+
   function _repayBaseDebt(uint256 amount, FP96.FixedPoint memory basePrice, Position storage position) internal virtual;
 
   function _repayQuoteDebt(uint256 amount, Position storage position) internal virtual;

@@ -52,16 +52,7 @@ contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
       return;
     }
 
-    Position storage position;
-    address positionOwner;
-    if (positionAddress == address(0)) {
-      position = positions[msg.sender];
-      positionOwner = msg.sender;
-    } else {
-      position = positions[positionAddress];
-      if (position._type != PositionType.Uninitialized) revert MarginlyErrors.Forbidden();
-      positionOwner = positionAddress;
-    }
+    (Position storage position, address positionOwner) = _getPosition(positionAddress);
 
     if (_positionHasBadLeverage(position, basePrice)) {
       _liquidate(msg.sender, position, basePrice);
@@ -70,14 +61,14 @@ contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
     }
 
     if (call == CallType.DepositBase) {
-      _depositBase(amount1, basePrice, position);
+      _depositBase(amount1, basePrice, position, positionOwner);
       if (amount2 > 0) {
         _long(uint256(amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       } else if (amount2 < 0) {
         _short(uint256(-amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       }
     } else if (call == CallType.DepositQuote) {
-      _depositQuote(amount1, position);
+      _depositQuote(amount1, position, positionOwner);
       if (amount2 > 0) {
         _short(uint256(amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       } else if (amount2 < 0) {
@@ -114,24 +105,6 @@ contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
     } else {
       return longHeap.getNodeByIndex(index);
     }
-  }
-
-  /// @notice Close position
-  /// @param position msg.sender position
-  function _closePosition(uint256 limitPriceX96, Position storage position, uint256 swapCalldata) private {
-    uint256 realCollateralDelta;
-    uint256 discountedCollateralDelta;
-    address collateralToken;
-    uint256 swapPriceX96;
-    if (position._type == PositionType.Long) {
-      _closeLongPosition(limitPriceX96, position, swapCalldata);
-    } else if (position._type == PositionType.Short) {
-      _closeShortPosition(limitPriceX96, position, swapCalldata);
-    } else {
-      revert MarginlyErrors.WrongPositionType();
-    }
-
-    emit ClosePosition(msg.sender, collateralToken, realCollateralDelta, swapPriceX96, discountedCollateralDelta);
   }
 
   function _calcRealBaseCollateralTotal() internal view override(LevvaPoolCommon, LongTrading) returns (uint256) {

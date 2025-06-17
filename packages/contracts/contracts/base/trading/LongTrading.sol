@@ -40,7 +40,7 @@ abstract contract LongTrading is Liquidations {
     Position storage position,
     address positionOwner,
     uint256 swapCalldata
-  ) internal virtual {
+  ) internal virtual override {
     if (basePrice.mul(_newPoolBaseBalance(realBaseAmount)) > params.quoteLimit) revert MarginlyErrors.ExceedsLimit();
 
     // this function guaranties the position is gonna be either Long or Lend with 0 quote balance
@@ -89,7 +89,7 @@ abstract contract LongTrading is Liquidations {
     uint256 limitPriceX96,
     Position storage position,
     uint256 swapCalldata
-  ) internal virtual returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta) {
+  ) internal override returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta) {
     uint256 positionDiscountedQuoteDebtPrev = position.discountedQuoteAmount;
     uint256 realBaseCollateral = _calcRealBaseCollateral(position.discountedBaseAmount, position.discountedQuoteAmount);
     uint256 realQuoteDebt = quoteDebtCoeff.mul(positionDiscountedQuoteDebtPrev, Math.Rounding.Ceil);

@@ -40,7 +40,7 @@ abstract contract ShortTrading is Liquidations {
     Position storage position,
     address positionOwner,
     uint256 swapCalldata
-  ) internal {
+  ) internal virtual override {
     // revert MarginlyErrors.Forbidden();
     // this function guaranties the position is gonna be either Short or Lend with 0 base balance
     _sellBaseForQuote(position, limitPriceX96, swapCalldata);
@@ -90,7 +90,7 @@ abstract contract ShortTrading is Liquidations {
     uint256 limitPriceX96,
     Position storage position,
     uint256 swapCalldata
-  ) internal returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta) {
+  ) internal virtual override returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta) {
     uint256 positionDiscountedBaseDebtPrev = position.discountedBaseAmount;
     uint256 realQuoteCollateral = _calcRealQuoteCollateral(
       position.discountedQuoteAmount,

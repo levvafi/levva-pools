@@ -25,11 +25,11 @@ abstract contract ShortFarming is Liquidations {
   error ShortUnavailable();
 
   /// @notice Short is no availible for farming pools
-  function _short(uint256, uint256, FP96.FixedPoint memory, Position storage, address, uint256) internal pure {
+  function _short(uint256, uint256, FP96.FixedPoint memory, Position storage, address, uint256) internal pure override {
     revert ShortUnavailable();
   }
 
-  function _closeShortPosition(uint256, Position storage, uint256) internal pure returns (uint256, uint256) {
+  function _closeShortPosition(uint256, Position storage, uint256) internal pure override returns (uint256, uint256) {
     revert ShortUnavailable();
   }
 

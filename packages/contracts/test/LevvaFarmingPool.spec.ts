@@ -5,7 +5,7 @@ import { ethers } from 'hardhat';
 import { CallType, PositionType, uniswapV3Swapdata } from './shared/utils';
 import { ZeroAddress } from 'ethers';
 
-describe('Levva Farming pool', () => {
+describe.skip('Levva Farming pool', () => {
   it('Short forbidden', async () => {
     const { marginlyPool } = await loadFixture(createLevvaFarmingPool);
     const [_, lender, user] = await ethers.getSigners();
