@@ -23,7 +23,12 @@ abstract contract Funding is LevvaPoolCommon {
   /// @param amount Amount of base token to deposit
   /// @param basePrice current oracle base price, got by getBasePrice() method
   /// @param position msg.sender position
-  function _depositBase(uint256 amount, FP96.FixedPoint memory basePrice, Position storage position) internal {
+  function _depositBase(
+    uint256 amount,
+    FP96.FixedPoint memory basePrice,
+    Position storage position,
+    address positionOwner
+  ) internal {
     if (amount == 0) revert MarginlyErrors.ZeroAmount();
 
     if (position._type == PositionType.Uninitialized) {
@@ -45,13 +50,13 @@ abstract contract Funding is LevvaPoolCommon {
     }
 
     _wrapAndTransferFrom(baseToken, msg.sender, amount);
-    emit DepositBase(msg.sender, amount, position._type, position.discountedBaseAmount);
+    emit DepositBase(positionOwner, amount, position._type, position.discountedBaseAmount);
   }
 
   /// @notice Deposit quote token
   /// @param amount Amount of quote token
   /// @param position msg.sender position
-  function _depositQuote(uint256 amount, Position storage position) internal {
+  function _depositQuote(uint256 amount, Position storage position, address positionOwner) internal {
     if (amount == 0) revert MarginlyErrors.ZeroAmount();
 
     if (position._type == PositionType.Uninitialized) {
@@ -73,7 +78,7 @@ abstract contract Funding is LevvaPoolCommon {
     }
 
     _wrapAndTransferFrom(quoteToken, msg.sender, amount);
-    emit DepositQuote(msg.sender, amount, position._type, position.discountedQuoteAmount);
+    emit DepositQuote(positionOwner, amount, position._type, position.discountedQuoteAmount);
   }
 
   /// @notice Withdraw base token

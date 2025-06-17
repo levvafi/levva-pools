@@ -15,6 +15,7 @@ enum CallType {
   Reinit = 7,
   ReceivePosition = 8,
   EmergencyWithdraw = 9,
+  SellCollateral = 10,
 }
 
 // Example: npx hardhat --network arbitrumSepolia run ./scripts/callExecute.ts

@@ -38,11 +38,12 @@ abstract contract ShortTrading is Liquidations {
     uint256 limitPriceX96,
     FP96.FixedPoint memory basePrice,
     Position storage position,
+    address positionOwner,
     uint256 swapCalldata
-  ) internal {
+  ) internal virtual override {
     // revert MarginlyErrors.Forbidden();
     // this function guaranties the position is gonna be either Short or Lend with 0 base balance
-    _sellBaseForQuote(position, limitPriceX96, swapCalldata);
+    _sellBaseForQuote(position, positionOwner, limitPriceX96, swapCalldata);
 
     uint256 positionDisBaseDebt = position.discountedBaseAmount;
     uint256 positionDisQuoteCollateral = position.discountedQuoteAmount;
@@ -76,20 +77,20 @@ abstract contract ShortTrading is Liquidations {
     if (position._type == PositionType.Lend) {
       if (position.heapPosition != 0) revert MarginlyErrors.WrongIndex();
       // init heap with default value 0, it will be updated by 'updateHeap' function later
-      shortHeap.insert(positions, MaxBinaryHeapLib.Node({key: 0, account: msg.sender}));
+      shortHeap.insert(positions, MaxBinaryHeapLib.Node({key: 0, account: positionOwner}));
       position._type = PositionType.Short;
     }
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    // emit Short(msg.sender, realBaseAmount, discountedQuoteChange, discountedBaseDebtChange);
+    emit Short(positionOwner, realBaseAmount, 0, discountedQuoteChange, discountedBaseDebtChange);
   }
 
   function _closeShortPosition(
     uint256 limitPriceX96,
     Position storage position,
     uint256 swapCalldata
-  ) internal returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta) {
+  ) internal virtual override returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta) {
     uint256 positionDiscountedBaseDebtPrev = position.discountedBaseAmount;
     uint256 realQuoteCollateral = _calcRealQuoteCollateral(
       position.discountedQuoteAmount,
@@ -167,7 +168,12 @@ abstract contract ShortTrading is Liquidations {
   /// @notice sells all the quote tokens from lend position for base ones
   /// @dev no liquidity limit check since this function goes prior to 'long' call and it fail there anyway
   /// @dev you may consider adding that check here if this method is used in any other way
-  function _sellQuoteForBase(Position storage position, uint256 limitPriceX96, uint256 swapCalldata) internal override {
+  function _sellQuoteForBase(
+    Position storage position,
+    address positionOwner,
+    uint256 limitPriceX96,
+    uint256 swapCalldata
+  ) internal override {
     PositionType _type = position._type;
     if (_type == PositionType.Uninitialized) revert MarginlyErrors.UninitializedPosition();
     if (_type == PositionType.Long) return;
@@ -203,12 +209,12 @@ abstract contract ShortTrading is Liquidations {
       position._type = PositionType.Lend;
       uint32 heapIndex = position.heapPosition - 1;
       shortHeap.remove(positions, heapIndex);
-      emit BaseDebtRepaid(msg.sender, realBaseDebt, posDiscountedBaseDebt);
+      emit BaseDebtRepaid(positionOwner, realBaseDebt, posDiscountedBaseDebt);
     } else {
       position.discountedBaseAmount += discountedBaseCollateralDelta;
     }
     emit SellQuoteForBase(
-      msg.sender,
+      positionOwner,
       quoteInSubFee,
       baseAmountOut,
       posDiscountedQuoteColl,

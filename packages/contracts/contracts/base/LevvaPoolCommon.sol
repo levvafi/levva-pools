@@ -96,6 +96,41 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
     return FP96.FixedPoint({inner: price});
   }
 
+  /// @notice Close position
+  /// @param position msg.sender position
+  function _closePosition(uint256 limitPriceX96, Position storage position, uint256 swapCalldata) internal {
+    uint256 realCollateralDelta;
+    uint256 discountedCollateralDelta;
+    address collateralToken;
+    uint256 swapPriceX96;
+    if (position._type == PositionType.Long) {
+      (realCollateralDelta, discountedCollateralDelta) = _closeLongPosition(limitPriceX96, position, swapCalldata);
+      collateralToken = baseToken;
+    } else if (position._type == PositionType.Short) {
+      (realCollateralDelta, discountedCollateralDelta) = _closeShortPosition(limitPriceX96, position, swapCalldata);
+      collateralToken = quoteToken;
+    } else {
+      revert MarginlyErrors.WrongPositionType();
+    }
+
+    emit ClosePosition(msg.sender, collateralToken, realCollateralDelta, swapPriceX96, discountedCollateralDelta);
+  }
+
+  function _sellCollateral(
+    uint256 limitPriceX96,
+    Position storage position,
+    address positionOwner,
+    uint256 swapCalldata
+  ) internal {
+    if (position._type == PositionType.Long) {
+      _sellBaseForQuote(position, positionOwner, limitPriceX96, swapCalldata);
+    } else if (position._type == PositionType.Short) {
+      _sellQuoteForBase(position, positionOwner, limitPriceX96, swapCalldata);
+    } else {
+      revert MarginlyErrors.WrongPositionType();
+    }
+  }
+
   /// @dev Returns Uniswap SwapRouter address
   function _getSwapRouter() internal view returns (address) {
     return IMarginlyFactory(factory).swapRouter();
@@ -104,6 +139,19 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
   /// @dev Returns WETH9 address
   function _getWETH9Address() internal view returns (address) {
     return IMarginlyFactory(factory).WETH9();
+  }
+
+  function _resolvePositionAndOwner(
+    address transferPositionTo
+  ) internal view returns (Position storage position, address positionOwner) {
+    if (transferPositionTo == address(0)) {
+      position = positions[msg.sender];
+      positionOwner = msg.sender;
+    } else {
+      position = positions[transferPositionTo];
+      if (position._type != PositionType.Uninitialized) revert MarginlyErrors.Forbidden();
+      positionOwner = transferPositionTo;
+    }
   }
 
   function _setParameters(MarginlyParams calldata _params) internal {

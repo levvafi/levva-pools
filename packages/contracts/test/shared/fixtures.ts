@@ -1,7 +1,6 @@
 import { ethers } from 'hardhat';
 import {
   MarginlyFactory,
-  LevvaTradingPool,
   TestUniswapFactory,
   TestUniswapPool,
   TestERC20,
@@ -18,6 +17,10 @@ import {
   MarginlyKeeperAlgebra,
   TestAlgebraPool,
   MarginlyKeeperAave,
+  LevvaFarmingPool,
+  LevvaFarmingPool__factory,
+  LevvaTradingPool,
+  LevvaTradingPool__factory,
 } from '../../typechain-types';
 import { MarginlyParamsStruct } from '../../typechain-types/contracts/MarginlyFactory';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
@@ -94,8 +97,15 @@ export async function createSwapRoute(uniswapPool: string): Promise<{ swapRouter
   };
 }
 
-export async function createMarginlyPoolImplementation(): Promise<{ poolImplementation: LevvaTradingPool }> {
+export async function createLevvaTradingPoolImplementation(): Promise<{ poolImplementation: LevvaTradingPool }> {
   const factory = await ethers.getContractFactory('LevvaTradingPool');
+  return {
+    poolImplementation: await factory.deploy(),
+  };
+}
+
+export async function createLevvaFarmingPoolImplementation(): Promise<{ poolImplementation: LevvaFarmingPool }> {
+  const factory = await ethers.getContractFactory('LevvaFarmingPool');
   return {
     poolImplementation: await factory.deploy(),
   };
@@ -106,7 +116,10 @@ export async function createPriceOracleMock(): Promise<MockPriceOracle> {
   return await factory.deploy();
 }
 
-export async function createMarginlyFactory(baseTokenIsWETH = true): Promise<{
+export async function createMarginlyFactory(
+  poolImplementation: string | Addressable | undefined = undefined,
+  baseTokenIsWETH = true
+): Promise<{
   factory: MarginlyFactory;
   owner: SignerWithAddress;
   uniswapPoolInfo: UniswapPoolInfo;
@@ -115,11 +128,14 @@ export async function createMarginlyFactory(baseTokenIsWETH = true): Promise<{
 }> {
   const { uniswapPoolInfo } = await createUniswapFactory();
   const { swapRouter } = await createSwapRoute(uniswapPoolInfo.address);
-  const { poolImplementation } = await createMarginlyPoolImplementation();
   const priceOracle = await createPriceOracleMock();
 
   await uniswapPoolInfo.token0.mint(swapRouter, parseUnits('100000', 18));
   await uniswapPoolInfo.token1.mint(swapRouter, parseUnits('100000', 18));
+
+  if (poolImplementation === undefined) {
+    poolImplementation = (await createLevvaTradingPoolImplementation()).poolImplementation;
+  }
 
   const factoryFactory = await ethers.getContractFactory('MarginlyFactory');
   const [owner] = await ethers.getSigners();
@@ -133,15 +149,7 @@ export async function createMarginlyFactory(baseTokenIsWETH = true): Promise<{
   return { factory, owner, uniswapPoolInfo, swapRouter, priceOracle };
 }
 
-export function createMarginlyPool() {
-  return createMarginlyPoolInternal(true);
-}
-
-export function createMarginlyPoolQuoteTokenIsWETH() {
-  return createMarginlyPoolInternal(false);
-}
-
-async function createMarginlyPoolInternal(baseTokenIsWETH: boolean): Promise<{
+export async function createMarginlyPool(): Promise<{
   marginlyPool: LevvaTradingPool;
   factoryOwner: SignerWithAddress;
   uniswapPoolInfo: UniswapPoolInfo;
@@ -151,7 +159,68 @@ async function createMarginlyPoolInternal(baseTokenIsWETH: boolean): Promise<{
   marginlyFactory: MarginlyFactory;
   priceOracle: MockPriceOracle;
 }> {
-  const { factory, owner, uniswapPoolInfo, swapRouter, priceOracle } = await createMarginlyFactory(baseTokenIsWETH);
+  const { poolImplementation } = await createLevvaTradingPoolImplementation();
+  const result = await createMarginlyPoolInternal(poolImplementation.target, true);
+  return {
+    marginlyPool: LevvaTradingPool__factory.connect(result.marginlyPoolAddress, poolImplementation.runner),
+    ...result,
+  };
+}
+
+export async function createMarginlyPoolQuoteTokenIsWETH(): Promise<{
+  marginlyPool: LevvaTradingPool;
+  factoryOwner: SignerWithAddress;
+  uniswapPoolInfo: UniswapPoolInfo;
+  quoteContract: TestERC20;
+  baseContract: TestERC20;
+  swapRouter: TestSwapRouter;
+  marginlyFactory: MarginlyFactory;
+  priceOracle: MockPriceOracle;
+}> {
+  const { poolImplementation } = await createLevvaTradingPoolImplementation();
+
+  const result = await createMarginlyPoolInternal(poolImplementation.target, false);
+  return {
+    marginlyPool: LevvaTradingPool__factory.connect(result.marginlyPoolAddress, poolImplementation.runner),
+    ...result,
+  };
+}
+
+export async function createLevvaFarmingPool(): Promise<{
+  marginlyPool: LevvaFarmingPool;
+  factoryOwner: SignerWithAddress;
+  uniswapPoolInfo: UniswapPoolInfo;
+  quoteContract: TestERC20;
+  baseContract: TestERC20;
+  swapRouter: TestSwapRouter;
+  marginlyFactory: MarginlyFactory;
+  priceOracle: MockPriceOracle;
+}> {
+  const { poolImplementation } = await createLevvaFarmingPoolImplementation();
+  const result = await createMarginlyPoolInternal(poolImplementation.target, false);
+  return {
+    marginlyPool: LevvaFarmingPool__factory.connect(result.marginlyPoolAddress, poolImplementation.runner),
+    ...result,
+  };
+}
+
+async function createMarginlyPoolInternal(
+  poolImplementation: string | Addressable,
+  baseTokenIsWETH: boolean
+): Promise<{
+  marginlyPoolAddress: string;
+  factoryOwner: SignerWithAddress;
+  uniswapPoolInfo: UniswapPoolInfo;
+  quoteContract: TestERC20;
+  baseContract: TestERC20;
+  swapRouter: TestSwapRouter;
+  marginlyFactory: MarginlyFactory;
+  priceOracle: MockPriceOracle;
+}> {
+  const { factory, owner, uniswapPoolInfo, swapRouter, priceOracle } = await createMarginlyFactory(
+    poolImplementation,
+    baseTokenIsWETH
+  );
 
   const quoteToken = uniswapPoolInfo.token0.target;
   const baseToken = uniswapPoolInfo.token1.target;
@@ -175,9 +244,6 @@ async function createMarginlyPoolInternal(baseTokenIsWETH: boolean): Promise<{
     params
   );
   await factory.createPool(quoteToken, baseToken, priceOracle, defaultSwapCallData, params);
-
-  const poolFactory = await ethers.getContractFactory('LevvaTradingPool');
-  const pool = poolFactory.attach(poolAddress) as LevvaTradingPool;
 
   // mint for the first five signers and approve spend for marginlyPool
   const amountToDeposit = 5000n * 10n ** (await uniswapPoolInfo.token0.decimals());
@@ -204,13 +270,10 @@ async function createMarginlyPoolInternal(baseTokenIsWETH: boolean): Promise<{
   await uniswapPoolInfo.token0.connect(techPositionOwner).approve(poolAddress, amountToDeposit);
   await uniswapPoolInfo.token1.connect(techPositionOwner).approve(poolAddress, amountToDeposit);
 
-  // await uniswapPoolInfo.token0.mint(pool, amountToDeposit);
-  // await uniswapPoolInfo.token1.mint(pool, amountToDeposit);
-
   const [quoteContract, baseContract] = [uniswapPoolInfo.token0, uniswapPoolInfo.token1];
 
   return {
-    marginlyPool: pool,
+    marginlyPoolAddress: poolAddress,
     factoryOwner: owner,
     uniswapPoolInfo,
     quoteContract,

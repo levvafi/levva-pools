@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
-import './base/farming/LongFarming.sol';
+import './base/trading/LongTrading.sol';
 import './base/farming/ShortFarming.sol';
 import './base/Emergency.sol';
 
-contract LevvaFarmingPool is LongFarming, ShortFarming, Emergency {
+contract LevvaFarmingPool is LongTrading, ShortFarming, Emergency {
   using FP96 for FP96.FixedPoint;
   using LowGasSafeMath for uint256;
   using MaxBinaryHeapLib for MaxBinaryHeapLib.Heap;
@@ -21,7 +21,7 @@ contract LevvaFarmingPool is LongFarming, ShortFarming, Emergency {
     if (factory != address(0)) revert MarginlyErrors.Forbidden();
 
     __LevvaPoolCommon_init(_quoteToken, _baseToken, _priceOracle, _defaultSwapCallData, _params);
-    __LongFarming_init();
+    __LongTrading_init();
   }
 
   /// @param flag unwrapETH in case of withdraw calls or syncBalance in case of reinit call
@@ -31,12 +31,12 @@ contract LevvaFarmingPool is LongFarming, ShortFarming, Emergency {
     int256 amount2,
     uint256 limitPriceX96,
     bool flag,
-    address receivePositionAddress,
+    address positionAddress,
     uint256 swapCalldata
   ) external payable override lock {
     if (call == CallType.ReceivePosition) {
       if (amount2 < 0) revert MarginlyErrors.WrongValue();
-      _receivePosition(receivePositionAddress, amount1, uint256(amount2));
+      _receivePosition(positionAddress, amount1, uint256(amount2));
       return;
     } else if (call == CallType.EmergencyWithdraw) {
       _emergencyWithdraw(flag);
@@ -51,7 +51,7 @@ contract LevvaFarmingPool is LongFarming, ShortFarming, Emergency {
       return;
     }
 
-    Position storage position = positions[msg.sender];
+    (Position storage position, address positionOwner) = _resolvePositionAndOwner(positionAddress);
 
     if (_positionHasBadLeverage(position, basePrice)) {
       _liquidate(msg.sender, position, basePrice);
@@ -60,29 +60,37 @@ contract LevvaFarmingPool is LongFarming, ShortFarming, Emergency {
     }
 
     if (call == CallType.DepositBase) {
-      _depositBase(amount1, basePrice, position);
+      _depositBase(amount1, basePrice, position, positionOwner);
       if (amount2 > 0) {
-        _long(uint256(amount2), limitPriceX96, basePrice, position, swapCalldata);
+        _long(uint256(amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       } else if (amount2 < 0) {
-        _short(uint256(-amount2), limitPriceX96, basePrice, position, swapCalldata);
+        _short(uint256(-amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       }
     } else if (call == CallType.DepositQuote) {
-      _depositQuote(amount1, position);
+      _depositQuote(amount1, position, positionOwner);
       if (amount2 > 0) {
-        _short(uint256(amount2), limitPriceX96, basePrice, position, swapCalldata);
+        _short(uint256(amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       } else if (amount2 < 0) {
-        _long(uint256(-amount2), limitPriceX96, basePrice, position, swapCalldata);
+        _long(uint256(-amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       }
     } else if (call == CallType.WithdrawBase) {
       _withdrawBase(amount1, flag, basePrice, position);
     } else if (call == CallType.WithdrawQuote) {
       _withdrawQuote(amount1, flag, basePrice, position);
     } else if (call == CallType.Short) {
-      _short(amount1, limitPriceX96, basePrice, position, swapCalldata);
+      _short(amount1, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
     } else if (call == CallType.Long) {
-      _long(amount1, limitPriceX96, basePrice, position, swapCalldata);
+      _long(amount1, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
     } else if (call == CallType.ClosePosition) {
       _closePosition(limitPriceX96, position, swapCalldata);
+      if (flag) {
+        _withdrawBase(type(uint256).max, false, basePrice, position);
+      }
+    } else if (call == CallType.SellCollateral) {
+      _sellCollateral(limitPriceX96, position, positionOwner, swapCalldata);
+      if (flag) {
+        _withdrawQuote(type(uint256).max, false, basePrice, position);
+      }
     } else if (call == CallType.Reinit && flag) {
       // reinit itself has already taken place
       _syncBaseBalance();
@@ -106,61 +114,43 @@ contract LevvaFarmingPool is LongFarming, ShortFarming, Emergency {
     }
   }
 
-  /// @notice Close position
-  /// @param position msg.sender position
-  function _closePosition(uint256 limitPriceX96, Position storage position, uint256 swapCalldata) private {
-    uint256 realCollateralDelta;
-    uint256 discountedCollateralDelta;
-    address collateralToken;
-    uint256 swapPriceX96;
-    if (position._type == PositionType.Long) {
-      _closeLongPosition(limitPriceX96, position, swapCalldata);
-    } else if (position._type == PositionType.Short) {
-      _closeShortPosition(limitPriceX96, position, swapCalldata);
-    } else {
-      revert MarginlyErrors.WrongPositionType();
-    }
-
-    emit ClosePosition(msg.sender, collateralToken, realCollateralDelta, swapPriceX96, discountedCollateralDelta);
+  function _calcRealBaseCollateralTotal() internal view override(LevvaPoolCommon, LongTrading) returns (uint256) {
+    return LongTrading._calcRealBaseCollateralTotal();
   }
 
-  function _calcRealBaseCollateralTotal() internal view override(LevvaPoolCommon, LongFarming) returns (uint256) {
-    return LongFarming._calcRealBaseCollateralTotal();
-  }
-
-  function _calcRealQuoteDebtTotal() internal view override(LevvaPoolVirtual, LongFarming) returns (uint256) {
-    return LongFarming._calcRealQuoteDebtTotal();
+  function _calcRealQuoteDebtTotal() internal view override(LevvaPoolVirtual, LongTrading) returns (uint256) {
+    return LongTrading._calcRealQuoteDebtTotal();
   }
 
   function _calcRealBaseCollateral(
     uint256 disBaseCollateral,
     uint256 disQuoteDebt
-  ) internal view override(LevvaPoolCommon, LongFarming) returns (uint256) {
-    return LongFarming._calcRealBaseCollateral(disBaseCollateral, disQuoteDebt);
+  ) internal view override(LevvaPoolCommon, LongTrading) returns (uint256) {
+    return LongTrading._calcRealBaseCollateral(disBaseCollateral, disQuoteDebt);
   }
 
   function _calcRealQuoteDebt(
     uint256 disQuoteDebt
-  ) internal view override(LevvaPoolVirtual, LongFarming) returns (uint256) {
-    return LongFarming._calcRealQuoteDebt(disQuoteDebt);
+  ) internal view override(LevvaPoolVirtual, LongTrading) returns (uint256) {
+    return LongTrading._calcRealQuoteDebt(disQuoteDebt);
   }
 
-  function _updateBaseCollateralCoeffs(FP96.FixedPoint memory factor) internal override(LevvaPoolCommon, LongFarming) {
-    return LongFarming._updateBaseCollateralCoeffs(factor);
+  function _updateBaseCollateralCoeffs(FP96.FixedPoint memory factor) internal override(LevvaPoolCommon, LongTrading) {
+    return LongTrading._updateBaseCollateralCoeffs(factor);
   }
 
   function _deleverageLong(
     uint256 realQuoteCollateral,
     uint256 realBaseDebt
-  ) internal override(LongFarming, LevvaPoolVirtual) {
-    LongFarming._deleverageLong(realQuoteCollateral, realBaseDebt);
+  ) internal override(LongTrading, LevvaPoolVirtual) {
+    LongTrading._deleverageLong(realQuoteCollateral, realBaseDebt);
   }
 
-  function _getWorstLongPositionOwner() internal view override(LongFarming, LevvaPoolVirtual) returns (address) {
-    return LongFarming._getWorstLongPositionOwner();
+  function _getWorstLongPositionOwner() internal view override(LongTrading, LevvaPoolVirtual) returns (address) {
+    return LongTrading._getWorstLongPositionOwner();
   }
 
-  function _updateHeapLong(Position storage position) internal override(LongFarming, LevvaPoolVirtual) {
-    return LongFarming._updateHeapLong(position);
+  function _updateHeapLong(Position storage position) internal override(LongTrading, LevvaPoolVirtual) {
+    return LongTrading._updateHeapLong(position);
   }
 }

@@ -11,5 +11,6 @@ enum CallType {
   ClosePosition,
   Reinit,
   ReceivePosition,
-  EmergencyWithdraw
+  EmergencyWithdraw,
+  SellCollateral
 }
