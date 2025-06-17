@@ -1444,7 +1444,7 @@ describe('MarginlyPool.Base', () => {
   });
 
   describe('Sell collateral', () => {
-    it('should raise error when attempt to close Uninitialized or Lend position', async () => {
+    it('should raise error when attempt to sell collateral in Uninitialized or Lend position', async () => {
       const { marginlyPool } = await loadFixture(createMarginlyPool);
       const [_, signer] = await ethers.getSigners();
       const price = (await marginlyPool.getBasePrice()).inner;
@@ -1463,7 +1463,7 @@ describe('MarginlyPool.Base', () => {
       ).to.be.revertedWithCustomError(marginlyPool, 'WrongPositionType');
     });
 
-    it('close short slippage fail', async () => {
+    it('sell collateral short slippage fail', async () => {
       const { marginlyPool, swapRouter } = await loadFixture(createMarginlyPool);
       const [_, signer, lender] = await ethers.getSigners();
       const price = (await marginlyPool.getBasePrice()).inner;
@@ -1490,7 +1490,7 @@ describe('MarginlyPool.Base', () => {
       ).to.be.revertedWithCustomError(swapRouter, 'TooMuchRequested');
     });
 
-    it('close long slippage fail', async () => {
+    it('sell collateral long slippage fail', async () => {
       const { marginlyPool, swapRouter } = await loadFixture(createMarginlyPool);
       const [_, signer, lender] = await ethers.getSigners();
       const price = (await marginlyPool.getBasePrice()).inner;
@@ -1512,7 +1512,7 @@ describe('MarginlyPool.Base', () => {
       ).to.be.revertedWithCustomError(swapRouter, 'TooMuchRequested');
     });
 
-    it('should close short position', async () => {
+    it('should sell collateral for short position', async () => {
       const { marginlyPool } = await loadFixture(createMarginlyPool);
       const [_, signer, lender] = await ethers.getSigners();
       const price = (await marginlyPool.getBasePrice()).inner;
@@ -1547,7 +1547,7 @@ describe('MarginlyPool.Base', () => {
       }
     });
 
-    it('should close long position', async () => {
+    it('should sell collateral for long position', async () => {
       const { marginlyPool } = await loadFixture(createMarginlyPool);
       const [_, signer, lender] = await ethers.getSigners();
       const price = (await marginlyPool.getBasePrice()).inner;
