@@ -432,7 +432,7 @@ contract MarginlyPoolLegacy is IMarginlyPool {
     }
 
     delete positions[user];
-    emit EnactMarginCall(user, swapPriceX96);
+    // emit EnactMarginCall(user, swapPriceX96);
   }
 
   /// @dev Calculate leverage
@@ -1089,7 +1089,7 @@ contract MarginlyPoolLegacy is IMarginlyPool {
       discountedQuoteCollateral = discountedQuoteCollateral.add(discountedQuoteFee);
     }
 
-    emit Reinit(lastReinitTimestampSeconds);
+    // emit Reinit(lastReinitTimestampSeconds);
 
     return true;
   }

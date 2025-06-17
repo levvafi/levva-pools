@@ -266,7 +266,7 @@ abstract contract ShortTrading is Liquidations {
 
   function _enactMarginCallShort(
     Position storage position
-  ) internal override returns (uint256 quoteCollateralDelta, uint256 baseDebtDelta) {
+  ) internal override returns (uint256 quoteCollateralDelta, uint256 baseDebtDelta, int256 baseCollateralSurplus) {
     quoteCollateralDelta = _calcRealQuoteCollateral(position.discountedQuoteAmount, position.discountedBaseAmount);
     uint256 realBaseDebt = _calcRealBaseDebt(position.discountedBaseAmount);
 
@@ -283,9 +283,11 @@ abstract contract ShortTrading is Liquidations {
     if (baseDebtDelta >= realBaseDebt) {
       // Position has enough collateral to repay debt
       factor = FP96.one().add(FP96.fromRatio(baseDebtDelta.sub(realBaseDebt), _calcRealBaseCollateralTotal()));
+      baseCollateralSurplus = int256(baseDebtDelta.sub(realBaseDebt));
     } else {
       // Position's debt has been repaid by pool
       factor = FP96.one().sub(FP96.fromRatio(realBaseDebt.sub(baseDebtDelta), _calcRealBaseCollateralTotal()));
+      baseCollateralSurplus = -int256(realBaseDebt.sub(baseDebtDelta));
     }
     _updateBaseCollateralCoeffs(factor);
 
@@ -352,7 +354,7 @@ abstract contract ShortTrading is Liquidations {
     FP96.FixedPoint memory secondsInYear,
     FP96.FixedPoint memory interestRate,
     FP96.FixedPoint memory feeDt
-  ) internal virtual override returns (uint256 discountedBaseFee) {
+  ) internal virtual override returns (uint256 quoteDebtDistributed, uint256 discountedBaseFee) {
     if (discountedBaseCollateral != 0) {
       FP96.FixedPoint memory baseDebtCoeffPrev = baseDebtCoeff;
       uint256 realBaseDebtPrev = baseDebtCoeffPrev.mul(discountedBaseDebt);
@@ -364,8 +366,9 @@ abstract contract ShortTrading is Liquidations {
       // AR(dt) =  (1+ ir)^dt
       FP96.FixedPoint memory accruedRateDt = FP96.powTaylor(onePlusIR, secondsPassed);
       baseDebtCoeff = baseDebtCoeffPrev.mul(accruedRateDt).mul(feeDt);
+      quoteDebtDistributed = accruedRateDt.sub(FP96.one()).mul(realBaseDebtPrev);
       FP96.FixedPoint memory factor = FP96.one().add(
-        FP96.fromRatio(accruedRateDt.sub(FP96.one()).mul(realBaseDebtPrev), _calcRealBaseCollateralTotal())
+        FP96.fromRatio(quoteDebtDistributed, _calcRealBaseCollateralTotal())
       );
       _updateBaseCollateralCoeffs(factor);
       discountedBaseFee = baseCollateralCoeff.recipMul(accruedRateDt.mul(feeDt.sub(FP96.one())).mul(realBaseDebtPrev));

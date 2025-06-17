@@ -57,14 +57,14 @@ abstract contract LevvaPoolVirtual is IMarginlyPool {
     FP96.FixedPoint memory secondsInYear,
     FP96.FixedPoint memory interestRate,
     FP96.FixedPoint memory feeDt
-  ) internal virtual returns (uint256 discountedQuoteFee);
+  ) internal virtual returns (uint256 quoteDebtDistributed, uint256 discountedQuoteFee);
 
   function _accrueInterestShort(
     uint256 secondsPassed,
     FP96.FixedPoint memory secondsInYear,
     FP96.FixedPoint memory interestRate,
     FP96.FixedPoint memory feeDt
-  ) internal virtual returns (uint256 discountedBaseFee);
+  ) internal virtual returns (uint256 baseDebtDistributed, uint256 discountedBaseFee);
 
   // =============================================
   // ======== Position liquidation methods =======
@@ -90,11 +90,11 @@ abstract contract LevvaPoolVirtual is IMarginlyPool {
 
   function _enactMarginCallLong(
     Position storage position
-  ) internal virtual returns (uint256 baseCollateralDelta, uint256 quoteDebtDelta);
+  ) internal virtual returns (uint256 baseCollateralDelta, uint256 quoteDebtDelta, int256 quoteCollateralSurplus);
 
   function _enactMarginCallShort(
     Position storage position
-  ) internal virtual returns (uint256 quoteCollateralDelta, uint256 baseDebtDelta);
+  ) internal virtual returns (uint256 quoteCollateralDelta, uint256 baseDebtDelta, int256 baseCollateralSurplus);
 
   function _deleverageLong(uint256 realBaseCollateral, uint256 realQuoteDebt) internal virtual;
 

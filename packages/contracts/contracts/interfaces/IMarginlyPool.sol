@@ -11,7 +11,7 @@ interface IMarginlyPool is IMarginlyPoolOwnerActions {
   /// @dev Emitted when margin call took place
   /// @param user User that was reinited
   /// @param swapPriceX96 Price of swap worth in quote token as Q96
-  event EnactMarginCall(address indexed user, uint256 swapPriceX96);
+  event EnactMarginCall(address indexed user, uint256 swapPriceX96, int256 collateralSurplus, PositionType _type);
 
   /// @dev Emitted when deleverage took place
   /// @param positionType deleveraged positions type
@@ -153,7 +153,7 @@ interface IMarginlyPool is IMarginlyPoolOwnerActions {
 
   /// @dev Emitted when reinit happened
   /// @param reinitTimestamp timestamp when reinit happened
-  event Reinit(uint256 reinitTimestamp);
+  event Reinit(uint256 reinitTimestamp, uint256 baseDebtDistributed, uint256 quoteDebtDistributed);
 
   /// @dev Emitted when balance sync happened
   event BalanceSync();

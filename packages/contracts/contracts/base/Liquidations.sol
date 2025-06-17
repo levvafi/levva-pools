@@ -32,8 +32,18 @@ abstract contract Liquidations is Funding {
     // FEE(dt) = (1 + fee)^dt
     FP96.FixedPoint memory feeDt = FP96.powTaylor(onePlusFee, secondsPassed);
 
-    uint256 discountedBaseFee = _accrueInterestShort(secondsPassed, secondsInYear, interestRate, feeDt);
-    uint256 discountedQuoteFee = _accrueInterestLong(secondsPassed, secondsInYear, interestRate, feeDt);
+    (uint256 baseDebtDelta, uint256 discountedBaseFee) = _accrueInterestShort(
+      secondsPassed,
+      secondsInYear,
+      interestRate,
+      feeDt
+    );
+    (uint256 quoteDebtDelta, uint256 discountedQuoteFee) = _accrueInterestLong(
+      secondsPassed,
+      secondsInYear,
+      interestRate,
+      feeDt
+    );
 
     // keep debt fee in technical position
     if (discountedBaseFee != 0 || discountedQuoteFee != 0) {
@@ -45,7 +55,7 @@ abstract contract Liquidations is Funding {
       discountedQuoteCollateral = discountedQuoteCollateral.add(discountedQuoteFee);
     }
 
-    emit Reinit(lastReinitTimestampSeconds);
+    emit Reinit(lastReinitTimestampSeconds, baseDebtDelta, quoteDebtDelta);
 
     return true;
   }
@@ -99,16 +109,18 @@ abstract contract Liquidations is Funding {
   function _enactMarginCall(address positionOwner, Position storage position) private {
     uint256 baseDelta;
     uint256 quoteDelta;
+    int256 collateralSurplus;
+    PositionType _type = position._type;
     // it's guaranteed by liquidate() function, that position._type is either Short or Long
     // else is used to save some contract space
-    if (position._type == PositionType.Long) {
-      (baseDelta, quoteDelta) = _enactMarginCallLong(position);
+    if (_type == PositionType.Long) {
+      (baseDelta, quoteDelta, collateralSurplus) = _enactMarginCallLong(position);
     } else {
-      (quoteDelta, baseDelta) = _enactMarginCallShort(position);
+      (quoteDelta, baseDelta, collateralSurplus) = _enactMarginCallShort(position);
     }
 
     delete positions[positionOwner];
-    emit EnactMarginCall(positionOwner, _calcSwapPrice(quoteDelta, baseDelta));
+    emit EnactMarginCall(positionOwner, _calcSwapPrice(quoteDelta, baseDelta), collateralSurplus, _type);
   }
 
   /// @notice Liquidate bad position and receive position collateral and debt
