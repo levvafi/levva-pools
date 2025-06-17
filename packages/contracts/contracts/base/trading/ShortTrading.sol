@@ -396,11 +396,14 @@ abstract contract ShortTrading is Liquidations {
     uint256 disQuoteCollateral,
     uint256 disBaseDebt
   ) internal view virtual override returns (uint256) {
-    return quoteCollateralCoeff.mul(disQuoteCollateral).sub(quoteDelevCoeff.mul(disBaseDebt));
+    return
+      quoteCollateralCoeff.mul(disQuoteCollateral, Math.Rounding.Floor).sub(
+        quoteDelevCoeff.mul(disBaseDebt, Math.Rounding.Ceil)
+      );
   }
 
   function _calcRealBaseDebt(uint256 disBaseDebt) internal view virtual override returns (uint256) {
-    return baseDebtCoeff.mul(disBaseDebt);
+    return baseDebtCoeff.mul(disBaseDebt, Math.Rounding.Ceil);
   }
 
   function _getWorstShortPositionOwner() internal view virtual override returns (address) {

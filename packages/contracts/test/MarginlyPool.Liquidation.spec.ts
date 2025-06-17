@@ -98,7 +98,7 @@ describe('MarginlyPool.Liquidation', () => {
       .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const shorterCollateral = 100;
-    const shortAmount = 7600; // leverage 19.9
+    const shortAmount = 7500;
     await marginlyPool
       .connect(shorter)
       .execute(CallType.DepositQuote, shorterCollateral, shortAmount, price, false, ZeroAddress, uniswapV3Swapdata());
@@ -167,7 +167,7 @@ describe('MarginlyPool.Liquidation', () => {
       .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const shorterCollateral = 100;
-    const shortAmount = 7600; // leverage 19.9
+    const shortAmount = 7500;
     await marginlyPool
       .connect(shorter)
       .execute(CallType.DepositQuote, shorterCollateral, shortAmount, price, false, ZeroAddress, uniswapV3Swapdata());
@@ -358,7 +358,7 @@ describe('MarginlyPool.Liquidation', () => {
       .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const shorterCollateral = 100n;
-    const shortAmount = 7600n; // leverage 19.9
+    const shortAmount = 7500n;
     await marginlyPool
       .connect(shorter)
       .execute(CallType.DepositQuote, shorterCollateral, shortAmount, price, false, ZeroAddress, uniswapV3Swapdata());
@@ -491,7 +491,6 @@ describe('MarginlyPool.Liquidation', () => {
       beforeLiquidationPosition.discountedQuoteAmount - (quoteAmount * FP96.one) / quoteDebtCoeff;
     expect(newPosition.discountedQuoteAmount).to.be.equal(expectedDiscountedQuoteAmount);
 
-    //TODO: check aggregates discountedDebt, discountedCollateral, systemLeverage, balance of pool should increase
     //assert aggregates
     expect(await marginlyPool.discountedBaseDebt()).to.be.equal(0);
     expect(await marginlyPool.discountedQuoteDebt()).to.be.equal(expectedDiscountedQuoteAmount);
@@ -536,7 +535,7 @@ describe('MarginlyPool.Liquidation', () => {
       .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const shorterCollateral1 = 100;
-    const shortAmount1 = 7600; // leverage 19.9
+    const shortAmount1 = 7500; // leverage 19.9
     await marginlyPool
       .connect(shorter1)
       .execute(CallType.DepositQuote, shorterCollateral1, shortAmount1, price, false, ZeroAddress, uniswapV3Swapdata());

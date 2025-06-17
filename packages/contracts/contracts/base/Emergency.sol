@@ -30,10 +30,10 @@ abstract contract Emergency is Liquidations, LevvaPoolAccess {
        a bit more than IERC20(quoteToken).balanceOf(address(this))
      */
 
-    uint256 baseDebt = _calcRealBaseDebtTotal(); // TODO: Math.Rounding.Ceil
+    uint256 baseDebt = _calcRealBaseDebtTotal();
     uint256 quoteCollateral = _calcRealQuoteCollateralTotal();
 
-    uint256 quoteDebt = _calcRealQuoteDebtTotal(); // TODO: Math.Rounding.Ceil
+    uint256 quoteDebt = _calcRealQuoteDebtTotal();
     uint256 baseCollateral = _calcRealBaseCollateralTotal();
 
     if (basePrice.mul(baseDebt) > quoteCollateral) {
