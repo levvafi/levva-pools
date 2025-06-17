@@ -51,7 +51,7 @@ contract LevvaFarmingPool is LongTrading, ShortFarming, Emergency {
       return;
     }
 
-    (Position storage position, address positionOwner) = _getPosition(positionAddress);
+    (Position storage position, address positionOwner) = _resolvePositionAndOwner(positionAddress);
 
     if (_positionHasBadLeverage(position, basePrice)) {
       _liquidate(msg.sender, position, basePrice);
@@ -83,6 +83,9 @@ contract LevvaFarmingPool is LongTrading, ShortFarming, Emergency {
       _long(amount1, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
     } else if (call == CallType.ClosePosition) {
       _closePosition(limitPriceX96, position, swapCalldata);
+      if (flag) {
+        _withdrawBase(type(uint256).max, false, basePrice, position);
+      }
     } else if (call == CallType.SellCollateral) {
       _sellCollateral(limitPriceX96, position, swapCalldata);
       if (flag) {

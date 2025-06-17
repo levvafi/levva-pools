@@ -83,7 +83,7 @@ abstract contract ShortTrading is Liquidations {
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    // emit Short(positionOwner, realBaseAmount, discountedQuoteChange, discountedBaseDebtChange);
+    emit Short(positionOwner, realBaseAmount, 0, discountedQuoteChange, discountedBaseDebtChange);
   }
 
   function _closeShortPosition(

@@ -80,7 +80,7 @@ abstract contract LongTrading is Liquidations {
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    // emit Long(positionOwner, realBaseAmount, discountedQuoteDebtChange, discountedBaseCollateralChange);
+    emit Long(positionOwner, realBaseAmount, 0, discountedQuoteDebtChange, discountedBaseCollateralChange);
   }
 
   /// @notice Close position

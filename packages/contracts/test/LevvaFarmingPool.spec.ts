@@ -32,6 +32,42 @@ describe('Levva Farming pool', () => {
   });
 
   it('Close long position and withdraw', async () => {
+    const { marginlyPool, baseContract } = await loadFixture(createLevvaFarmingPool);
+    const [_, lender, user] = await ethers.getSigners();
+    const price = (await marginlyPool.getBasePrice()).inner;
+    const amount = 10_000n;
+
+    await marginlyPool
+      .connect(lender)
+      .execute(CallType.DepositQuote, 100n * amount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
+
+    await marginlyPool
+      .connect(user)
+      .execute(CallType.DepositBase, amount, amount, price, false, ZeroAddress, uniswapV3Swapdata());
+
+    const positionBefore = await marginlyPool.positions(user);
+
+    expect(positionBefore._type).to.be.eq(PositionType.Long);
+    expect(positionBefore.discountedBaseAmount).to.be.gt(0);
+    expect(positionBefore.discountedQuoteAmount).to.be.gt(0);
+
+    const balanceBefore = await baseContract.balanceOf(user);
+
+    await marginlyPool
+      .connect(user)
+      .execute(CallType.ClosePosition, 0, 0, price, true, ZeroAddress, uniswapV3Swapdata());
+
+    const positionAfter = await marginlyPool.positions(user);
+
+    expect(positionAfter._type).to.be.eq(PositionType.Uninitialized);
+    expect(positionAfter.discountedBaseAmount).to.be.eq(0);
+    expect(positionAfter.discountedQuoteAmount).to.be.eq(0);
+
+    const balanceAfter = await baseContract.balanceOf(user);
+    expect(balanceAfter).to.be.gt(balanceBefore);
+  });
+
+  it('Sell collateral long position and withdraw', async () => {
     const { marginlyPool, quoteContract } = await loadFixture(createLevvaFarmingPool);
     const [_, lender, user] = await ethers.getSigners();
     const price = (await marginlyPool.getBasePrice()).inner;

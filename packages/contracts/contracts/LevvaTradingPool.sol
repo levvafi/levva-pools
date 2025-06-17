@@ -52,7 +52,7 @@ contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
       return;
     }
 
-    (Position storage position, address positionOwner) = _getPosition(positionAddress);
+    (Position storage position, address positionOwner) = _resolvePositionAndOwner(positionAddress);
 
     if (_positionHasBadLeverage(position, basePrice)) {
       _liquidate(msg.sender, position, basePrice);

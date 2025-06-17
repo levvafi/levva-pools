@@ -104,9 +104,11 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
     address collateralToken;
     uint256 swapPriceX96;
     if (position._type == PositionType.Long) {
-      _closeLongPosition(limitPriceX96, position, swapCalldata);
+      (realCollateralDelta, discountedCollateralDelta) = _closeLongPosition(limitPriceX96, position, swapCalldata);
+      collateralToken = baseToken;
     } else if (position._type == PositionType.Short) {
-      _closeShortPosition(limitPriceX96, position, swapCalldata);
+      (realCollateralDelta, discountedCollateralDelta) = _closeShortPosition(limitPriceX96, position, swapCalldata);
+      collateralToken = quoteToken;
     } else {
       revert MarginlyErrors.WrongPositionType();
     }
@@ -134,7 +136,7 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
     return IMarginlyFactory(factory).WETH9();
   }
 
-  function _getPosition(
+  function _resolvePositionAndOwner(
     address transferPositionTo
   ) internal view returns (Position storage position, address positionOwner) {
     if (transferPositionTo == address(0)) {
