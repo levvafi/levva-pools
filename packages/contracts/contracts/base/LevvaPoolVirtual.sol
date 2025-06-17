@@ -142,9 +142,19 @@ abstract contract LevvaPoolVirtual is IMarginlyPool {
 
   function _repayQuoteDebt(uint256 amount, Position storage position) internal virtual;
 
-  function _sellQuoteForBase(Position storage position, uint256 limitPriceX96, uint256 swapCalldata) internal virtual;
+  function _sellQuoteForBase(
+    Position storage position,
+    address positionOwner,
+    uint256 limitPriceX96,
+    uint256 swapCalldata
+  ) internal virtual;
 
-  function _sellBaseForQuote(Position storage position, uint256 limitPriceX96, uint256 swapCalldata) internal virtual;
+  function _sellBaseForQuote(
+    Position storage position,
+    address positionOwner,
+    uint256 limitPriceX96,
+    uint256 swapCalldata
+  ) internal virtual;
 
   // =============================================
   // =========== System update methods ===========

@@ -40,7 +40,12 @@ abstract contract ShortFarming is Liquidations {
   /// @notice sells all the quote tokens from lend position for base ones
   /// @dev no liquidity limit check since this function goes prior to 'long' call and it fail there anyway
   /// @dev you may consider adding that check here if this method is used in any other way
-  function _sellQuoteForBase(Position storage position, uint256 limitPriceX96, uint256 swapCalldata) internal override {
+  function _sellQuoteForBase(
+    Position storage position,
+    address positionOwner,
+    uint256 limitPriceX96,
+    uint256 swapCalldata
+  ) internal override {
     PositionType _type = position._type;
     if (_type == PositionType.Uninitialized) revert MarginlyErrors.UninitializedPosition();
     if (_type == PositionType.Long) return;
@@ -72,7 +77,7 @@ abstract contract ShortFarming is Liquidations {
     position.discountedBaseAmount += discountedBaseCollateralDelta;
 
     emit SellQuoteForBase(
-      msg.sender,
+      positionOwner,
       quoteInSubFee,
       baseAmountOut,
       posDiscountedQuoteColl,
