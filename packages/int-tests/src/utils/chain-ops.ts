@@ -80,9 +80,10 @@ export const CallType = {
   Short: 4,
   Long: 5,
   ClosePosition: 6,
-  Reinit: 7,
-  ReceivePosition: 8,
-  EmergencyWithdraw: 9,
+  SellCollateral: 7,
+  Reinit: 8,
+  ReceivePosition: 9,
+  EmergencyWithdraw: 10,
 };
 
 export type SwapEvent = {

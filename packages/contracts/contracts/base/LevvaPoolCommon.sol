@@ -114,6 +114,16 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
     emit ClosePosition(msg.sender, collateralToken, realCollateralDelta, swapPriceX96, discountedCollateralDelta);
   }
 
+  function _sellCollateral(uint256 limitPriceX96, Position storage position, uint256 swapCalldata) internal {
+    if (position._type == PositionType.Long) {
+      _sellBaseForQuote(position, limitPriceX96, swapCalldata);
+    } else if (position._type == PositionType.Short) {
+      _sellQuoteForBase(position, limitPriceX96, swapCalldata);
+    } else {
+      revert MarginlyErrors.WrongPositionType();
+    }
+  }
+
   /// @dev Returns Uniswap SwapRouter address
   function _getSwapRouter() internal view returns (address) {
     return IMarginlyFactory(factory).swapRouter();

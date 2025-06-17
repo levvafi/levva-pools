@@ -83,6 +83,8 @@ contract LevvaFarmingPool is LongTrading, ShortFarming, Emergency {
       _long(amount1, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
     } else if (call == CallType.ClosePosition) {
       _closePosition(limitPriceX96, position, swapCalldata);
+    } else if (call == CallType.SellCollateral) {
+      _sellCollateral(limitPriceX96, position, swapCalldata);
       if (flag) {
         _withdrawQuote(type(uint256).max, false, basePrice, position);
       }

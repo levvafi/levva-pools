@@ -9,6 +9,7 @@ enum CallType {
   Short,
   Long,
   ClosePosition,
+  SellCollateral,
   Reinit,
   ReceivePosition,
   EmergencyWithdraw

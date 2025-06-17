@@ -15,8 +15,11 @@ contract TestSwapRouter is IMarginlyRouter {
     uniswapPool = _uniswapPool;
   }
 
+  error TooMuchRequested();
+  error InsufficientAmount();
+
   function swapExactInput(
-    uint256 swapCalldata,
+    uint256,
     address tokenIn,
     address tokenOut,
     uint256 amountIn,
@@ -34,11 +37,11 @@ contract TestSwapRouter is IMarginlyRouter {
     IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
     IERC20(tokenOut).transfer(msg.sender, amountOut);
 
-    require(amountOut >= minAmountOut, 'TooMuchRequested');
+    if (amountOut < minAmountOut) revert TooMuchRequested();
   }
 
   function swapExactOutput(
-    uint256 swapCalldata,
+    uint256,
     address tokenIn,
     address tokenOut,
     uint256 maxAmountIn,
@@ -56,7 +59,7 @@ contract TestSwapRouter is IMarginlyRouter {
     IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
     IERC20(tokenOut).transfer(msg.sender, amountOut);
 
-    require(amountIn <= maxAmountIn, 'InsufficientAmount');
+    if (amountIn > maxAmountIn) revert InsufficientAmount();
   }
 
   function adapterCallback(address recipient, uint256 amount, bytes calldata data) external {}
