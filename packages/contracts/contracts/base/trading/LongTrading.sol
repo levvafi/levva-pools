@@ -57,11 +57,16 @@ abstract contract LongTrading is Liquidations {
     // realQuoteInMaximum is defined by user input limitPriceX96
     uint256 realQuoteInMaximum = Math.mulDiv(limitPriceX96, realBaseAmount, FP96.Q96);
     uint256 realQuoteAmount = _swapExactOutput(true, realQuoteInMaximum, realBaseAmount, swapCalldata);
+    uint256 swapPriceX96 = _calcSwapPrice(realQuoteAmount, realBaseAmount);
 
-    uint256 realSwapFee = Math.mulDiv(params.swapFee, realQuoteAmount, WHOLE_ONE);
-    _chargeFee(realSwapFee);
+    uint256 discountedQuoteDebtChange;
+    {
+      uint256 realSwapFee = Math.mulDiv(params.swapFee, realQuoteAmount, WHOLE_ONE);
+      _chargeFee(realSwapFee);
 
-    uint256 discountedQuoteDebtChange = quoteDebtCoeff.recipMul(realQuoteAmount.add(realSwapFee));
+      discountedQuoteDebtChange = quoteDebtCoeff.recipMul(realQuoteAmount.add(realSwapFee));
+    }
+
     position.discountedQuoteAmount = positionDisQuoteDebt.add(discountedQuoteDebtChange);
     discountedQuoteDebt = discountedQuoteDebt.add(discountedQuoteDebtChange);
 
@@ -80,7 +85,7 @@ abstract contract LongTrading is Liquidations {
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    emit Long(positionOwner, realBaseAmount, 0, discountedQuoteDebtChange, discountedBaseCollateralChange);
+    emit Long(positionOwner, realBaseAmount, swapPriceX96, discountedQuoteDebtChange, discountedBaseCollateralChange);
   }
 
   /// @notice Close position
@@ -89,7 +94,7 @@ abstract contract LongTrading is Liquidations {
     uint256 limitPriceX96,
     Position storage position,
     uint256 swapCalldata
-  ) internal override returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta) {
+  ) internal override returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta, uint256 swapPriceX96) {
     uint256 positionDiscountedQuoteDebtPrev = position.discountedQuoteAmount;
     uint256 realBaseCollateral = _calcRealBaseCollateral(position.discountedBaseAmount, position.discountedQuoteAmount);
     uint256 realQuoteDebt = quoteDebtCoeff.mul(positionDiscountedQuoteDebtPrev, Math.Rounding.Ceil);
@@ -103,6 +108,7 @@ abstract contract LongTrading is Liquidations {
 
       realCollateralDelta = _swapExactOutput(false, realBaseCollateral, exactQuoteOut, swapCalldata);
       if (realCollateralDelta > baseInMaximum) revert MarginlyErrors.SlippageLimit();
+      swapPriceX96 = _calcSwapPrice(exactQuoteOut, realCollateralDelta);
 
       _chargeFee(realFeeAmount);
 
@@ -242,28 +248,28 @@ abstract contract LongTrading is Liquidations {
     }
   }
 
-  function _enactMarginCallLong(Position storage position) internal override {
-    uint256 realBaseCollateral = _calcRealBaseCollateral(position.discountedBaseAmount, position.discountedQuoteAmount);
+  function _enactMarginCallLong(
+    Position storage position
+  ) internal override returns (uint256 baseCollateralDelta, uint256 quoteDebtDelta) {
+    baseCollateralDelta = _calcRealBaseCollateral(position.discountedBaseAmount, position.discountedQuoteAmount);
     uint256 realQuoteDebt = quoteDebtCoeff.mul(position.discountedQuoteAmount);
 
     // long position mc
-    uint256 swappedQuoteDebt;
-    if (realBaseCollateral != 0) {
+    if (baseCollateralDelta != 0) {
       uint256 quoteOutMinimum = FP96.fromRatio(WHOLE_ONE - params.mcSlippage, WHOLE_ONE).mul(
-        getLiquidationPrice().mul(realBaseCollateral)
+        getLiquidationPrice().mul(baseCollateralDelta)
       );
-      swappedQuoteDebt = _swapExactInput(false, realBaseCollateral, quoteOutMinimum, defaultSwapCallData);
-      // swapPriceX96 = getSwapPrice(swappedQuoteDebt, realBaseCollateral);
+      quoteDebtDelta = _swapExactInput(false, baseCollateralDelta, quoteOutMinimum, defaultSwapCallData);
     }
 
     FP96.FixedPoint memory factor;
     // quoteCollateralCoef += rqd * (rbc - sbc) / sbc
-    if (swappedQuoteDebt >= realQuoteDebt) {
+    if (quoteDebtDelta >= realQuoteDebt) {
       // Position has enough collateral to repay debt
-      factor = FP96.one().add(FP96.fromRatio(swappedQuoteDebt.sub(realQuoteDebt), _calcRealQuoteCollateralTotal()));
+      factor = FP96.one().add(FP96.fromRatio(quoteDebtDelta.sub(realQuoteDebt), _calcRealQuoteCollateralTotal()));
     } else {
       // Position's debt has been repaid by pool
-      factor = FP96.one().sub(FP96.fromRatio(realQuoteDebt.sub(swappedQuoteDebt), _calcRealQuoteCollateralTotal()));
+      factor = FP96.one().sub(FP96.fromRatio(realQuoteDebt.sub(quoteDebtDelta), _calcRealQuoteCollateralTotal()));
     }
     _updateQuoteCollateralCoeffs(factor);
 

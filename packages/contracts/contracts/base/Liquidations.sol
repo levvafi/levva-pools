@@ -94,20 +94,21 @@ abstract contract Liquidations is Funding {
   }
 
   /// @dev Enact margin call procedure for the position
-  /// @param user User's address
+  /// @param positionOwner User's address
   /// @param position User's position to reinit
-  function _enactMarginCall(address user, Position storage position) private {
-    uint256 swapPriceX96;
+  function _enactMarginCall(address positionOwner, Position storage position) private {
+    uint256 baseDelta;
+    uint256 quoteDelta;
     // it's guaranteed by liquidate() function, that position._type is either Short or Long
     // else is used to save some contract space
     if (position._type == PositionType.Long) {
-      _enactMarginCallLong(position);
+      (baseDelta, quoteDelta) = _enactMarginCallLong(position);
     } else {
-      _enactMarginCallShort(position);
+      (quoteDelta, baseDelta) = _enactMarginCallShort(position);
     }
 
-    delete positions[user];
-    emit EnactMarginCall(user, swapPriceX96);
+    delete positions[positionOwner];
+    emit EnactMarginCall(positionOwner, _calcSwapPrice(quoteDelta, baseDelta));
   }
 
   /// @notice Liquidate bad position and receive position collateral and debt

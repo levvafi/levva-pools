@@ -100,10 +100,18 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
     address collateralToken;
     uint256 swapPriceX96;
     if (position._type == PositionType.Long) {
-      (realCollateralDelta, discountedCollateralDelta) = _closeLongPosition(limitPriceX96, position, swapCalldata);
+      (realCollateralDelta, discountedCollateralDelta, swapPriceX96) = _closeLongPosition(
+        limitPriceX96,
+        position,
+        swapCalldata
+      );
       collateralToken = baseToken;
     } else if (position._type == PositionType.Short) {
-      (realCollateralDelta, discountedCollateralDelta) = _closeShortPosition(limitPriceX96, position, swapCalldata);
+      (realCollateralDelta, discountedCollateralDelta, swapPriceX96) = _closeShortPosition(
+        limitPriceX96,
+        position,
+        swapCalldata
+      );
       collateralToken = quoteToken;
     } else {
       revert MarginlyErrors.WrongPositionType();
@@ -313,6 +321,11 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
     } else {
       return maxValue;
     }
+  }
+
+  /// @dev Calculate swap price in Q96. Used for events data only
+  function _calcSwapPrice(uint256 quoteAmount, uint256 baseAmount) internal pure returns (uint256) {
+    return Math.mulDiv(quoteAmount, FP96.Q96, baseAmount);
   }
 
   function _updateBaseCollateralCoeffs(FP96.FixedPoint memory factor) internal virtual override {

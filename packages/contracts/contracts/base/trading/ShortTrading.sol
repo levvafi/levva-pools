@@ -57,9 +57,14 @@ abstract contract ShortTrading is Liquidations {
     // quoteOutMinimum is defined by user input limitPriceX96
     uint256 quoteOutMinimum = Math.mulDiv(limitPriceX96, realBaseAmount, FP96.Q96);
     uint256 realQuoteCollateralChangeWithFee = _swapExactInput(false, realBaseAmount, quoteOutMinimum, swapCalldata);
+    uint256 swapPriceX96 = _calcSwapPrice(realQuoteCollateralChangeWithFee, realBaseAmount);
 
-    uint256 realSwapFee = Math.mulDiv(params.swapFee, realQuoteCollateralChangeWithFee, WHOLE_ONE);
-    uint256 realQuoteCollateralChange = realQuoteCollateralChangeWithFee.sub(realSwapFee);
+    uint256 realQuoteCollateralChange;
+    {
+      uint256 realSwapFee = Math.mulDiv(params.swapFee, realQuoteCollateralChangeWithFee, WHOLE_ONE);
+      _chargeFee(realSwapFee);
+      realQuoteCollateralChange = realQuoteCollateralChangeWithFee.sub(realSwapFee);
+    }
 
     if (_newPoolQuoteBalance(realQuoteCollateralChange) > params.quoteLimit) revert MarginlyErrors.ExceedsLimit();
 
@@ -72,7 +77,6 @@ abstract contract ShortTrading is Liquidations {
     );
     position.discountedQuoteAmount = positionDisQuoteCollateral.add(discountedQuoteChange);
     discountedQuoteCollateral = discountedQuoteCollateral.add(discountedQuoteChange);
-    _chargeFee(realSwapFee);
 
     if (position._type == PositionType.Lend) {
       if (position.heapPosition != 0) revert MarginlyErrors.WrongIndex();
@@ -83,14 +87,19 @@ abstract contract ShortTrading is Liquidations {
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    emit Short(positionOwner, realBaseAmount, 0, discountedQuoteChange, discountedBaseDebtChange);
+    emit Short(positionOwner, realBaseAmount, swapPriceX96, discountedQuoteChange, discountedBaseDebtChange);
   }
 
   function _closeShortPosition(
     uint256 limitPriceX96,
     Position storage position,
     uint256 swapCalldata
-  ) internal virtual override returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta) {
+  )
+    internal
+    virtual
+    override
+    returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta, uint256 swapPriceX96)
+  {
     uint256 positionDiscountedBaseDebtPrev = position.discountedBaseAmount;
     uint256 realQuoteCollateral = _calcRealQuoteCollateral(
       position.discountedQuoteAmount,
@@ -104,6 +113,7 @@ abstract contract ShortTrading is Liquidations {
 
       realCollateralDelta = _swapExactOutput(true, realQuoteCollateral, realBaseDebt, swapCalldata);
       if (realCollateralDelta > quoteInMaximum) revert MarginlyErrors.SlippageLimit();
+      swapPriceX96 = _calcSwapPrice(realCollateralDelta, realBaseDebt);
 
       uint256 realFeeAmount = Math.mulDiv(params.swapFee, realCollateralDelta, WHOLE_ONE);
       _chargeFee(realFeeAmount);
@@ -254,31 +264,28 @@ abstract contract ShortTrading is Liquidations {
     }
   }
 
-  function _enactMarginCallShort(Position storage position) internal override {
-    uint256 realQuoteCollateral = _calcRealQuoteCollateral(
-      position.discountedQuoteAmount,
-      position.discountedBaseAmount
-    );
+  function _enactMarginCallShort(
+    Position storage position
+  ) internal override returns (uint256 quoteCollateralDelta, uint256 baseDebtDelta) {
+    quoteCollateralDelta = _calcRealQuoteCollateral(position.discountedQuoteAmount, position.discountedBaseAmount);
     uint256 realBaseDebt = _calcRealBaseDebt(position.discountedBaseAmount);
 
     // short position mc
-    uint256 swappedBaseDebt;
-    if (realQuoteCollateral != 0) {
+    if (quoteCollateralDelta != 0) {
       uint baseOutMinimum = FP96.fromRatio(WHOLE_ONE - params.mcSlippage, WHOLE_ONE).mul(
-        getLiquidationPrice().recipMul(realQuoteCollateral)
+        getLiquidationPrice().recipMul(quoteCollateralDelta)
       );
-      swappedBaseDebt = _swapExactInput(true, realQuoteCollateral, baseOutMinimum, defaultSwapCallData);
-      // swapPriceX96 = getSwapPrice(realQuoteCollateral, swappedBaseDebt);
+      baseDebtDelta = _swapExactInput(true, quoteCollateralDelta, baseOutMinimum, defaultSwapCallData);
     }
 
     FP96.FixedPoint memory factor;
     // baseCollateralCoeff += rcd * (rqc - sqc) / sqc
-    if (swappedBaseDebt >= realBaseDebt) {
+    if (baseDebtDelta >= realBaseDebt) {
       // Position has enough collateral to repay debt
-      factor = FP96.one().add(FP96.fromRatio(swappedBaseDebt.sub(realBaseDebt), _calcRealBaseCollateralTotal()));
+      factor = FP96.one().add(FP96.fromRatio(baseDebtDelta.sub(realBaseDebt), _calcRealBaseCollateralTotal()));
     } else {
       // Position's debt has been repaid by pool
-      factor = FP96.one().sub(FP96.fromRatio(realBaseDebt.sub(swappedBaseDebt), _calcRealBaseCollateralTotal()));
+      factor = FP96.one().sub(FP96.fromRatio(realBaseDebt.sub(baseDebtDelta), _calcRealBaseCollateralTotal()));
     }
     _updateBaseCollateralCoeffs(factor);
 
