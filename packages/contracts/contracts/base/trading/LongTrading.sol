@@ -396,7 +396,7 @@ abstract contract LongTrading is Liquidations {
   }
 
   function _updateHeapLong(Position storage position) internal virtual override {
-    uint96 sortKey = _calcSortKey(initialPrice.mul(position.discountedBaseAmount), position.discountedQuoteAmount);
+    uint96 sortKey = _calcSortKey(position.discountedBaseAmount, position.discountedQuoteAmount);
     uint32 heapIndex = position.heapPosition - 1;
     longHeap.update(positions, heapIndex, sortKey);
   }

@@ -97,18 +97,12 @@ export function toHumanString(fp96Value: bigint): string {
   return (fp96Value / FP96.one).toString();
 }
 
-export function calcLongSortKey(initialPrice: bigint, quoteAmount: bigint, baseAmount: bigint): bigint {
-  const collateral = (initialPrice * baseAmount) / FP96.one;
-  const debt = quoteAmount;
-
-  return (debt * FP48.Q48) / collateral;
+export function calcLongSortKey(quoteAmount: bigint, baseAmount: bigint): bigint {
+  return (quoteAmount * FP48.Q48) / baseAmount;
 }
 
-export function calcShortSortKey(initialPrice: bigint, quoteAmount: bigint, baseAmount: bigint): bigint {
-  const collateral = quoteAmount;
-  const debt = (initialPrice * baseAmount) / FP96.one;
-
-  return (debt * FP48.Q48) / collateral;
+export function calcShortSortKey(quoteAmount: bigint, baseAmount: bigint): bigint {
+  return (baseAmount * FP48.Q48) / quoteAmount;
 }
 
 export function calcLeverageShort(

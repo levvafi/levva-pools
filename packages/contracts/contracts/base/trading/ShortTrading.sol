@@ -409,7 +409,7 @@ abstract contract ShortTrading is Liquidations {
   }
 
   function _updateHeapShort(Position storage position) internal virtual override {
-    uint96 sortKey = _calcSortKey(position.discountedQuoteAmount, initialPrice.mul(position.discountedBaseAmount));
+    uint96 sortKey = _calcSortKey(position.discountedQuoteAmount, position.discountedBaseAmount);
     uint32 heapIndex = position.heapPosition - 1;
     shortHeap.update(positions, heapIndex, sortKey);
   }

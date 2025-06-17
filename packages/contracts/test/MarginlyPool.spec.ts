@@ -329,11 +329,7 @@ describe('MarginlyPool.Base', () => {
       expect(position.heapPosition).to.be.equal(1);
 
       const sortKeyBefore = (await marginlyPool.getHeapPosition(position.heapPosition - 1n, true))[1].key;
-      const expectedShortKeyBefore = calcShortSortKey(
-        price,
-        position.discountedQuoteAmount,
-        position.discountedBaseAmount
-      );
+      const expectedShortKeyBefore = calcShortSortKey(position.discountedQuoteAmount, position.discountedBaseAmount);
       expect(sortKeyBefore).to.be.equal(expectedShortKeyBefore);
 
       const baseDepositFirst = 100;
@@ -348,11 +344,7 @@ describe('MarginlyPool.Base', () => {
       expect((position.discountedBaseAmount * baseDebtCoeff) / FP96.one).to.be.equal(positionRealBaseAmount);
 
       const sortKeyAfter = (await marginlyPool.getHeapPosition(position.heapPosition - 1n, true))[1].key;
-      const expectedSortKeyAfter = calcShortSortKey(
-        price,
-        position.discountedQuoteAmount,
-        position.discountedBaseAmount
-      );
+      const expectedSortKeyAfter = calcShortSortKey(position.discountedQuoteAmount, position.discountedBaseAmount);
       expect(sortKeyAfter).to.be.equal(expectedSortKeyAfter);
       // leverage should be less after depositBase
       expect(sortKeyAfter).to.be.lessThan(sortKeyBefore);
@@ -1779,7 +1771,7 @@ describe('MarginlyPool.Base', () => {
       const position = await marginlyPool.positions(shorter.address);
       const shortHeapPositionKey = (await marginlyPool.getHeapPosition(position.heapPosition - 1n, true))[1].key;
 
-      const expectedShortKey = calcShortSortKey(price, position.discountedQuoteAmount, position.discountedBaseAmount);
+      const expectedShortKey = calcShortSortKey(position.discountedQuoteAmount, position.discountedBaseAmount);
 
       expect(shortHeapPositionKey).to.be.equal(expectedShortKey);
 
@@ -2167,15 +2159,9 @@ describe('MarginlyPool.Base', () => {
 
       const position = await marginlyPool.positions(longer.address);
       const basePrice = await marginlyPool.getBasePrice();
-      const initialPrice = (await marginlyPool.getBasePrice()).inner;
-
       const longHeapPositionKey = (await marginlyPool.getHeapPosition(position.heapPosition - 1n, false))[1].key;
 
-      const expectedSortKey = calcLongSortKey(
-        initialPrice,
-        position.discountedQuoteAmount,
-        position.discountedBaseAmount
-      );
+      const expectedSortKey = calcLongSortKey(position.discountedQuoteAmount, position.discountedBaseAmount);
 
       expect(longHeapPositionKey).to.be.equal(expectedSortKey);
       const leverageLong = await marginlyPool.longLeverageX96();
@@ -2499,10 +2485,7 @@ describe('MarginlyPool.Base', () => {
 
       const longSortKeyX48 = node.key;
 
-      const initialPrice = (await marginlyPool.getBasePrice()).inner;
-
-      const expectedLongSortKeyX48 =
-        (position1.discountedQuoteAmount * FP48.Q48) / ((initialPrice * position1.discountedBaseAmount) / FP96.one);
+      const expectedLongSortKeyX48 = (position1.discountedQuoteAmount * FP48.Q48) / position1.discountedBaseAmount;
 
       expect(longSortKeyX48).to.be.equal(expectedLongSortKeyX48);
     });
@@ -2531,10 +2514,7 @@ describe('MarginlyPool.Base', () => {
 
       const shortSortKeyX48 = node.key;
 
-      const initialPrice = (await marginlyPool.getBasePrice()).inner;
-
-      const expectedShortSortKeyX48 =
-        (((initialPrice * position1.discountedBaseAmount) / FP96.one) * FP48.Q48) / position1.discountedQuoteAmount;
+      const expectedShortSortKeyX48 = (position1.discountedBaseAmount * FP48.Q48) / position1.discountedQuoteAmount;
 
       expect(shortSortKeyX48).to.be.equal(expectedShortSortKeyX48);
     });

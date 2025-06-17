@@ -39,8 +39,6 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
 
   MarginlyParams public params;
 
-  /// @dev Initial price. Used to sort key and shutdown calculations. Value gets reset for the latter one
-  FP96.FixedPoint public initialPrice;
   /// @notice users positions
   mapping(address => Position) public positions;
 
@@ -75,8 +73,6 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
 
     baseCollateralCoeff = FP96.one();
     quoteCollateralCoeff = FP96.one();
-
-    initialPrice = getBasePrice(); // TODO: can be replaced with FP96.one?
 
     _setParameters(_params);
 
