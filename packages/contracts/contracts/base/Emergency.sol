@@ -20,21 +20,13 @@ abstract contract Emergency is Liquidations, LevvaPoolAccess {
     if (mode != Mode.Regular) revert MarginlyErrors.EmergencyMode();
     _accrueInterest();
 
-    _syncBaseBalance();
-    _syncQuoteBalance();
-
     FP96.FixedPoint memory basePrice = getBasePrice();
 
-    /* We use Rounding.Up in baseDebt/quoteDebt calculation 
-       to avoid case when "surplus = quoteCollateral - quoteDebt"
-       a bit more than IERC20(quoteToken).balanceOf(address(this))
-     */
-
     uint256 baseDebt = _calcRealBaseDebtTotal();
-    uint256 quoteCollateral = _calcRealQuoteCollateralTotal();
-
     uint256 quoteDebt = _calcRealQuoteDebtTotal();
-    uint256 baseCollateral = _calcRealBaseCollateralTotal();
+
+    uint256 baseCollateral = _getBalance(baseToken).add(baseDebt);
+    uint256 quoteCollateral = _getBalance(quoteToken).add(quoteDebt);
 
     if (basePrice.mul(baseDebt) > quoteCollateral) {
       // removing all non-emergency position with bad leverages (negative net positions included)

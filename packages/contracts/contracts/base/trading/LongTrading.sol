@@ -394,11 +394,11 @@ abstract contract LongTrading is Liquidations {
     uint256 disBaseCollateral,
     uint256 disQuoteDebt
   ) internal view virtual override returns (uint256) {
-    return baseCollateralCoeff.mul(disBaseCollateral).sub(baseDelevCoeff.mul(disQuoteDebt));
+    return baseCollateralCoeff.mul(disBaseCollateral).sub(baseDelevCoeff.mul(disQuoteDebt, Math.Rounding.Ceil));
   }
 
   function _calcRealQuoteDebt(uint256 disQuoteDebt) internal view virtual override returns (uint256) {
-    return quoteDebtCoeff.mul(disQuoteDebt);
+    return quoteDebtCoeff.mul(disQuoteDebt, Math.Rounding.Ceil);
   }
 
   function _getWorstLongPositionOwner() internal view virtual override returns (address) {

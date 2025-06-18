@@ -18,7 +18,7 @@ import {
   WHOLE_ONE,
 } from './shared/utils';
 import { EventLog, parseUnits, ZeroAddress } from 'ethers';
-import { MarginlyParamsStruct } from '../typechain-types/contracts/MarginlyPool';
+import { MarginlyParamsStruct } from '../typechain-types/contracts/LevvaTradingPool';
 
 describe('MarginlyPool.Base', () => {
   it('should revert when second try of initialization', async () => {
@@ -2603,13 +2603,13 @@ describe('MarginlyPool.Base', () => {
       .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral1 = 100;
-    const longAmount1 = 1980; // leverage 20
+    const longAmount1 = 1900;
     await marginlyPool
       .connect(longer1)
       .execute(CallType.DepositBase, baseCollateral1, longAmount1, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral2 = 100;
-    const longAmount2 = 1900; // leverage 19.2
+    const longAmount2 = 1880;
     await marginlyPool
       .connect(longer2)
       .execute(CallType.DepositBase, baseCollateral2, longAmount2, price, false, ZeroAddress, uniswapV3Swapdata());
@@ -2835,7 +2835,7 @@ describe('MarginlyPool.Base', () => {
       .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral1 = 100;
-    const longAmount1 = 1980; // leverage 20
+    const longAmount1 = 1900;
     await marginlyPool
       .connect(longer1)
       .execute(CallType.DepositBase, baseCollateral1, longAmount1, price, false, ZeroAddress, uniswapV3Swapdata());
@@ -2888,13 +2888,13 @@ describe('MarginlyPool.Base', () => {
       .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral1 = 100;
-    const longAmount1 = 1980; // leverage 20
+    const longAmount1 = 1900;
     await marginlyPool
       .connect(longer1)
       .execute(CallType.DepositBase, baseCollateral1, longAmount1, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral2 = 100;
-    const longAmount2 = 1900; // leverage 19.2
+    const longAmount2 = 1880;
     await marginlyPool
       .connect(longer2)
       .execute(CallType.DepositBase, baseCollateral2, longAmount2, price, false, ZeroAddress, uniswapV3Swapdata());
