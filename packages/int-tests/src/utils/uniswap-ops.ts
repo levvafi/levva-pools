@@ -1,4 +1,4 @@
-import { BrowserProvider, Wallet, formatUnits, parseUnits } from 'ethers';
+import { formatUnits, parseUnits } from 'ethers';
 import { logger } from './logger';
 import { tickToPrice } from '@uniswap/v3-sdk';
 import { Token } from '@uniswap/sdk-core';
@@ -59,12 +59,7 @@ export async function changeWethPrice(
     if (priceDelta > priceLeft) {
       amountIn = (amountIn * priceLeft) / priceDelta;
     }
-
-    await (
-      await swapRouter
-        .connect(treasury)
-        .swapExactInput(uniswapV3Swapdata(), tokenIn, tokenOut, amountIn, 0, { gasLimit: 1_000_000 })
-    ).wait();
+    await swapRouter.connect(treasury).swapExactInput(uniswapV3Swapdata(), tokenIn, tokenOut, amountIn, 0);
 
     const { tick } = await uniswap.connect(treasury.provider).slot0();
     const price = BigInt(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));

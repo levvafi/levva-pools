@@ -1,5 +1,5 @@
-import assert = require('assert');
-import { ethers, EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
+import assert from 'assert';
+import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import {
@@ -94,7 +94,7 @@ async function long(sut: SystemUnderTest) {
   }
 
   const realBaseBalance = await weth.balanceOf(marginlyPool);
-  assert(expectedRealBaseBalance == realBaseBalance);
+  assert.equal(expectedRealBaseBalance, realBaseBalance);
 
   logger.info(`RealBaseBalance: ${formatUnits(realBaseBalance, 18)} WETH`);
 

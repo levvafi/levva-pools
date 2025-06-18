@@ -41,9 +41,6 @@ async function longAndShort(sut: SystemUnderTest) {
   logger.info(`Prepared accounts`);
   const { marginlyPool, usdc, weth, accounts, treasury, uniswap, gasReporter } = sut;
 
-  const params = await marginlyPool.params();
-  await marginlyPool.connect(treasury).setParameters({ ...params });
-
   const interestRateX96 = ((await marginlyPool.params()).interestRate * FP96.one) / WHOLE_ONE;
   logger.info(`interestRate: ${toHumanString(interestRateX96)}`);
 
@@ -175,7 +172,7 @@ async function longAndShort(sut: SystemUnderTest) {
   }
 
   logger.info(`Shift date for 1 year`);
-  logger.warn(`leverageLong: ${toHumanString((await marginlyPool.systemLeverage()).longX96)}`);
+  logger.warn(`leverageLong: ${toHumanString(await marginlyPool.longLeverageX96())}`);
   await time.setNextBlockTimestamp(Number(await marginlyPool.lastReinitTimestampSeconds()) + numOfSeconds);
   const txReceipt = await gasReporter.saveGasUsage(
     'reinit',
@@ -302,7 +299,7 @@ async function longAndShort(sut: SystemUnderTest) {
   logger.info(`quoteDebtCoeff: ${toHumanString(await marginlyPool.quoteDebtCoeff())}`);
 
   logger.warn(`basePrice: ${toHumanString((await marginlyPool.getBasePrice()).inner * 10n ** 12n)}`);
-  logger.warn(`leverageShort: ${toHumanString((await marginlyPool.systemLeverage()).shortX96)}`);
+  logger.warn(`leverageShort: ${toHumanString(await marginlyPool.shortLeverageX96())}`);
 
   return;
 }

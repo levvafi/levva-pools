@@ -1,25 +1,25 @@
 import { logger } from './logger';
-import { INITIAL_BALANCE, INITIAL_USDC, USDC_OWNER_ADDR } from './const';
-import assert = require('assert');
-import { formatUnits, Provider } from 'ethers';
+import { INITIAL_USDC, INITIAL_ETH } from './const';
+import assert from 'assert';
+import { Provider } from 'ethers';
 import { usdcContract, wethContract } from './known-contracts';
 import { IWETH9, IUSDC } from '../../../contracts/typechain-types';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { ethers } from 'hardhat';
+import { setBalance } from '@nomicfoundation/hardhat-network-helpers';
 
 export async function initWeth(signer: SignerWithAddress, provider: Provider): Promise<IWETH9> {
   const weth = wethContract(provider);
-  const address = await signer.getAddress();
   logger.info(`weth erc20 address: ${await weth.getAddress()}`);
+  await setBalance(signer.address, 2n * INITIAL_ETH);
 
-  const wethBalance = (await signer.provider.getBalance(signer)) / 2n;
   const currentBalance = await weth.balanceOf(signer);
-  if (currentBalance < wethBalance) {
-    const depositTx = await weth.connect(signer).deposit({ value: wethBalance - currentBalance });
+  if (currentBalance < INITIAL_ETH) {
+    const depositTx = await weth.connect(signer).deposit({ value: INITIAL_ETH - currentBalance });
     await depositTx.wait();
   }
 
-  // assert.equal(await weth.balanceOf(address), wethBalance);
+  assert.equal(await weth.balanceOf(signer), INITIAL_ETH);
   return weth;
 }
 
@@ -46,6 +46,6 @@ export async function initUsdc(signer: SignerWithAddress, provider: Provider): P
     await mintTx.wait();
   }
 
-  // assert.equal(formatUnits(await usdc.balanceOf(address), 6), INITIAL_BALANCE);
+  assert.equal(await usdc.balanceOf(address), INITIAL_USDC);
   return usdc;
 }

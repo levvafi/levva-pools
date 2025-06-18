@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 import { showSystemAggregates } from '../utils/log-utils';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
+import { FP96 } from '../utils/fixed-point';
 
 describe('Simulation', () => {
   it('Simulation1', async () => {
@@ -53,7 +54,6 @@ async function simulation1(sut: SystemUnderTest) {
   const longer = accounts[2];
   const receiver = accounts[3];
 
-  // lender deposit 2.0 ETH
   const lenderDepositBaseAmount = parseUnits('2.1', 18);
   logger.info(`Lender deposit ${formatUnits(lenderDepositBaseAmount, 18)} WETH`);
   await (await weth.connect(lender).approve(marginlyPool, lenderDepositBaseAmount)).wait();
@@ -66,7 +66,6 @@ async function simulation1(sut: SystemUnderTest) {
   ).wait();
   await showSystemAggregates(sut);
 
-  //shorter deposit 280 USDC
   const shorterDepositQuote = parseUnits('280', 6);
   logger.info(`Shorter deposit ${formatUnits(shorterDepositQuote, 6)} USDC`);
   await (await usdc.connect(shorter).approve(marginlyPool, shorterDepositQuote)).wait();
@@ -78,9 +77,9 @@ async function simulation1(sut: SystemUnderTest) {
       })
   ).wait();
 
-  //shorter make short on 2.0 ETH
-  const shortAmount = parseUnits('2', 18);
-  const minPrice = (await marginlyPool.getBasePrice()).inner / 2n;
+  const basePrice = (await marginlyPool.getBasePrice()).inner;
+  const shortAmount = (17n * shorterDepositQuote * FP96.one) / basePrice;
+  const minPrice = basePrice / 2n;
   await (
     await marginlyPool
       .connect(shorter)
@@ -91,7 +90,6 @@ async function simulation1(sut: SystemUnderTest) {
   logger.info(`Short to ${formatUnits(shortAmount, 18)} WETH`);
   await showSystemAggregates(sut);
 
-  // longer deposit 0.1 ETH
   const longDepositBase = parseUnits('0.1', 18);
   logger.info(`Longer deposit ${formatUnits(longDepositBase, 18)} WETH`);
   await (await weth.connect(longer).approve(marginlyPool, longDepositBase)).wait();
@@ -103,7 +101,6 @@ async function simulation1(sut: SystemUnderTest) {
       })
   ).wait();
 
-  // longer make long on 1.8 ETH
   const longAmount = parseUnits('0.5', 18);
   logger.info(`Long to ${formatUnits(longAmount, 18)} WETH`);
   const maxPrice = (await marginlyPool.getBasePrice()).inner * 2n;
@@ -114,7 +111,7 @@ async function simulation1(sut: SystemUnderTest) {
   ).wait();
   await showSystemAggregates(sut);
 
-  //shift dates and reinit
+  // shift dates and reinit
   logger.info(`Shift date for 1 month, 1 day per iteration`);
   // shift time to 1 year
   const numOfSeconds = 24 * 60 * 60; // 1 day
@@ -139,7 +136,7 @@ async function simulation1(sut: SystemUnderTest) {
         logger.warn(` mc account: ${marginCallEvent.args![0]}`);
       }
     } catch {
-      // we are in  liquidity shortage state try to receive position and continue
+      // we are in liquidity shortage state try to receive position and continue
       logger.warn(`⛔️ Pool liquidity not enough to cover position debt`);
       logger.info(`   bad position ${shorter.address}`);
 
@@ -176,8 +173,7 @@ async function simulation2(sut: SystemUnderTest) {
   const longer = accounts[2];
   const liquidator = accounts[3];
 
-  // lender deposit 3200 USDC
-  const lenderDepositQuoteAmount = parseUnits('3300', 6);
+  const lenderDepositQuoteAmount = parseUnits('5000', 6);
   logger.info(`Lender deposit ${formatUnits(lenderDepositQuoteAmount, 6)} USDC`);
   await (await usdc.connect(lender).approve(marginlyPool, lenderDepositQuoteAmount)).wait();
   await (
@@ -189,8 +185,9 @@ async function simulation2(sut: SystemUnderTest) {
   ).wait();
   await showSystemAggregates(sut);
 
-  // longer deposit 0.3 ETH
-  const longDepositBase = parseUnits('0.2', 18);
+  const basePrice = (await marginlyPool.getBasePrice()).inner;
+  const longCollateral = (lenderDepositQuoteAmount * 95n * FP96.one) / 100n / basePrice;
+  const longDepositBase = longCollateral / 10n;
   logger.info(`Longer deposit ${formatUnits(longDepositBase, 18)} WETH`);
   await (await weth.connect(longer).approve(marginlyPool, longDepositBase)).wait();
   await (
@@ -201,8 +198,7 @@ async function simulation2(sut: SystemUnderTest) {
       })
   ).wait();
 
-  // longer make long on 2.0 ETH
-  const longAmount = parseUnits('1.8', 18);
+  const longAmount = longCollateral - longDepositBase;
   logger.info(`Long to ${formatUnits(longAmount, 18)} WETH`);
   const maxPrice = (await marginlyPool.getBasePrice()).inner * 2n;
   await (
@@ -212,7 +208,6 @@ async function simulation2(sut: SystemUnderTest) {
   ).wait();
   await showSystemAggregates(sut);
 
-  //shorter deposit 300 USDC
   const shorterDepositQuote = parseUnits('600', 6);
   logger.info(`Shorter deposit ${formatUnits(shorterDepositQuote, 6)} USDC`);
   await (await usdc.connect(shorter).approve(marginlyPool, shorterDepositQuote)).wait();
@@ -224,9 +219,8 @@ async function simulation2(sut: SystemUnderTest) {
       })
   ).wait();
 
-  //shorter make short on 2.0 ETH
-  const shortAmount = parseUnits('2', 18);
-  const minPrice = (await marginlyPool.getBasePrice()).inner / 2n;
+  const shortAmount = longAmount;
+  const minPrice = basePrice / 2n;
   await (
     await marginlyPool
       .connect(shorter)
@@ -237,7 +231,7 @@ async function simulation2(sut: SystemUnderTest) {
   logger.info(`Short to ${formatUnits(shortAmount, 18)} WETH`);
   await showSystemAggregates(sut);
 
-  //shift dates and reinit
+  // shift dates and reinit
   logger.info(`Shift date for 1 month, 1 day per iteration`);
   // shift time to 1 year
   const numOfSeconds = 24 * 60 * 60; // 1 day
@@ -262,7 +256,7 @@ async function simulation2(sut: SystemUnderTest) {
         logger.warn(` mc account: ${marginCallEvent.args![0]}`);
       }
     } catch {
-      // we are in  liquidity shortage state try to receive position and continue
+      // we are in liquidity shortage state try to receive position and continue
       logger.warn(`⛔️ Pool liquidity not enough to cover position debt`);
       logger.info(`   bad position ${longer.address}`);
 
@@ -296,7 +290,6 @@ async function simulation3(sut: SystemUnderTest) {
   const shorter = accounts[1];
   const longer = accounts[2];
 
-  // lender deposit 3200 USDC and 2.0 ETH
   const lenderDepositQuoteAmount = parseUnits('3300', 6);
   logger.info(`Lender deposit ${formatUnits(lenderDepositQuoteAmount, 6)} USDC`);
   await (await usdc.connect(lender).approve(marginlyPool, lenderDepositQuoteAmount)).wait();
@@ -319,8 +312,9 @@ async function simulation3(sut: SystemUnderTest) {
   ).wait();
   await showSystemAggregates(sut);
 
-  // longer deposit 0.3 ETH
-  const longDepositBase = parseUnits('0.3', 18);
+  const basePrice = (await marginlyPool.getBasePrice()).inner;
+  const longCollateral = (lenderDepositQuoteAmount * 95n * FP96.one) / 100n / basePrice;
+  const longDepositBase = longCollateral / 10n;
   logger.info(`Longer deposit ${formatUnits(longDepositBase, 18)} WETH`);
   await (await weth.connect(longer).approve(marginlyPool, longDepositBase)).wait();
   await (
@@ -331,8 +325,7 @@ async function simulation3(sut: SystemUnderTest) {
       })
   ).wait();
 
-  // longer make long on 2.0 ETH
-  const longAmount = parseUnits('1.8', 18);
+  const longAmount = longCollateral - longDepositBase;
   logger.info(`Long to ${formatUnits(longAmount, 18)} WETH`);
   const maxPrice = (await marginlyPool.getBasePrice()).inner * 2n;
   await (
@@ -342,8 +335,7 @@ async function simulation3(sut: SystemUnderTest) {
   ).wait();
   await showSystemAggregates(sut);
 
-  //shorter deposit 300 USDC
-  const shorterDepositQuote = parseUnits('230', 6);
+  const shorterDepositQuote = parseUnits('300', 6);
   logger.info(`Shorter deposit ${formatUnits(shorterDepositQuote, 6)} USDC`);
   await (await usdc.connect(shorter).approve(marginlyPool, shorterDepositQuote)).wait();
   await (
@@ -354,8 +346,7 @@ async function simulation3(sut: SystemUnderTest) {
       })
   ).wait();
 
-  //shorter make short on 2.0 ETH
-  const shortAmount = parseUnits('2', 18);
+  const shortAmount = longAmount;
   const minPrice = (await marginlyPool.getBasePrice()).inner / 2n;
   await (
     await marginlyPool
@@ -367,7 +358,7 @@ async function simulation3(sut: SystemUnderTest) {
   logger.info(`Short to ${formatUnits(shortAmount, 18)} WETH`);
   await showSystemAggregates(sut);
 
-  //shift dates and reinit
+  // shift dates and reinit
   logger.info(`Shift date for 1 month, 1 day per iteration`);
   // shift time to 1 year
   const numOfSeconds = 24 * 60 * 60; // 1 day

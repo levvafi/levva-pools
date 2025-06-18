@@ -42,8 +42,8 @@ async function short(sut: SystemUnderTest) {
   const lenders = accounts.slice(0, lendersNumber);
   const shorters = accounts.slice(lendersNumber, lendersNumber + shortersNumber);
 
-  const baseAmount = 200_000_000n * 10n ** 18n;
-  const quoteAmount = 200_000_000n * 10n ** 6n;
+  const baseAmount = 100_000_000n * 10n ** 18n;
+  const quoteAmount = 100_000_000n * 10n ** 6n;
 
   const baseAmountsLenders = [];
   const baseDebtsShorters = [];
@@ -93,7 +93,7 @@ async function short(sut: SystemUnderTest) {
 
   for (let i = 0; i < shortersNumber; ++i) {
     const shorter = shorters[i];
-    console.log(`\n`);
+    logger.info(`\n`);
     logger.info(`shorter: ${shorter.address}`);
     logger.info(`depositQuote call`);
     await (await usdc.connect(shorter).approve(marginlyPool, initCollateral)).wait();
@@ -309,7 +309,7 @@ async function short(sut: SystemUnderTest) {
     logger.info(` Deposit ${formatUnits(baseAmount, 18)} WETH, current ${formatUnits(realBaseAmount, 18)} WETH`);
   }
 
-  console.log(`\n`);
+  logger.info(`\n`);
   logger.info(`Check borrowers after reinit`);
   for (let i = 0; i < shortersNumber; ++i) {
     const shorter = shorters[i];

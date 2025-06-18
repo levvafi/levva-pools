@@ -1,10 +1,10 @@
-import assert = require('assert');
 import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { FP96 } from '../utils/fixed-point';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
+import assert from 'assert';
 
 describe('Balance sync', () => {
   it('Balance sync', async () => {

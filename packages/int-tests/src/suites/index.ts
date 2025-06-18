@@ -16,8 +16,8 @@ import {
   MarginlyKeeperAlgebra__factory,
   MarginlyKeeperBalancer__factory,
   MarginlyKeeperUniswapV3__factory,
-  MarginlyPool,
-  MarginlyPool__factory,
+  LevvaTradingPool,
+  LevvaTradingPool__factory,
 } from '../../../contracts/typechain-types';
 import {
   MarginlyKeeperAave,
@@ -49,7 +49,7 @@ export type SystemUnderTest = {
   uniswap: IUniswapV3Pool;
   uniswapFactory: IUniswapV3Factory;
   swapRouter: MarginlyRouter;
-  marginlyPool: MarginlyPool;
+  marginlyPool: LevvaTradingPool;
   marginlyFactory: MarginlyFactory;
   keeperAave: MarginlyKeeperAave;
   keeperUniswapV3: MarginlyKeeperUniswapV3;
@@ -148,7 +148,7 @@ export async function initializeTestSystem(): Promise<SystemUnderTest> {
   const uniswapPoolFee = 500;
   await priceOracle.connect(treasury).setOptions(usdc, weth, secondsAgo, secondsAgoLiquidation, uniswapPoolFee);
 
-  const marginlyPoolImplementation = await new MarginlyPool__factory().connect(treasury).deploy();
+  const marginlyPoolImplementation = await new LevvaTradingPool__factory().connect(treasury).deploy();
   logger.info(`marginly pool implementation: ${await marginlyPoolImplementation.getAddress()}`);
 
   const marginlyFactory = await new MarginlyFactory__factory()
@@ -184,7 +184,7 @@ export async function initializeTestSystem(): Promise<SystemUnderTest> {
   }
   const marginlyAddress = poolCreatedEvent.args[4];
 
-  const marginlyPool = MarginlyPool__factory.connect(marginlyAddress, treasury.provider);
+  const marginlyPool = LevvaTradingPool__factory.connect(marginlyAddress, treasury.provider);
   logger.info(`marginly <> uniswap: ${marginlyAddress} <> ${await uniswap.getAddress()}`);
 
   const aavePoolAddressesProviderAddress = '0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e'; //ethereum mainnet

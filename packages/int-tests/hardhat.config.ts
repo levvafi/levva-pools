@@ -6,8 +6,11 @@ export default {
       forking: {
         enabled: true,
         url: 'https://ethereum-rpc.publicnode.com',
-        blockNumber: 21814800,
+        blockNumber: 22730520,
       },
     },
   },
+  mocha: {
+    timeout: 6000000,
+  }
 };

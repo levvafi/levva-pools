@@ -1,4 +1,4 @@
-import assert = require('assert');
+import assert from 'assert';
 import { parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
 import { logger } from '../utils/logger';

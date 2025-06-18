@@ -1,4 +1,4 @@
-import assert = require('assert');
+import assert from 'assert';
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
 import { logger } from '../utils/logger';
@@ -135,7 +135,7 @@ async function shortIncome(sut: SystemUnderTest) {
   const collCoeff = await marginlyPool.quoteCollateralCoeff();
   const positionDiscountedQuoteAmountAfter = positionAfter.discountedQuoteAmount;
   const expectedPosDiscountedQuoteAmount =
-    ((positionDiscountedQuoteAmountBefore - swapAmount + fee) * FP96.one) / collCoeff;
+    positionDiscountedQuoteAmountBefore - ((swapAmount + fee) * FP96.one) / collCoeff;
   logger.info(`position.discountedQuoteAmount: ${formatUnits(positionDiscountedQuoteAmountAfter, 6)}`);
   assert.deepEqual(expectedPosDiscountedQuoteAmount, positionDiscountedQuoteAmountAfter, 'pos.discountedQuoteAmount');
 

@@ -1,9 +1,8 @@
 import { logger } from '../utils/logger';
-import { SECS_PER_BLOCK } from './const';
-import { AbiCoder, Addressable, BrowserProvider, ContractTransactionReceipt, EventLog, Provider } from 'ethers';
+import { AbiCoder, Addressable, BrowserProvider, ContractTransactionReceipt, Log } from 'ethers';
 import { FP96, powTaylor } from './fixed-point';
 import { TechnicalPositionOwner } from '../suites';
-import { MarginlyPool } from '../../../contracts/typechain-types';
+import { LevvaTradingPool } from '../../../contracts/typechain-types';
 
 export const PositionType = {
   Uninitialized: 0n,
@@ -45,11 +44,6 @@ export function constructSwap(dex: bigint[], ratios: bigint[]): bigint {
   }
   swap = (swap << 4n) + BigInt(dex.length);
   return swap;
-}
-
-export async function waitBlocks(blocks: number): Promise<void> {
-  logger.info(`Waiting for ${blocks} blocks`);
-  return await new Promise((rs) => setTimeout(rs, blocks * SECS_PER_BLOCK * 1000.0));
 }
 
 export class BrowserProviderDecorator {
@@ -98,9 +92,7 @@ export function decodeSwapEvent(
   txReceipt: ContractTransactionReceipt,
   uniswapAddress: string | Addressable
 ): SwapEvent {
-  const swapEvent = txReceipt.logs
-    ?.filter((x) => x instanceof EventLog)
-    .find((e) => e.address == uniswapAddress.toString());
+  const swapEvent = txReceipt.logs?.filter((x) => x instanceof Log).find((e) => e.address == uniswapAddress.toString());
   const swapEventTypes = ['int256', 'int256', 'uint160', 'uint128', 'int24'];
   const result = AbiCoder.defaultAbiCoder().decode(swapEventTypes, swapEvent!.data);
 
@@ -113,7 +105,7 @@ export function decodeSwapEvent(
   };
 }
 
-export async function getLongSortKeyX48(marginlyPool: MarginlyPool, accountAddress: string): Promise<bigint> {
+export async function getLongSortKeyX48(marginlyPool: LevvaTradingPool, accountAddress: string): Promise<bigint> {
   const position = await marginlyPool.positions(accountAddress);
   const index = position.heapPosition - 1n;
   logger.debug(`  heap position is ${position.heapPosition}`);
@@ -121,7 +113,7 @@ export async function getLongSortKeyX48(marginlyPool: MarginlyPool, accountAddre
   return leverage.key;
 }
 
-export async function getShortSortKeyX48(marginlyPool: MarginlyPool, accountAddress: string): Promise<bigint> {
+export async function getShortSortKeyX48(marginlyPool: LevvaTradingPool, accountAddress: string): Promise<bigint> {
   const position = await marginlyPool.positions(accountAddress);
   const index = position.heapPosition - 1n;
   logger.debug(`  heap position is ${position.heapPosition}`);
@@ -146,16 +138,15 @@ function fp96FromRatio(nom: bigint, denom: bigint): bigint {
 
 /// Same as accrueInterest in smart contract
 export async function calcAccruedRateCoeffs(
-  marginlyPool: MarginlyPool,
+  marginlyPool: LevvaTradingPool,
   prevBlockNumber: number,
   marginCallHappened = false
 ) {
   const callOpt = { blockTag: prevBlockNumber };
 
   const params = await marginlyPool.params(callOpt);
-  const systemLeverage = await marginlyPool.systemLeverage(callOpt);
-  const leverageShortX96 = systemLeverage.shortX96;
-  const leverageLongX96 = systemLeverage.longX96;
+  const leverageShortX96 = await marginlyPool.shortLeverageX96(callOpt);
+  const leverageLongX96 = await marginlyPool.longLeverageX96(callOpt);
 
   const lastReinitOnPrevBlock = await marginlyPool.lastReinitTimestampSeconds(callOpt);
   const lastReinitTimestamp = await marginlyPool.lastReinitTimestampSeconds();
@@ -242,7 +233,7 @@ export async function calcAccruedRateCoeffs(
 }
 
 export async function assertAccruedRateCoeffs(
-  marginlyPool: MarginlyPool,
+  marginlyPool: LevvaTradingPool,
   prevBlockNumber: number,
   marginCallHappened = false
 ) {

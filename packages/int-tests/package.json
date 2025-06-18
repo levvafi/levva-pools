@@ -4,9 +4,6 @@
   "license": "MIT",
   "private": false,
   "author": "EqLab",
-  "engines": {
-    "node": ">=16.0.0"
-  },
   "devDependencies": {
     "@marginly/contracts": "0.1.0",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
@@ -15,7 +12,7 @@
     "@openzeppelin/contracts": "^5.3.0",
     "@typechain/ethers-v6": "^0.5.0",
     "@typechain/hardhat": "^9.1.0",
-    "@types/node": ">=18.0.0",
+    "@types/node": "^22.15.29",
     "@uniswap/v3-sdk": "^3.9.0",
     "ethers": "^6.14.3",
     "hardhat": "2.24.1",
@@ -30,7 +27,6 @@
     "@openzeppelin/contracts": "^5.3.0",
     "@typechain/ethers-v6": "^0.5.0",
     "@typechain/hardhat": "^9.1.0",
-    "@types/node": "^22.15.29",
     "@uniswap/v2-periphery": "^1.1.0-beta.0",
     "@uniswap/v3-core": "^1.0.1",
     "@uniswap/v3-periphery": "^1.4.3",
@@ -40,7 +36,7 @@
     "tslib": "^2.4.1"
   },
   "scripts": {
-    "test": "UPDATE_SNAPSHOT=1 REPORT_GAS=true hardhat test ./src/suites/*.ts",
+    "test": "hardhat test ./src/suites/*.ts",
     "lint:write": "prettier --write ./src"
   }
 }

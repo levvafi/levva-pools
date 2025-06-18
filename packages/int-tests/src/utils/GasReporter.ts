@@ -61,7 +61,7 @@ export class GasReporter {
     const gasUsageStatistics = this.gasUsageStatistics;
     if (Object.keys(gasUsageStatistics).length > 0) {
       setTimeout(function () {
-        console.log('Gas usage statistics');
+        logger.info('Gas usage statistics');
         console.table(gasUsageStatistics);
       }, 10);
     }

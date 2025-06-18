@@ -20,9 +20,8 @@ export async function showSystemAggregates(sut: SystemUnderTest) {
   const quoteCollateralCoeff = await marginlyPool.quoteCollateralCoeff();
   const quoteDebtCoeff = await marginlyPool.quoteDebtCoeff();
 
-  const systemLeverage = await marginlyPool.systemLeverage();
-  const shortX96 = systemLeverage.shortX96;
-  const longX96 = systemLeverage.longX96;
+  const shortX96 = await marginlyPool.shortLeverageX96();
+  const longX96 = await marginlyPool.longLeverageX96();
   const basePriceX96 = (await marginlyPool.getBasePrice()).inner * 10n ** 12n;
 
   // calc aggregates
