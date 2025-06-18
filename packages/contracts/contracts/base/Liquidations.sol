@@ -107,20 +107,19 @@ abstract contract Liquidations is Funding {
   /// @param positionOwner User's address
   /// @param position User's position to reinit
   function _enactMarginCall(address positionOwner, Position storage position) private {
-    uint256 baseDelta;
-    uint256 quoteDelta;
     int256 collateralSurplus;
+    uint256 swapPriceX96;
     PositionType _type = position._type;
     // it's guaranteed by liquidate() function, that position._type is either Short or Long
     // else is used to save some contract space
     if (_type == PositionType.Long) {
-      (baseDelta, quoteDelta, collateralSurplus) = _enactMarginCallLong(position);
+      (collateralSurplus, swapPriceX96) = _enactMarginCallLong(position);
     } else {
-      (quoteDelta, baseDelta, collateralSurplus) = _enactMarginCallShort(position);
+      (collateralSurplus, swapPriceX96) = _enactMarginCallShort(position);
     }
 
     delete positions[positionOwner];
-    emit EnactMarginCall(positionOwner, _calcSwapPrice(quoteDelta, baseDelta), collateralSurplus, _type);
+    emit EnactMarginCall(positionOwner, swapPriceX96, collateralSurplus, _type);
   }
 
   /// @notice Liquidate bad position and receive position collateral and debt

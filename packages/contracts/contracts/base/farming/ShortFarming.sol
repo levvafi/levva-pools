@@ -93,8 +93,8 @@ abstract contract ShortFarming is Liquidations {
     return;
   }
 
-  function _enactMarginCallShort(Position storage) internal pure override returns (uint256, uint256, int256) {
-    return (0, 0, 0);
+  function _enactMarginCallShort(Position storage) internal pure override returns (int256, uint256) {
+    return (0, 0);
   }
 
   function _receiveShort(Position storage, Position storage, uint256, uint256) internal pure virtual override {

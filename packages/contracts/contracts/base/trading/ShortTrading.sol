@@ -266,28 +266,33 @@ abstract contract ShortTrading is Liquidations {
 
   function _enactMarginCallShort(
     Position storage position
-  ) internal override returns (uint256 quoteCollateralDelta, uint256 baseDebtDelta, int256 baseCollateralSurplus) {
-    quoteCollateralDelta = _calcRealQuoteCollateral(position.discountedQuoteAmount, position.discountedBaseAmount);
+  ) internal override returns (int256 baseCollateralSurplus, uint256 swapPriceX96) {
+    uint256 realQuoteCollateral = _calcRealQuoteCollateral(
+      position.discountedQuoteAmount,
+      position.discountedBaseAmount
+    );
     uint256 realBaseDebt = _calcRealBaseDebt(position.discountedBaseAmount);
 
     // short position mc
-    if (quoteCollateralDelta != 0) {
+    uint256 swappedBaseDebt;
+    if (realQuoteCollateral != 0) {
       uint baseOutMinimum = FP96.fromRatio(WHOLE_ONE - params.mcSlippage, WHOLE_ONE).mul(
-        getLiquidationPrice().recipMul(quoteCollateralDelta)
+        getLiquidationPrice().recipMul(realQuoteCollateral)
       );
-      baseDebtDelta = _swapExactInput(true, quoteCollateralDelta, baseOutMinimum, defaultSwapCallData);
+      swappedBaseDebt = _swapExactInput(true, realQuoteCollateral, baseOutMinimum, defaultSwapCallData);
+      swapPriceX96 = _calcSwapPrice(realQuoteCollateral, swappedBaseDebt);
     }
 
     FP96.FixedPoint memory factor;
     // baseCollateralCoeff += rcd * (rqc - sqc) / sqc
-    if (baseDebtDelta >= realBaseDebt) {
+    if (swappedBaseDebt >= realBaseDebt) {
       // Position has enough collateral to repay debt
-      factor = FP96.one().add(FP96.fromRatio(baseDebtDelta.sub(realBaseDebt), _calcRealBaseCollateralTotal()));
-      baseCollateralSurplus = int256(baseDebtDelta.sub(realBaseDebt));
+      factor = FP96.one().add(FP96.fromRatio(swappedBaseDebt.sub(realBaseDebt), _calcRealBaseCollateralTotal()));
+      baseCollateralSurplus = int256(swappedBaseDebt.sub(realBaseDebt));
     } else {
       // Position's debt has been repaid by pool
-      factor = FP96.one().sub(FP96.fromRatio(realBaseDebt.sub(baseDebtDelta), _calcRealBaseCollateralTotal()));
-      baseCollateralSurplus = -int256(realBaseDebt.sub(baseDebtDelta));
+      factor = FP96.one().sub(FP96.fromRatio(realBaseDebt.sub(swappedBaseDebt), _calcRealBaseCollateralTotal()));
+      baseCollateralSurplus = -int256(realBaseDebt.sub(swappedBaseDebt));
     }
     _updateBaseCollateralCoeffs(factor);
 

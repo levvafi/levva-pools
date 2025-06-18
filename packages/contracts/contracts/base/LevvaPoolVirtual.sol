@@ -90,11 +90,11 @@ abstract contract LevvaPoolVirtual is IMarginlyPool {
 
   function _enactMarginCallLong(
     Position storage position
-  ) internal virtual returns (uint256 baseCollateralDelta, uint256 quoteDebtDelta, int256 quoteCollateralSurplus);
+  ) internal virtual returns (int256 quoteCollateralSurplus, uint256 swapPriceX96);
 
   function _enactMarginCallShort(
     Position storage position
-  ) internal virtual returns (uint256 quoteCollateralDelta, uint256 baseDebtDelta, int256 baseCollateralSurplus);
+  ) internal virtual returns (int256 baseCollateralSurplus, uint256 swapPriceX96);
 
   function _deleverageLong(uint256 realBaseCollateral, uint256 realQuoteDebt) internal virtual;
 
