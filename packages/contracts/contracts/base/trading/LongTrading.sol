@@ -341,7 +341,7 @@ abstract contract LongTrading is Liquidations {
     FP96.FixedPoint memory interestRate,
     FP96.FixedPoint memory feeDt
   ) internal virtual override returns (uint256 baseDebtDistributed, uint256 discountedQuoteFee) {
-    if (discountedQuoteCollateral != 0) {
+    if (discountedQuoteDebt != 0) {
       FP96.FixedPoint memory quoteDebtCoeffPrev = quoteDebtCoeff;
       uint256 realQuoteDebtPrev = quoteDebtCoeffPrev.mul(discountedQuoteDebt, Math.Rounding.Ceil);
       FP96.FixedPoint memory onePlusIR = interestRate

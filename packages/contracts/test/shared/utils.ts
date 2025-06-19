@@ -114,7 +114,7 @@ export function calcLeverageShort(
 ) {
   if (baseAmount == 0n) return FP96.one;
   const collateral = (quoteCollateralCoeff * quoteAmount) / FP96.one;
-  const debt = (((baseDebtCoeff * baseAmount) / FP96.one + 1n) * basePrice) / FP96.one;
+  const debt = (ceilDivision(baseDebtCoeff * baseAmount, FP96.one) * basePrice) / FP96.one;
 
   return (collateral * FP96.one) / (collateral - debt);
 }
@@ -128,7 +128,7 @@ export function calcLeverageLong(
 ) {
   if (quoteAmount == 0n) return FP96.one;
   const collateral = (((baseCollateralCoeff * baseAmount) / FP96.one) * basePrice) / FP96.one;
-  const debt = (quoteDebtCoeff * quoteAmount) / FP96.one + 1n;
+  const debt = ceilDivision(quoteDebtCoeff * quoteAmount, FP96.one);
 
   return (collateral * FP96.one) / (collateral - debt);
 }
@@ -219,7 +219,7 @@ export async function calcAccruedRateCoeffs(marginlyPool: LevvaTradingPool, prev
     const realBaseDebtPrev = ceilDivision(baseDebtCoeffPrev * discountedBaseDebtPrev, FP96.one);
     const onePlusIRshort = (interestRateX96 * leverageShortX96) / SECONDS_IN_YEAR_X96 + FP96.one;
     const accruedRateDt = powTaylor(onePlusIRshort, secondsPassed);
-    const baseDebtCoeffMul = ceilDivision(accruedRateDt * feeDt, FP96.one);
+    const baseDebtCoeffMul = (accruedRateDt * feeDt) / FP96.one;
 
     const baseCollateralCoeff =
       baseCollateralCoeffPrev +
@@ -342,6 +342,6 @@ export async function getMarginlyPoolState(marginlyPool: LevvaTradingPool): Prom
   };
 }
 
-function ceilDivision(a: bigint, b: bigint): bigint {
+export function ceilDivision(a: bigint, b: bigint): bigint {
   return (a + b - 1n) / b;
 }

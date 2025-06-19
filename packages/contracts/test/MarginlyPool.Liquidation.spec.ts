@@ -584,13 +584,13 @@ describe('MarginlyPool.Liquidation', () => {
       .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral1 = 100;
-    const longAmount1 = 1900;
+    const longAmount1 = 1800;
     await marginlyPool
       .connect(longer1)
       .execute(CallType.DepositBase, baseCollateral1, longAmount1, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral2 = 100;
-    const longAmount2 = 1900;
+    const longAmount2 = 1800;
     await marginlyPool
       .connect(longer2)
       .execute(CallType.DepositBase, baseCollateral2, longAmount2, price, false, ZeroAddress, uniswapV3Swapdata());

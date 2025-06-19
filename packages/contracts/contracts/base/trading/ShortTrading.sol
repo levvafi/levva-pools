@@ -360,7 +360,7 @@ abstract contract ShortTrading is Liquidations {
     FP96.FixedPoint memory interestRate,
     FP96.FixedPoint memory feeDt
   ) internal virtual override returns (uint256 quoteDebtDistributed, uint256 discountedBaseFee) {
-    if (discountedBaseCollateral != 0) {
+    if (discountedBaseDebt != 0) {
       FP96.FixedPoint memory baseDebtCoeffPrev = baseDebtCoeff;
       uint256 realBaseDebtPrev = baseDebtCoeffPrev.mul(discountedBaseDebt, Math.Rounding.Ceil);
       FP96.FixedPoint memory onePlusIR = interestRate

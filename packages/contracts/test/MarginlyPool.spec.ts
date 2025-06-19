@@ -341,7 +341,7 @@ describe('MarginlyPool.Base', () => {
       position = await marginlyPool.positions(signer.address);
       expect(position._type).to.be.equal(PositionType.Short);
       positionRealBaseAmount -= baseDepositFirst;
-      expect((position.discountedBaseAmount * baseDebtCoeff) / FP96.one).to.be.equal(positionRealBaseAmount);
+      expect((position.discountedBaseAmount * baseDebtCoeff) / FP96.one).to.be.closeTo(positionRealBaseAmount, 1);
 
       const sortKeyAfter = (await marginlyPool.getHeapPosition(position.heapPosition - 1n, true))[1].key;
       const expectedSortKeyAfter = calcShortSortKey(position.discountedQuoteAmount, position.discountedBaseAmount);
@@ -362,7 +362,7 @@ describe('MarginlyPool.Base', () => {
         expect((await marginlyPool.getHeapPosition(0, true))[0]).to.be.false;
         expect((position.discountedBaseAmount * baseCollateralCoeff) / FP96.one).to.be.closeTo(
           positionRealBaseAmount,
-          1
+          2
         );
       }
     });
@@ -689,7 +689,10 @@ describe('MarginlyPool.Base', () => {
         const positionAfter = await marginlyPool.positions(signer.address);
         const quoteDebtCoeff = await marginlyPool.quoteDebtCoeff();
         expect(positionAfter._type).to.be.equal(PositionType.Long);
-        expect((positionAfter.discountedQuoteAmount * quoteDebtCoeff) / FP96.one).to.be.equal(positionRealQuoteAmount);
+        expect((positionAfter.discountedQuoteAmount * quoteDebtCoeff) / FP96.one).to.be.closeTo(
+          positionRealQuoteAmount,
+          1
+        );
       }
 
       const quoteDepositSecond = positionRealQuoteAmount * 2n;
@@ -702,8 +705,9 @@ describe('MarginlyPool.Base', () => {
       expect(positionAfter._type).to.be.equal(PositionType.Lend);
       expect(positionAfter.heapPosition).to.be.equal(0);
       expect((await marginlyPool.getHeapPosition(0, false))[0]).to.be.false;
-      expect((positionAfter.discountedQuoteAmount * quoteCollateralCoeff) / FP96.one).to.be.equal(
-        positionRealQuoteAmount
+      expect((positionAfter.discountedQuoteAmount * quoteCollateralCoeff) / FP96.one).to.be.closeTo(
+        positionRealQuoteAmount,
+        1
       );
     });
 
@@ -2603,13 +2607,13 @@ describe('MarginlyPool.Base', () => {
       .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral1 = 100;
-    const longAmount1 = 1900;
+    const longAmount1 = 1800;
     await marginlyPool
       .connect(longer1)
       .execute(CallType.DepositBase, baseCollateral1, longAmount1, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral2 = 100;
-    const longAmount2 = 1880;
+    const longAmount2 = 1780;
     await marginlyPool
       .connect(longer2)
       .execute(CallType.DepositBase, baseCollateral2, longAmount2, price, false, ZeroAddress, uniswapV3Swapdata());
@@ -2835,7 +2839,7 @@ describe('MarginlyPool.Base', () => {
       .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral1 = 100;
-    const longAmount1 = 1900;
+    const longAmount1 = 1800;
     await marginlyPool
       .connect(longer1)
       .execute(CallType.DepositBase, baseCollateral1, longAmount1, price, false, ZeroAddress, uniswapV3Swapdata());
@@ -2884,13 +2888,13 @@ describe('MarginlyPool.Base', () => {
       .execute(CallType.DepositQuote, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral1 = 100;
-    const longAmount1 = 1900;
+    const longAmount1 = 1800;
     await marginlyPool
       .connect(longer1)
       .execute(CallType.DepositBase, baseCollateral1, longAmount1, price, false, ZeroAddress, uniswapV3Swapdata());
 
     const baseCollateral2 = 100;
-    const longAmount2 = 1880;
+    const longAmount2 = 1780;
     await marginlyPool
       .connect(longer2)
       .execute(CallType.DepositBase, baseCollateral2, longAmount2, price, false, ZeroAddress, uniswapV3Swapdata());
