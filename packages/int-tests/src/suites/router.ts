@@ -1,7 +1,6 @@
-import assert = require('assert');
+import assert from 'assert';
 import { parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
-import { logger } from '../utils/logger';
 import { constructSwap, Dex, SWAP_ONE } from '../utils/chain-ops';
 import { ethers } from 'ethers';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
@@ -10,17 +9,19 @@ describe('Router', () => {
   it('Router swaps', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await routerSwaps(sut);
+    sut.logger.flush();
   });
 
   it('Router multiple swaps', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await routerMultipleSwaps(sut);
+    sut.logger.flush();
   });
 });
 
 async function routerSwaps(sut: SystemUnderTest) {
+  const { treasury, usdc, weth, swapRouter, logger } = sut;
   logger.info(`Starting routerSwaps test suite`);
-  const { treasury, usdc, weth, swapRouter } = sut;
 
   let currentWethBalance = await weth.balanceOf(treasury.address);
   let currentUsdcBalance = await usdc.balanceOf(treasury.address);
@@ -147,8 +148,8 @@ async function routerSwaps(sut: SystemUnderTest) {
 }
 
 async function routerMultipleSwaps(sut: SystemUnderTest) {
+  const { treasury, usdc, weth, swapRouter, logger } = sut;
   logger.info(`Starting routerMultipleSwaps test suite`);
-  const { treasury, usdc, weth, swapRouter } = sut;
 
   let currentWethBalance = await weth.balanceOf(treasury.address);
   let currentUsdcBalance = await usdc.balanceOf(treasury.address);

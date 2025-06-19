@@ -1,5 +1,4 @@
 import { initializeTestSystem, SystemUnderTest, TechnicalPositionOwner } from '.';
-import { logger } from '../utils/logger';
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { abs, FP96, toHumanString } from '../utils/fixed-point';
 import {
@@ -16,11 +15,12 @@ describe('Long and short', () => {
   it('long and short', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await longAndShort(sut);
+    sut.logger.flush();
   });
 });
 
 async function prepareAccounts(sut: SystemUnderTest) {
-  const { treasury, usdc, weth, accounts } = sut;
+  const { treasury, usdc, weth, accounts, logger } = sut;
   logger.debug(`Depositing accounts`);
   for (let i = 0; i < accounts.length; i++) {
     const account = accounts[i];
@@ -36,13 +36,11 @@ async function prepareAccounts(sut: SystemUnderTest) {
 }
 
 async function longAndShort(sut: SystemUnderTest) {
+  const { marginlyPool, usdc, weth, accounts, treasury, uniswap, gasReporter, logger } = sut;
+
   logger.info(`Starting long_and_short test suite`);
   await prepareAccounts(sut);
   logger.info(`Prepared accounts`);
-  const { marginlyPool, usdc, weth, accounts, treasury, uniswap, gasReporter } = sut;
-
-  const params = await marginlyPool.params();
-  await marginlyPool.connect(treasury).setParameters({ ...params });
 
   const interestRateX96 = ((await marginlyPool.params()).interestRate * FP96.one) / WHOLE_ONE;
   logger.info(`interestRate: ${toHumanString(interestRateX96)}`);
@@ -175,7 +173,7 @@ async function longAndShort(sut: SystemUnderTest) {
   }
 
   logger.info(`Shift date for 1 year`);
-  logger.warn(`leverageLong: ${toHumanString((await marginlyPool.systemLeverage()).longX96)}`);
+  logger.warn(`leverageLong: ${toHumanString(await marginlyPool.longLeverageX96())}`);
   await time.setNextBlockTimestamp(Number(await marginlyPool.lastReinitTimestampSeconds()) + numOfSeconds);
   const txReceipt = await gasReporter.saveGasUsage(
     'reinit',
@@ -207,7 +205,7 @@ async function longAndShort(sut: SystemUnderTest) {
       continue;
     }
 
-    const sortKeyX48 = await getLongSortKeyX48(marginlyPool, longer.address);
+    const sortKeyX48 = await getLongSortKeyX48(marginlyPool, longer.address, logger);
     const discountedBaseAmount = position.discountedBaseAmount;
     const discountedQuoteAmount = position.discountedQuoteAmount;
     logger.info(` discountedBaseAmount  ${formatUnits(discountedBaseAmount, 18)}`);
@@ -241,7 +239,7 @@ async function longAndShort(sut: SystemUnderTest) {
       continue;
     }
 
-    const leverage = await getShortSortKeyX48(marginlyPool, shorter.address);
+    const leverage = await getShortSortKeyX48(marginlyPool, shorter.address, logger);
     const discountedBaseAmount = position.discountedBaseAmount;
     const discountedQuoteAmount = position.discountedQuoteAmount;
     logger.info(` discountedBaseAmount  ${formatUnits(discountedBaseAmount, 18)}`);
@@ -274,35 +272,33 @@ async function longAndShort(sut: SystemUnderTest) {
   logger.info(`shortersTotalCollDelta ${formatUnits(shortersTotalCollDelta, 6)} USDC`);
   logger.info(`realQuoteDebtFee ${realQuoteDebtFee} USDC`);
 
-  const epsilon = 10;
+  const epsilon = 30;
 
-  let delta = abs(shortersTotalDebtDelta - longersTotalCollDelta + realBaseDebtFee);
+  let delta = abs(shortersTotalDebtDelta - longersTotalCollDelta - realBaseDebtFee);
   if (delta > epsilon) {
     const shortDebtDelta = formatUnits(shortersTotalDebtDelta, 18);
     const longCollDelta = formatUnits(longersTotalCollDelta, 18);
     const debtFee = formatUnits(realBaseDebtFee, 18);
     const deltaFormatted = formatUnits(delta, 18);
-    const error = `realDebtFee ${debtFee} WETH + short debt delta = ${shortDebtDelta} WETH !=  ${longCollDelta} WETH = long coll delta, delta = ${deltaFormatted}`;
-    logger.error(error);
-    // throw new Error(error);
+    const warn = `realDebtFee ${debtFee} WETH + short debt delta = ${shortDebtDelta} WETH !=  ${longCollDelta} WETH = long coll delta, delta = ${deltaFormatted}`;
+    logger.warn(warn);
   }
 
-  delta = abs(longersTotalDebtDelta - shortersTotalCollDelta + realQuoteDebtFee);
+  delta = abs(longersTotalDebtDelta - shortersTotalCollDelta - realQuoteDebtFee);
   if (delta > epsilon) {
     const shortCollDelta = formatUnits(shortersTotalCollDelta, 6);
     const longDebtDelta = formatUnits(longersTotalDebtDelta, 6);
     const debtFee = formatUnits(realQuoteDebtFee, 6);
     const deltaFormatted = formatUnits(delta, 6);
-    const error = `realDebtFee ${debtFee} USDC + short coll delta = ${shortCollDelta} USDC !=  ${longDebtDelta} USDC = long debt delta, delta = ${deltaFormatted}`;
-    logger.error(error);
-    // throw new Error(error);
+    const warn = `realDebtFee ${debtFee} USDC + short coll delta = ${shortCollDelta} USDC !=  ${longDebtDelta} USDC = long debt delta, delta = ${deltaFormatted}`;
+    logger.warn(warn);
   }
 
   logger.info(`baseDebtCoeff: ${toHumanString(await marginlyPool.baseDebtCoeff())}`);
   logger.info(`quoteDebtCoeff: ${toHumanString(await marginlyPool.quoteDebtCoeff())}`);
 
   logger.warn(`basePrice: ${toHumanString((await marginlyPool.getBasePrice()).inner * 10n ** 12n)}`);
-  logger.warn(`leverageShort: ${toHumanString((await marginlyPool.systemLeverage()).shortX96)}`);
+  logger.warn(`leverageShort: ${toHumanString(await marginlyPool.shortLeverageX96())}`);
 
   return;
 }

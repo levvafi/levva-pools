@@ -1,3 +1,7 @@
+export function ceilDivision(a: bigint, b: bigint): bigint {
+  return (a + b - 1n) / b;
+}
+
 export function abs(num: bigint): bigint {
   return num > 0n ? num : -num;
 }

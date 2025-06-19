@@ -1,15 +1,17 @@
 import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
-import { logger } from '../utils/logger';
 import { encodeLiquidationParamsAave } from '../utils/marginly-keeper';
-import { MarginlyPool } from '../../../contracts/typechain-types';
+import { LevvaTradingPool } from '../../../contracts/typechain-types';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
+import { FP96 } from '../utils/fixed-point';
+import { Logger } from 'pino';
 
 describe('KeeperAave', () => {
   it('KeeperAave', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await keeperAave(sut);
+    sut.logger.flush();
   });
 });
 
@@ -21,10 +23,11 @@ type PoolCoeffs = {
 };
 
 async function getDebtAmount(
-  marginlyPool: MarginlyPool,
+  marginlyPool: LevvaTradingPool,
   positionAddress: string,
   basePriceX96: bigint,
-  poolCoeffs: PoolCoeffs
+  poolCoeffs: PoolCoeffs,
+  logger: Logger
 ): Promise<bigint> {
   const Fp96One = 2n ** 96n;
   const position = await marginlyPool.positions(positionAddress);
@@ -35,7 +38,7 @@ async function getDebtAmount(
     const collateral = (position.discountedQuoteAmount * poolCoeffs.quoteCollateralCoeffX96) / Fp96One;
 
     const leverage = collateral / (collateral - debtInQuote);
-    console.log(`Position ${positionAddress} leverage is ${leverage}`);
+    logger.info(`Position ${positionAddress} leverage is ${leverage}`);
     return debt;
   } else if (position._type == 3n) {
     const debt = (position.discountedQuoteAmount * poolCoeffs.quoteDebtCoeffX96) / Fp96One;
@@ -43,7 +46,7 @@ async function getDebtAmount(
     const collateralInQuote = (collateral * basePriceX96) / Fp96One;
 
     const leverage = collateralInQuote / (collateralInQuote - debt);
-    console.log(`Position ${positionAddress} leverage is ${leverage}`);
+    logger.info(`Position ${positionAddress} leverage is ${leverage}`);
     return debt;
   } else {
     throw Error('Wrong position type');
@@ -51,10 +54,10 @@ async function getDebtAmount(
 }
 
 async function keeperAave(sut: SystemUnderTest) {
+  const { marginlyPool, keeperAave, treasury, usdc, weth, accounts, gasReporter, logger } = sut;
+
   logger.info(`Starting keeper liquidation test suite`);
   const ethArgs = { gasLimit: 1_000_000 };
-
-  const { marginlyPool, keeperAave, treasury, usdc, weth, accounts, gasReporter } = sut;
 
   const lender = accounts[0];
   logger.info(`Deposit lender account`);
@@ -70,7 +73,7 @@ async function keeperAave(sut: SystemUnderTest) {
 
     await marginlyPool
       .connect(lender)
-      .execute(CallType.DepositBase, baseAmount, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), ethArgs);
+      .execute(CallType.DepositBase, baseAmount, 0, 0, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(lender)
       .execute(CallType.DepositQuote, quoteAmount, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), ethArgs);
@@ -79,8 +82,8 @@ async function keeperAave(sut: SystemUnderTest) {
   const longer = accounts[1];
   logger.info(`Deposit longer account`);
   {
-    const baseAmount = parseUnits('1', 18); // 0.1 WETH
-    const longAmount = parseUnits('17', 18); //1.7 WETH
+    const baseAmount = parseUnits('1', 18); // 1 WETH
+    const longAmount = parseUnits('17', 18); // 17 WETH
 
     await (await weth.connect(treasury).transfer(longer, baseAmount)).wait();
     await (await weth.connect(longer).approve(marginlyPool, baseAmount)).wait();
@@ -102,7 +105,7 @@ async function keeperAave(sut: SystemUnderTest) {
   const shorter = accounts[2];
   {
     const quoteAmount = parseUnits('200', 6); // 200 USDC
-    const shortAmount = parseUnits('1.7', 18); // 1.7 WETH
+    const shortAmount = (17n * quoteAmount * FP96.one) / (await marginlyPool.getBasePrice()).inner;
     await (await usdc.connect(treasury).transfer(shorter, quoteAmount)).wait();
     await (await usdc.connect(shorter).approve(marginlyPool, quoteAmount)).wait();
 
@@ -122,7 +125,16 @@ async function keeperAave(sut: SystemUnderTest) {
   // Set parameters to leverage 15
   {
     const params = await marginlyPool.params();
-    await (await marginlyPool.connect(treasury).setParameters({ ...params, maxLeverage: 15 })).wait();
+    const newParams = {
+      maxLeverage: 15n,
+      interestRate: params.interestRate,
+      fee: params.fee,
+      swapFee: params.swapFee,
+      mcSlippage: params.mcSlippage,
+      positionMinAmount: params.positionMinAmount,
+      quoteLimit: params.quoteLimit,
+    };
+    await (await marginlyPool.connect(treasury).setParameters(newParams)).wait();
   }
 
   const [basePrice, params, baseCollateralCoeff, baseDebtCoeff, quoteCollateralCoeff, quoteDebtCoeff]: [
@@ -144,7 +156,7 @@ async function keeperAave(sut: SystemUnderTest) {
   const basePriceX96 = basePrice.inner;
   const maxLeverage = params.maxLeverage;
 
-  console.log(`Max leverage is ${maxLeverage}`);
+  logger.info(`Max leverage is ${maxLeverage}`);
 
   const poolCoeffs: PoolCoeffs = {
     baseCollateralCoeffX96: baseCollateralCoeff,
@@ -155,9 +167,9 @@ async function keeperAave(sut: SystemUnderTest) {
 
   // get 1% more than calculated debt value
   const longerDebtAmount =
-    ((await getDebtAmount(marginlyPool, longer.address, basePriceX96, poolCoeffs)) * 101n) / 100n;
+    ((await getDebtAmount(marginlyPool, longer.address, basePriceX96, poolCoeffs, logger)) * 101n) / 100n;
   const shorterDebtAmount =
-    ((await getDebtAmount(marginlyPool, shorter.address, basePriceX96, poolCoeffs)) * 101n) / 100n;
+    ((await getDebtAmount(marginlyPool, shorter.address, basePriceX96, poolCoeffs, logger)) * 101n) / 100n;
 
   const liquidator = accounts[4];
 
@@ -186,7 +198,7 @@ async function keeperAave(sut: SystemUnderTest) {
   let balanceAfter = await usdc.balanceOf(liquidator);
 
   let profit = formatUnits(balanceAfter - balanceBefore, await usdc.decimals());
-  console.log(`Profit after long position liquidation is ${profit} USDC`);
+  logger.info(`Profit after long position liquidation is ${profit} USDC`);
 
   const shorterLiqParams = encodeLiquidationParamsAave(
     marginlyPool.target,
@@ -204,5 +216,5 @@ async function keeperAave(sut: SystemUnderTest) {
 
   balanceAfter = await weth.balanceOf(liquidator);
   profit = formatUnits(balanceAfter - balanceBefore, await weth.decimals());
-  console.log(`Profit after short position liquidation is ${profit} WETH`);
+  logger.info(`Profit after short position liquidation is ${profit} WETH`);
 }

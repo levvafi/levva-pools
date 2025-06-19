@@ -5,5 +5,4 @@ export const TREASURY_ACC_SEC =
 export const INITIAL_BALANCE = process.env.INITIAL_BALANCE ?? `1000000000000.0`;
 export const INITIAL_ETH = parseEther(INITIAL_BALANCE);
 export const INITIAL_USDC = parseUnits(INITIAL_BALANCE, 6);
-export const SECS_PER_BLOCK = process.env.SECS_PER_BLOCK ? +process.env.SECS_PER_BLOCK : 6;
 export const USDC_OWNER_ADDR = `0xFcb19e6a322b27c06842A71e8c725399f049AE3a`;

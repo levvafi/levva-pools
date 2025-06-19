@@ -1,22 +1,24 @@
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
-import { FP96 } from '../utils/fixed-point';
-import { logger } from '../utils/logger';
+import { ceilDivision, FP96 } from '../utils/fixed-point';
 import { changeWethPrice } from '../utils/uniswap-ops';
 import { showSystemAggregates } from '../utils/log-utils';
 import { prepareAccounts } from './simulation';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
+import assert from 'assert';
 
 describe('Shutdown', () => {
   it('Short emergency', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await shortEmergency(sut);
+    sut.logger.flush();
   });
 
   it('Long emergency', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await longEmergency(sut);
+    sut.logger.flush();
   });
 });
 
@@ -25,19 +27,14 @@ System shutdown case, when price of WETH token drastically increased
 ShortEmergency
 */
 async function shortEmergency(sut: SystemUnderTest) {
+  const { marginlyPool, usdc, weth, accounts, treasury, logger } = sut;
   logger.info(`Starting shortEmergency test suite`);
-  const { marginlyPool, usdc, weth, accounts, treasury } = sut;
 
   await prepareAccounts(sut);
 
   const lender = accounts[0];
   const longer = accounts[1];
   const shorters = accounts.slice(2, 4);
-
-  const params = await marginlyPool.params();
-  await (
-    await marginlyPool.connect(treasury).setParameters({ ...params, maxLeverage: 20 }, { gasLimit: 400_000 })
-  ).wait();
 
   // lender deposit 4.0 ETH
   const lenderDepositBaseAmount = parseUnits('4', 18);
@@ -54,12 +51,13 @@ async function shortEmergency(sut: SystemUnderTest) {
 
   // shorter deposit 250 USDC
   for (const shorter of shorters) {
+    const basePrice = (await marginlyPool.getBasePrice()).inner;
     const shorterDepositQuote = parseUnits('250', 6);
-    const shortAmount = parseUnits('2', 18);
+    const shortAmount = (17n * shorterDepositQuote * FP96.one) / basePrice;
     logger.info(`Shorter deposit ${formatUnits(shorterDepositQuote, 6)} USDC`);
     logger.info(`Short to ${formatUnits(shortAmount, 18)} WETH`);
     await (await usdc.connect(shorter).approve(marginlyPool, shorterDepositQuote)).wait();
-    const minPrice = (await marginlyPool.getBasePrice()).inner / 2n;
+    const minPrice = basePrice / 2n;
     await (
       await marginlyPool
         .connect(shorter)
@@ -105,13 +103,13 @@ async function shortEmergency(sut: SystemUnderTest) {
   const wethPriceX96 = (await marginlyPool.getBasePrice()).inner * 10n ** 12n;
 
   logger.info(`Increasing WETH price by ~80%`);
-  await changeWethPrice(treasury, sut, (wethPriceX96 * 18n) / 10n / FP96.one);
+  await changeWethPrice(treasury, sut, (wethPriceX96 * 18n) / 10n / FP96.one, logger);
 
   //shift dates and reinit
   logger.info(`Shift date for 1 month, 1 day per iteration`);
   // shift time to 1 year
   const numOfSeconds = 24 * 60 * 60; // 1 day
-  let nextDate = Math.floor(Date.now() / 1000);
+  let nextDate = await time.latest();
   for (let i = 0; i < 30; i++) {
     logger.info(`Iteration ${i + 1} of 30`);
     nextDate += numOfSeconds;
@@ -143,39 +141,56 @@ async function shortEmergency(sut: SystemUnderTest) {
     await showSystemAggregates(sut);
   }
 
+  /* emergencyWithdraw */
+  logger.debug('system in Emergency mode');
+
   const emWithdrawCoeff = await marginlyPool.emergencyWithdrawCoeff();
+  const baseCollCoeff = await marginlyPool.baseCollateralCoeff();
+  const quoteDebtCoeff = await marginlyPool.quoteDebtCoeff();
+  const shutDownPrice = await marginlyPool.shutDownPrice();
+
+  logger.info(`In pool ${await weth.balanceOf(marginlyPool)}`);
 
   const lenderPosition = await marginlyPool.positions(lender);
-  const longerPosition = await marginlyPool.positions(longer);
+  const lenderNet = (baseCollCoeff * lenderPosition.discountedBaseAmount) / FP96.one;
+  const lenderAmount = (lenderNet * emWithdrawCoeff) / FP96.one;
+  logger.info(`Trying to withdraw ${lenderAmount}`);
 
-  const lenderAmount = (lenderPosition.discountedBaseAmount * emWithdrawCoeff) / FP96.one;
-  const longerAmount = (longerPosition.discountedBaseAmount * emWithdrawCoeff) / FP96.one;
-
-  const poolBaseBalance = await weth.balanceOf(marginlyPool);
-
-  const baseCollateral = console.log(`In pool ${poolBaseBalance}`);
-  console.log(`Trying to withdraw ${lenderAmount} + ${longerAmount} = ${lenderAmount + longerAmount}`);
-
-  /* emergencyWithdraw */
-  logger.debug('system  in Emergency mode');
-
-  await (
-    await marginlyPool
-      .connect(longer)
-      .execute(CallType.EmergencyWithdraw, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 400_000 })
-  ).wait();
+  let balanceBefore = await weth.balanceOf(lender);
   await (
     await marginlyPool
       .connect(lender)
       .execute(CallType.EmergencyWithdraw, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 400_000 })
   ).wait();
+  let balanceAfter = await weth.balanceOf(lender);
+  assert.equal(balanceAfter - balanceBefore, lenderAmount);
+
+  logger.info(`In pool ${await weth.balanceOf(marginlyPool)}`);
+
+  const longerPosition = await marginlyPool.positions(longer);
+  const longerCollateral = (baseCollCoeff * longerPosition.discountedBaseAmount) / FP96.one;
+  const longerDebt =
+    (ceilDivision(quoteDebtCoeff * longerPosition.discountedQuoteAmount, FP96.one) * FP96.one) / shutDownPrice;
+  const longerNet = longerCollateral - longerDebt;
+
+  const longerAmount = (longerNet * emWithdrawCoeff) / FP96.one;
+  logger.info(`Trying to withdraw ${longerAmount}`);
+
+  balanceBefore = await weth.balanceOf(longer);
+  await (
+    await marginlyPool
+      .connect(longer)
+      .execute(CallType.EmergencyWithdraw, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 400_000 })
+  ).wait();
+  balanceAfter = await weth.balanceOf(longer);
+  assert.equal(balanceAfter - balanceBefore, longerAmount);
 
   await showSystemAggregates(sut);
 }
 
 async function longEmergency(sut: SystemUnderTest) {
+  const { marginlyPool, usdc, weth, accounts, treasury, logger } = sut;
   logger.info(`Starting longEmergency test suite`);
-  const { marginlyPool, usdc, weth, accounts, treasury } = sut;
 
   await prepareAccounts(sut);
 
@@ -183,8 +198,8 @@ async function longEmergency(sut: SystemUnderTest) {
   const shorter = accounts[1];
   const longers = accounts.slice(2, 4);
 
-  // lender deposit 3300 USDC
-  const lenderDepositQuoteAmount = parseUnits('3300', 6);
+  // lender deposit 5000 USDC
+  const lenderDepositQuoteAmount = parseUnits('5000', 6);
   logger.info(`Lender deposit ${formatUnits(lenderDepositQuoteAmount, 6)} USDC`);
   await (await usdc.connect(lender).approve(marginlyPool, lenderDepositQuoteAmount)).wait();
   await (
@@ -243,7 +258,7 @@ async function longEmergency(sut: SystemUnderTest) {
   const wethPriceX96 = (await marginlyPool.getBasePrice()).inner * 10n ** 12n;
 
   logger.info(`Decreasing WETH price by ~40%`);
-  await changeWethPrice(treasury, sut, (wethPriceX96 * 6n) / 10n / FP96.one);
+  await changeWethPrice(treasury, sut, (wethPriceX96 * 6n) / 10n / FP96.one, logger);
 
   //shift dates and reinit
   logger.info(`Shift date for 1 month, 1 day per iteration`);
@@ -285,17 +300,47 @@ async function longEmergency(sut: SystemUnderTest) {
   }
 
   /* emergencyWithdraw */
+  logger.debug('system in Emergency mode');
 
-  await (
-    await marginlyPool
-      .connect(shorter)
-      .execute(CallType.EmergencyWithdraw, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 400_000 })
-  ).wait();
+  const emWithdrawCoeff = await marginlyPool.emergencyWithdrawCoeff();
+  const quoteCollCoeff = await marginlyPool.quoteCollateralCoeff();
+  const baseDebtCoeff = await marginlyPool.baseDebtCoeff();
+  const shutDownPrice = await marginlyPool.shutDownPrice();
+
+  logger.info(`In pool ${await usdc.balanceOf(marginlyPool)}`);
+
+  const lenderPosition = await marginlyPool.positions(lender);
+  const lenderNet = (quoteCollCoeff * lenderPosition.discountedQuoteAmount) / FP96.one;
+  const lenderAmount = (lenderNet * emWithdrawCoeff) / FP96.one;
+  logger.info(`Trying to withdraw ${lenderAmount}`);
+
+  let balanceBefore = await usdc.balanceOf(lender);
   await (
     await marginlyPool
       .connect(lender)
       .execute(CallType.EmergencyWithdraw, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 400_000 })
   ).wait();
+  let balanceAfter = await usdc.balanceOf(lender);
+  assert.equal(balanceAfter - balanceBefore, lenderAmount);
+
+  logger.info(`In pool ${await usdc.balanceOf(marginlyPool)}`);
+
+  const longerPosition = await marginlyPool.positions(shorter);
+  const shorterCollateral = (quoteCollCoeff * longerPosition.discountedQuoteAmount) / FP96.one;
+  const shorterDebt =
+    (ceilDivision(baseDebtCoeff * longerPosition.discountedBaseAmount, FP96.one) * shutDownPrice) / FP96.one;
+  const shorterNet = shorterCollateral - shorterDebt;
+  const shorterAmount = (shorterNet * emWithdrawCoeff) / FP96.one;
+  logger.info(`Trying to withdraw ${shorterAmount}`);
+
+  balanceBefore = await usdc.balanceOf(shorter);
+  await (
+    await marginlyPool
+      .connect(shorter)
+      .execute(CallType.EmergencyWithdraw, 0, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), { gasLimit: 400_000 })
+  ).wait();
+  balanceAfter = await usdc.balanceOf(shorter);
+  assert.equal(balanceAfter - balanceBefore, shorterAmount);
 
   await showSystemAggregates(sut);
 }

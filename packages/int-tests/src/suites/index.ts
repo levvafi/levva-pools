@@ -1,6 +1,6 @@
 import { EventLog, parseUnits } from 'ethers';
 import { ethers } from 'hardhat';
-import { logger } from '../utils/logger';
+import { createTestLogger } from '../utils/logger';
 import { initUsdc, initWeth } from '../utils/erc20-init';
 import { uniswapFactoryContract, uniswapPoolContract } from '../utils/known-contracts';
 import { Dex } from '../utils/chain-ops';
@@ -16,8 +16,8 @@ import {
   MarginlyKeeperAlgebra__factory,
   MarginlyKeeperBalancer__factory,
   MarginlyKeeperUniswapV3__factory,
-  MarginlyPool,
-  MarginlyPool__factory,
+  LevvaTradingPool,
+  LevvaTradingPool__factory,
 } from '../../../contracts/typechain-types';
 import {
   MarginlyKeeperAave,
@@ -38,6 +38,7 @@ import {
 
 import { UniswapV3TickOracle__factory } from '../../../periphery/typechain-types';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
+import { Logger } from 'pino';
 
 /// @dev theme paddle front firm patient burger forward little enter pause rule limb
 export const FeeHolder = '0x4c576Bf4BbF1d9AB9c359414e5D2b466bab085fa';
@@ -49,7 +50,7 @@ export type SystemUnderTest = {
   uniswap: IUniswapV3Pool;
   uniswapFactory: IUniswapV3Factory;
   swapRouter: MarginlyRouter;
-  marginlyPool: MarginlyPool;
+  marginlyPool: LevvaTradingPool;
   marginlyFactory: MarginlyFactory;
   keeperAave: MarginlyKeeperAave;
   keeperUniswapV3: MarginlyKeeperUniswapV3;
@@ -60,17 +61,19 @@ export type SystemUnderTest = {
   usdc: IUSDC;
   weth: IWETH9;
   gasReporter: GasReporter;
+  logger: Logger;
 };
 
 export async function initializeTestSystem(): Promise<SystemUnderTest> {
+  const logger = createTestLogger();
   logger.info('Initializing');
   const accounts = await ethers.getSigners();
   const count = accounts.length - 1;
   for (let i = 0; i < count; ++i) {}
   const treasury = accounts[0];
 
-  const weth = await initWeth(treasury, treasury.provider);
-  const usdc = await initUsdc(treasury, treasury.provider);
+  const weth = await initWeth(treasury, treasury.provider, logger);
+  const usdc = await initUsdc(treasury, treasury.provider, logger);
 
   const uniswapFactory = uniswapFactoryContract(treasury);
   logger.info(`uniswapFactory: ${await uniswapFactory.getAddress()}`);
@@ -148,7 +151,7 @@ export async function initializeTestSystem(): Promise<SystemUnderTest> {
   const uniswapPoolFee = 500;
   await priceOracle.connect(treasury).setOptions(usdc, weth, secondsAgo, secondsAgoLiquidation, uniswapPoolFee);
 
-  const marginlyPoolImplementation = await new MarginlyPool__factory().connect(treasury).deploy();
+  const marginlyPoolImplementation = await new LevvaTradingPool__factory().connect(treasury).deploy();
   logger.info(`marginly pool implementation: ${await marginlyPoolImplementation.getAddress()}`);
 
   const marginlyFactory = await new MarginlyFactory__factory()
@@ -169,7 +172,7 @@ export async function initializeTestSystem(): Promise<SystemUnderTest> {
   };
 
   const defaultSwapCallData = 0;
-  const gasReporter = new GasReporter('FIXME');
+  const gasReporter = new GasReporter('FIXME', logger);
   const txReceipt = await gasReporter.saveGasUsage(
     'factory.createPool',
     marginlyFactory.createPool(usdc, weth, priceOracle, defaultSwapCallData, initialParams)
@@ -184,7 +187,7 @@ export async function initializeTestSystem(): Promise<SystemUnderTest> {
   }
   const marginlyAddress = poolCreatedEvent.args[4];
 
-  const marginlyPool = MarginlyPool__factory.connect(marginlyAddress, treasury.provider);
+  const marginlyPool = LevvaTradingPool__factory.connect(marginlyAddress, treasury.provider);
   logger.info(`marginly <> uniswap: ${marginlyAddress} <> ${await uniswap.getAddress()}`);
 
   const aavePoolAddressesProviderAddress = '0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e'; //ethereum mainnet
@@ -217,5 +220,6 @@ export async function initializeTestSystem(): Promise<SystemUnderTest> {
     keeperBalancer,
     keeperAlgebra,
     gasReporter,
+    logger,
   };
 }

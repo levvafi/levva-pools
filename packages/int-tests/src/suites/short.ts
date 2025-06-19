@@ -1,5 +1,4 @@
 import { initializeTestSystem, SystemUnderTest } from '.';
-import { logger } from '../utils/logger';
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { abs, fp48ToHumanString, FP96, toHumanString } from '../utils/fixed-point';
 import {
@@ -12,11 +11,13 @@ import {
 } from '../utils/chain-ops';
 import { showSystemAggregates } from '../utils/log-utils';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
+import assert from 'assert';
 
 describe('Short', () => {
   it('Short', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await short(sut);
+    sut.logger.flush();
   });
 });
 
@@ -32,18 +33,18 @@ async function prepareAccounts(sut: SystemUnderTest) {
 }
 
 async function short(sut: SystemUnderTest) {
+  const { marginlyPool, marginlyFactory, usdc, weth, accounts, treasury, uniswap, gasReporter, logger } = sut;
   logger.info(`Starting short test suite`);
   await prepareAccounts(sut);
   logger.info(`Prepared accounts`);
-  const { marginlyPool, marginlyFactory, usdc, weth, accounts, treasury, uniswap, gasReporter } = sut;
 
   const lendersNumber = 2;
   const shortersNumber = 10;
   const lenders = accounts.slice(0, lendersNumber);
   const shorters = accounts.slice(lendersNumber, lendersNumber + shortersNumber);
 
-  const baseAmount = 200_000_000n * 10n ** 18n;
-  const quoteAmount = 200_000_000n * 10n ** 6n;
+  const baseAmount = 100_000_000n * 10n ** 18n;
+  const quoteAmount = 100_000_000n * 10n ** 6n;
 
   const baseAmountsLenders = [];
   const baseDebtsShorters = [];
@@ -93,7 +94,7 @@ async function short(sut: SystemUnderTest) {
 
   for (let i = 0; i < shortersNumber; ++i) {
     const shorter = shorters[i];
-    console.log(`\n`);
+    logger.info(`\n`);
     logger.info(`shorter: ${shorter.address}`);
     logger.info(`depositQuote call`);
     await (await usdc.connect(shorter).approve(marginlyPool, initCollateral)).wait();
@@ -210,9 +211,11 @@ async function short(sut: SystemUnderTest) {
     }
   }
 
+  assert.notEqual(await marginlyPool.discountedBaseDebt(), 0n);
+
   logger.info(`Shift date for 1 day per iteration`);
-  const numOfSeconds = 24 * 60 * 60; // 1 day
-  let nextDate = Math.floor(Date.now() / 1000);
+  const numOfSeconds = 24n * 60n * 60n; // 1 day
+  let nextDate = await marginlyPool.lastReinitTimestampSeconds();
 
   for (let i = 1; i <= 365; i++) {
     const prevBlockNumber = await treasury.provider.getBlockNumber();
@@ -247,20 +250,18 @@ async function short(sut: SystemUnderTest) {
 
     if (!marginCallEvent) {
       // baseCollateralCoeff
-      const baseDebtDelta = baseDebtCoeff - (baseDebtCoeffBefore * discountedBaseDebt) / FP96.one;
-
-      const baseCollatDelta = baseCollateralCoeff - (baseCollateralCoeffBefore * discountedBaseCollateral) / FP96.one;
-
+      const baseDebtDelta = ((baseDebtCoeff - baseDebtCoeffBefore) * discountedBaseDebt) / FP96.one;
+      const baseCollatDelta = ((baseCollateralCoeff - baseCollateralCoeffBefore) * discountedBaseCollateral) / FP96.one;
       const realDebtFee = (expectedCoeffs.discountedBaseDebtFee * baseCollateralCoeff) / FP96.one;
 
       // base collateral change == base debt change
-      const epsilon = 1;
-      const delta = abs(baseDebtDelta - baseCollateralCoeff - realDebtFee);
-      if (delta <= epsilon) {
-        logger.warn(`quoteDebtDelta: ${formatUnits(baseDebtDelta, 18)} WETH`);
-        logger.warn(`quoteCollatDelta: ${formatUnits(baseCollatDelta, 18)} WETH`);
+      const epsilon = 10 ** 9;
+      const delta = abs(baseDebtDelta - baseCollatDelta - realDebtFee);
+      if (delta >= epsilon) {
+        logger.warn(`baseDebtDelta: ${formatUnits(baseDebtDelta, 18)} WETH`);
+        logger.warn(`baseCollatDelta: ${formatUnits(baseCollatDelta, 18)} WETH`);
         logger.warn(`realDebtFee: ${formatUnits(realDebtFee, 18)} WETH`);
-        logger.error(`delta ${delta} they must be equal`);
+        logger.error(`delta ${formatUnits(delta, 18)} they must be equal`);
       }
 
       let lendersTotalBaseDelta = 0n;
@@ -309,7 +310,7 @@ async function short(sut: SystemUnderTest) {
     logger.info(` Deposit ${formatUnits(baseAmount, 18)} WETH, current ${formatUnits(realBaseAmount, 18)} WETH`);
   }
 
-  console.log(`\n`);
+  logger.info(`\n`);
   logger.info(`Check borrowers after reinit`);
   for (let i = 0; i < shortersNumber; ++i) {
     const shorter = shorters[i];
@@ -320,7 +321,7 @@ async function short(sut: SystemUnderTest) {
       continue;
     }
 
-    const sortKeyX48 = await getShortSortKeyX48(marginlyPool, shorter.address);
+    const sortKeyX48 = await getShortSortKeyX48(marginlyPool, shorter.address, logger);
     const debtCoeff = await marginlyPool.baseDebtCoeff();
     const realBaseAmount = (debtCoeff * position.discountedBaseAmount) / FP96.one;
     const realQuoteAmount = (quoteCollateralCoeff * position.discountedQuoteAmount) / FP96.one;

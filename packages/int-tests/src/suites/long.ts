@@ -1,7 +1,6 @@
-import assert = require('assert');
-import { ethers, EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
+import assert from 'assert';
+import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
-import { logger } from '../utils/logger';
 import {
   getLongSortKeyX48,
   decodeSwapEvent,
@@ -18,13 +17,13 @@ describe('Long', () => {
   it('Long', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await long(sut);
+    sut.logger.flush();
   });
 });
 
 async function long(sut: SystemUnderTest) {
+  const { marginlyPool, marginlyFactory, treasury, usdc, weth, accounts, uniswap, gasReporter, logger } = sut;
   logger.info(`Starting long test suite`);
-
-  const { marginlyPool, marginlyFactory, treasury, usdc, weth, accounts, uniswap, gasReporter } = sut;
 
   const lenders = accounts.slice(0, 20); // 2 lenders
   const quoteAmount = parseUnits('1000000', 6); // 1_000_000 USDC
@@ -72,7 +71,7 @@ async function long(sut: SystemUnderTest) {
   logger.info(`Weth price = ${toHumanString(wethPriceX96 * 10n ** 12n)}`);
 
   //prepare base depositors
-  const borrowers = accounts.slice(20, 40); // 120 borrowers
+  const borrowers = accounts.slice(20, 40);
   const initialBorrBaseBalance = parseUnits('2', 18); // 2 WETH
   const expectedRealBaseBalance =
     initialBorrBaseBalance * BigInt(borrowers.length) + baseAmount * BigInt(lenders.length);
@@ -94,7 +93,7 @@ async function long(sut: SystemUnderTest) {
   }
 
   const realBaseBalance = await weth.balanceOf(marginlyPool);
-  assert(expectedRealBaseBalance == realBaseBalance);
+  assert.equal(expectedRealBaseBalance, realBaseBalance);
 
   logger.info(`RealBaseBalance: ${formatUnits(realBaseBalance, 18)} WETH`);
 
@@ -133,7 +132,7 @@ async function long(sut: SystemUnderTest) {
     const feeHolderBalance = await usdc.balanceOf(feeHolder);
     const position = await marginlyPool.positions(borrowers[i].address);
     const realQuoteBalance = await usdc.balanceOf(marginlyPool);
-    const sortKeyX48 = await getLongSortKeyX48(marginlyPool, borrowers[i].address);
+    const sortKeyX48 = await getLongSortKeyX48(marginlyPool, borrowers[i].address, logger);
     const baseCollateralCoeff = await marginlyPool.baseCollateralCoeff();
     const quoteDebtCoeff = await marginlyPool.quoteDebtCoeff();
     const realBaseBalance = await weth.balanceOf(marginlyPool);
@@ -213,10 +212,12 @@ async function long(sut: SystemUnderTest) {
     assert.deepEqual(realBaseBalanceBefore + expectedRealBaseBalanceChange, realBaseBalance);
   }
 
+  assert.notEqual(await marginlyPool.discountedQuoteDebt(), 0n);
+
   logger.info(`Shift date for 1 year, 1 day per iteration`);
   // shift time to 1 year
-  const numOfSeconds = 24 * 60 * 60; // 1 day
-  let nextDate = Math.floor(Date.now() / 1000);
+  const numOfSeconds = 24n * 60n * 60n; // 1 day
+  let nextDate = await marginlyPool.lastReinitTimestampSeconds();
   for (let i = 0; i < 365; i++) {
     const prevBlockNumber = await treasury.provider.getBlockNumber();
     nextDate += numOfSeconds;
@@ -249,21 +250,21 @@ async function long(sut: SystemUnderTest) {
     const discountedQuoteCollateral = await marginlyPool.discountedQuoteCollateral();
 
     if (!marginCallEvent) {
-      const quoteDebtDelta = quoteDebtCoeff - (quoteDebtCoeffBefore * discountedQuoteDebt) / FP96.one;
+      const quoteDebtDelta = ((quoteDebtCoeff - quoteDebtCoeffBefore) * discountedQuoteDebt) / FP96.one;
 
       const quoteCollatDelta =
-        quoteCollateralCoeff - (quoteCollateralCoeffBefore * discountedQuoteCollateral) / FP96.one;
+        ((quoteCollateralCoeff - quoteCollateralCoeffBefore) * discountedQuoteCollateral) / FP96.one;
 
       const realDebtFee = (expectedCoeffs.discountedQuoteDebtFee * quoteCollateralCoeff) / FP96.one;
 
       // quote collateral change + debt fee == quote debt change
-      const epsilon = 200;
+      const epsilon = 300n;
       const delta = abs(quoteDebtDelta - quoteCollatDelta - realDebtFee);
       if (delta >= epsilon) {
         logger.warn(`quoteDebtDelta: ${formatUnits(quoteDebtDelta, 6)} USDC`);
         logger.warn(`quoteCollatDelta: ${formatUnits(quoteCollatDelta, 6)} USDC`);
-        logger.warn(`quoteDbtFee: ${formatUnits(expectedCoeffs.discountedQuoteDebtFee, 6)} USDC`);
-        logger.error(`delta is ${delta} they must be equal`);
+        logger.warn(`quoteDebtFee: ${formatUnits(expectedCoeffs.discountedQuoteDebtFee, 6)} USDC`);
+        logger.error(`delta is ${formatUnits(delta, 6)} they must be equal`);
       }
       // assert.deepEqual(quoteDebtDelta, quoteCollatDelta);
     }
@@ -297,7 +298,7 @@ async function long(sut: SystemUnderTest) {
       continue;
     }
 
-    const sortKeyX48 = await getLongSortKeyX48(marginlyPool, borrowers[i].address);
+    const sortKeyX48 = await getLongSortKeyX48(marginlyPool, borrowers[i].address, logger);
 
     const realBaseAmount = (baseCollateralCoeff * position.discountedBaseAmount) / FP96.one;
     const realQuoteAmount = (quoteDebtCoeff * position.discountedQuoteAmount) / FP96.one;

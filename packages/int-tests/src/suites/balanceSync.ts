@@ -1,31 +1,33 @@
-import assert = require('assert');
 import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
-import { logger } from '../utils/logger';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { FP96 } from '../utils/fixed-point';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
+import assert from 'assert';
 
 describe('Balance sync', () => {
   it('Balance sync', async () => {
     const sut = await loadFixture(initializeTestSystem);
-    balanceSync(sut);
+    await balanceSync(sut);
+    sut.logger.flush();
   });
 
   it('Balance sync withdraw base', async () => {
     const sut = await loadFixture(initializeTestSystem);
-    balanceSyncWithdrawBase(sut);
+    await balanceSyncWithdrawBase(sut);
+    sut.logger.flush();
   });
 
   it('Balance sync withdraw quote', async () => {
     const sut = await loadFixture(initializeTestSystem);
-    balanceSyncWithdrawQuote(sut);
+    await balanceSyncWithdrawQuote(sut);
+    sut.logger.flush();
   });
 });
 
 async function balanceSync(sut: SystemUnderTest) {
+  const { marginlyPool, marginlyFactory, treasury, usdc, weth, logger } = sut;
   logger.info(`Starting balanceSync test suite`);
-  const { marginlyPool, marginlyFactory, treasury, usdc, weth } = sut;
 
   const techPositionOwner = await marginlyFactory.techPositionOwner();
 
@@ -59,8 +61,9 @@ async function balanceSync(sut: SystemUnderTest) {
 }
 
 async function balanceSyncWithdrawBase(sut: SystemUnderTest) {
+  const { marginlyPool, marginlyFactory, treasury, usdc, weth, accounts, logger } = sut;
   logger.info(`Starting balanceSync test suite`);
-  const { marginlyPool, marginlyFactory, treasury, usdc, weth, accounts } = sut;
+
   const techPositionOwner = await marginlyFactory.techPositionOwner();
 
   assert((await marginlyPool.positions(techPositionOwner)).discountedBaseAmount == 0n);
@@ -153,8 +156,9 @@ async function balanceSyncWithdrawBase(sut: SystemUnderTest) {
 }
 
 async function balanceSyncWithdrawQuote(sut: SystemUnderTest) {
+  const { marginlyPool, marginlyFactory, treasury, usdc, weth, accounts, logger } = sut;
   logger.info(`Starting balanceSync test suite`);
-  const { marginlyPool, marginlyFactory, treasury, usdc, weth, accounts } = sut;
+
   const techPositionOwner = await marginlyFactory.techPositionOwner();
 
   assert((await marginlyPool.positions(techPositionOwner)).discountedBaseAmount == 0n);
@@ -167,8 +171,9 @@ async function balanceSyncWithdrawQuote(sut: SystemUnderTest) {
   const lender = accounts[0];
   const longer = accounts[1];
 
+  const basePrice = (await marginlyPool.getBasePrice()).inner;
   const baseTransferAmount = parseUnits('1', 18);
-  const quoteTransferAmount = parseUnits('2000', 6);
+  const quoteTransferAmount = (basePrice * baseTransferAmount * 101n) / FP96.one / 100n;
 
   logger.info(`Setting up lender`);
   await (await usdc.connect(treasury).transfer(lender, quoteTransferAmount, { gasLimit: 80_000 })).wait();
@@ -186,7 +191,7 @@ async function balanceSyncWithdrawQuote(sut: SystemUnderTest) {
   await (await weth.connect(treasury).transfer(longer, baseTransferAmount, { gasLimit: 80_000 })).wait();
   await (await weth.connect(longer).approve(marginlyPool, baseTransferAmount)).wait();
   logger.info(`Long`);
-  const maxPrice = (await marginlyPool.getBasePrice()).inner * 2n;
+  const maxPrice = basePrice * 2n;
   await (
     await marginlyPool
       .connect(longer)

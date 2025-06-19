@@ -1,10 +1,9 @@
 import { formatUnits } from 'ethers';
 import { FP96, toHumanString } from '../utils/fixed-point';
-import { logger } from '../utils/logger';
 import { SystemUnderTest, TechnicalPositionOwner } from '../suites';
 
 export async function showSystemAggregates(sut: SystemUnderTest) {
-  const { marginlyPool, marginlyFactory, accounts, usdc, weth } = sut;
+  const { marginlyPool, marginlyFactory, accounts, usdc, weth, logger } = sut;
   const discountedBaseCollateral = await marginlyPool.discountedBaseCollateral();
   const discountedBaseDebt = await marginlyPool.discountedBaseDebt();
   const discountedQuoteCollateral = await marginlyPool.discountedQuoteCollateral();
@@ -20,9 +19,8 @@ export async function showSystemAggregates(sut: SystemUnderTest) {
   const quoteCollateralCoeff = await marginlyPool.quoteCollateralCoeff();
   const quoteDebtCoeff = await marginlyPool.quoteDebtCoeff();
 
-  const systemLeverage = await marginlyPool.systemLeverage();
-  const shortX96 = systemLeverage.shortX96;
-  const longX96 = systemLeverage.longX96;
+  const shortX96 = await marginlyPool.shortLeverageX96();
+  const longX96 = await marginlyPool.longLeverageX96();
   const basePriceX96 = (await marginlyPool.getBasePrice()).inner * 10n ** 12n;
 
   // calc aggregates

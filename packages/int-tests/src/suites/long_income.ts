@@ -1,7 +1,6 @@
-import assert = require('assert');
+import assert from 'assert';
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
-import { logger } from '../utils/logger';
 import { CallType, decodeSwapEvent, uniswapV3Swapdata } from '../utils/chain-ops';
 import { FP96, toHumanString } from '../utils/fixed-point';
 import { changeWethPrice } from '../utils/uniswap-ops';
@@ -11,12 +10,13 @@ describe('Long income', () => {
   it('Long income', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await longIncome(sut);
+    sut.logger.flush();
   });
 });
 
 async function longIncome(sut: SystemUnderTest) {
+  const { marginlyPool, treasury, usdc, weth, accounts, uniswap, gasReporter, logger } = sut;
   logger.info(`Starting longIncome test suite`);
-  const { marginlyPool, treasury, usdc, weth, accounts, uniswap, gasReporter } = sut;
 
   const numberOfLenders = 2;
   const lenders = accounts.slice(0, numberOfLenders);
@@ -72,7 +72,7 @@ async function longIncome(sut: SystemUnderTest) {
   );
 
   logger.info(`Increasing WETH price by ~10%`);
-  await changeWethPrice(treasury, sut, (wethPriceX96 * 11n) / 10n / FP96.one);
+  await changeWethPrice(treasury, sut, (wethPriceX96 * 11n) / 10n / FP96.one, logger);
 
   const shiftInDays = 10;
   logger.info(`Shift date by ${shiftInDays} days`);

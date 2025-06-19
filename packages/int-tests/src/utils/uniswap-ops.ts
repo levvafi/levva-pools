@@ -1,5 +1,4 @@
-import { BrowserProvider, Wallet, formatUnits, parseUnits } from 'ethers';
-import { logger } from './logger';
+import { formatUnits, parseUnits } from 'ethers';
 import { tickToPrice } from '@uniswap/v3-sdk';
 import { Token } from '@uniswap/sdk-core';
 import { uniswapV3Swapdata } from './chain-ops';
@@ -7,6 +6,7 @@ import { IUniswapV3Pool, IUSDC, IWETH9 } from '../../../contracts/typechain-type
 import { MarginlyRouter } from '../../../router/typechain-types';
 import { abs } from './fixed-point';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
+import { Logger } from 'pino';
 
 export async function changeWethPrice(
   treasury: SignerWithAddress,
@@ -21,7 +21,8 @@ export async function changeWethPrice(
     uniswap: IUniswapV3Pool;
     swapRouter: MarginlyRouter;
   },
-  targetPrice: bigint
+  targetPrice: bigint,
+  logger: Logger
 ) {
   logger.info(`Start changing price, target: ${targetPrice.toString()}`);
   const { tick } = await uniswap.connect(treasury.provider).slot0();
@@ -59,12 +60,7 @@ export async function changeWethPrice(
     if (priceDelta > priceLeft) {
       amountIn = (amountIn * priceLeft) / priceDelta;
     }
-
-    await (
-      await swapRouter
-        .connect(treasury)
-        .swapExactInput(uniswapV3Swapdata(), tokenIn, tokenOut, amountIn, 0, { gasLimit: 1_000_000 })
-    ).wait();
+    await swapRouter.connect(treasury).swapExactInput(uniswapV3Swapdata(), tokenIn, tokenOut, amountIn, 0);
 
     const { tick } = await uniswap.connect(treasury.provider).slot0();
     const price = BigInt(tickToPrice(WETH, USDC, Number(tick)).toFixed(0));
