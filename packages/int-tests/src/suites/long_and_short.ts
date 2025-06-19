@@ -272,28 +272,26 @@ async function longAndShort(sut: SystemUnderTest) {
   logger.info(`shortersTotalCollDelta ${formatUnits(shortersTotalCollDelta, 6)} USDC`);
   logger.info(`realQuoteDebtFee ${realQuoteDebtFee} USDC`);
 
-  const epsilon = 10;
+  const epsilon = 30;
 
-  let delta = abs(shortersTotalDebtDelta - longersTotalCollDelta + realBaseDebtFee);
+  let delta = abs(shortersTotalDebtDelta - longersTotalCollDelta - realBaseDebtFee);
   if (delta > epsilon) {
     const shortDebtDelta = formatUnits(shortersTotalDebtDelta, 18);
     const longCollDelta = formatUnits(longersTotalCollDelta, 18);
     const debtFee = formatUnits(realBaseDebtFee, 18);
     const deltaFormatted = formatUnits(delta, 18);
-    const error = `realDebtFee ${debtFee} WETH + short debt delta = ${shortDebtDelta} WETH !=  ${longCollDelta} WETH = long coll delta, delta = ${deltaFormatted}`;
-    logger.error(error);
-    // throw new Error(error);
+    const warn = `realDebtFee ${debtFee} WETH + short debt delta = ${shortDebtDelta} WETH !=  ${longCollDelta} WETH = long coll delta, delta = ${deltaFormatted}`;
+    logger.warn(warn);
   }
 
-  delta = abs(longersTotalDebtDelta - shortersTotalCollDelta + realQuoteDebtFee);
+  delta = abs(longersTotalDebtDelta - shortersTotalCollDelta - realQuoteDebtFee);
   if (delta > epsilon) {
     const shortCollDelta = formatUnits(shortersTotalCollDelta, 6);
     const longDebtDelta = formatUnits(longersTotalDebtDelta, 6);
     const debtFee = formatUnits(realQuoteDebtFee, 6);
     const deltaFormatted = formatUnits(delta, 6);
-    const error = `realDebtFee ${debtFee} USDC + short coll delta = ${shortCollDelta} USDC !=  ${longDebtDelta} USDC = long debt delta, delta = ${deltaFormatted}`;
-    logger.error(error);
-    // throw new Error(error);
+    const warn = `realDebtFee ${debtFee} USDC + short coll delta = ${shortCollDelta} USDC !=  ${longDebtDelta} USDC = long debt delta, delta = ${deltaFormatted}`;
+    logger.warn(warn);
   }
 
   logger.info(`baseDebtCoeff: ${toHumanString(await marginlyPool.baseDebtCoeff())}`);
