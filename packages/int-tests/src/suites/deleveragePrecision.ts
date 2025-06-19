@@ -158,7 +158,7 @@ async function deleveragePrecisionLong(sut: SystemUnderTest) {
     positions
   );
 
-  let nextDate = Math.floor(Date.now() / 1000);
+  let nextDate = await time.latest();
   const timeDelta = 24 * 60 * 60;
 
   for (let i = 0; i < 10; ++i) {

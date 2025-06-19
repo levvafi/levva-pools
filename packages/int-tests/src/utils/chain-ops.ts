@@ -1,5 +1,5 @@
-import { AbiCoder, Addressable, BrowserProvider, ContractTransactionReceipt, Log } from 'ethers';
-import { FP96, powTaylor } from './fixed-point';
+import { AbiCoder, Addressable, BrowserProvider, ContractTransactionReceipt, formatUnits, Log } from 'ethers';
+import { ceilDivision, FP96, powTaylor } from './fixed-point';
 import { TechnicalPositionOwner } from '../suites';
 import { LevvaTradingPool } from '../../../contracts/typechain-types';
 import { Logger } from 'pino';
@@ -193,8 +193,8 @@ export async function calcAccruedRateCoeffs(
   const onePlusFee = (feeX96 * FP96.one) / SECONDS_IN_YEAR_X96 + FP96.one;
   const feeDt = powTaylor(onePlusFee, secondsPassed);
 
-  if (discountedBaseCollateralPrev != 0n) {
-    const realBaseDebtPrev = (baseDebtCoeffPrev * discountedBaseDebtPrev) / FP96.one;
+  if (discountedBaseDebtPrev != 0n) {
+    const realBaseDebtPrev = ceilDivision(baseDebtCoeffPrev * discountedBaseDebtPrev, FP96.one);
     const onePlusIRshort = (interestRateX96 * leverageShortX96) / SECONDS_IN_YEAR_X96 + FP96.one;
     const accruedRateDt = powTaylor(onePlusIRshort, secondsPassed);
     const realBaseCollateral = (baseCollateralCoeffPrev * discountedBaseCollateralPrev) / FP96.one;
@@ -212,8 +212,8 @@ export async function calcAccruedRateCoeffs(
     result.baseDelevCoeff = baseDelevCoeff;
   }
 
-  if (discountedQuoteCollateralPrev != 0n) {
-    const realQuoteDebtPrev = (quoteDebtCoeffPrev * discountedQuoteDebtPrev) / FP96.one;
+  if (discountedQuoteDebtPrev != 0n) {
+    const realQuoteDebtPrev = ceilDivision(quoteDebtCoeffPrev * discountedQuoteDebtPrev, FP96.one);
     const onePlusIRLong = (interestRateX96 * leverageLongX96) / SECONDS_IN_YEAR_X96 + FP96.one;
     const accruedRateDt = powTaylor(onePlusIRLong, secondsPassed);
     const quoteDebtCoeff = (((quoteDebtCoeffPrev * accruedRateDt) / FP96.one) * feeDt) / FP96.one;

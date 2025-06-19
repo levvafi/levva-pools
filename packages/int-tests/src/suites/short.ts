@@ -11,6 +11,7 @@ import {
 } from '../utils/chain-ops';
 import { showSystemAggregates } from '../utils/log-utils';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
+import assert from 'assert';
 
 describe('Short', () => {
   it('Short', async () => {
@@ -210,9 +211,11 @@ async function short(sut: SystemUnderTest) {
     }
   }
 
+  assert.notEqual(await marginlyPool.discountedBaseDebt(), 0n);
+
   logger.info(`Shift date for 1 day per iteration`);
-  const numOfSeconds = 24 * 60 * 60; // 1 day
-  let nextDate = Math.floor(Date.now() / 1000);
+  const numOfSeconds = 24n * 60n * 60n; // 1 day
+  let nextDate = await marginlyPool.lastReinitTimestampSeconds();
 
   for (let i = 1; i <= 365; i++) {
     const prevBlockNumber = await treasury.provider.getBlockNumber();
@@ -247,20 +250,18 @@ async function short(sut: SystemUnderTest) {
 
     if (!marginCallEvent) {
       // baseCollateralCoeff
-      const baseDebtDelta = baseDebtCoeff - (baseDebtCoeffBefore * discountedBaseDebt) / FP96.one;
-
-      const baseCollatDelta = baseCollateralCoeff - (baseCollateralCoeffBefore * discountedBaseCollateral) / FP96.one;
-
+      const baseDebtDelta = ((baseDebtCoeff - baseDebtCoeffBefore) * discountedBaseDebt) / FP96.one;
+      const baseCollatDelta = ((baseCollateralCoeff - baseCollateralCoeffBefore) * discountedBaseCollateral) / FP96.one;
       const realDebtFee = (expectedCoeffs.discountedBaseDebtFee * baseCollateralCoeff) / FP96.one;
 
       // base collateral change == base debt change
-      const epsilon = 1;
-      const delta = abs(baseDebtDelta - baseCollateralCoeff - realDebtFee);
-      if (delta <= epsilon) {
-        logger.warn(`quoteDebtDelta: ${formatUnits(baseDebtDelta, 18)} WETH`);
-        logger.warn(`quoteCollatDelta: ${formatUnits(baseCollatDelta, 18)} WETH`);
+      const epsilon = 10 ** 9;
+      const delta = abs(baseDebtDelta - baseCollatDelta - realDebtFee);
+      if (delta >= epsilon) {
+        logger.warn(`baseDebtDelta: ${formatUnits(baseDebtDelta, 18)} WETH`);
+        logger.warn(`baseCollatDelta: ${formatUnits(baseCollatDelta, 18)} WETH`);
         logger.warn(`realDebtFee: ${formatUnits(realDebtFee, 18)} WETH`);
-        logger.error(`delta ${delta} they must be equal`);
+        logger.error(`delta ${formatUnits(delta, 18)} they must be equal`);
       }
 
       let lendersTotalBaseDelta = 0n;

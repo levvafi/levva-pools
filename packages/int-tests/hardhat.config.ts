@@ -8,6 +8,9 @@ export default {
         url: 'https://ethereum-rpc.publicnode.com',
         blockNumber: 22730520,
       },
+      accounts: {
+        count: 40,
+      },
     },
   },
   mocha: {

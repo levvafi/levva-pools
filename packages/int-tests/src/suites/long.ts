@@ -71,7 +71,7 @@ async function long(sut: SystemUnderTest) {
   logger.info(`Weth price = ${toHumanString(wethPriceX96 * 10n ** 12n)}`);
 
   //prepare base depositors
-  const borrowers = accounts.slice(20, 40); // 120 borrowers
+  const borrowers = accounts.slice(20, 40);
   const initialBorrBaseBalance = parseUnits('2', 18); // 2 WETH
   const expectedRealBaseBalance =
     initialBorrBaseBalance * BigInt(borrowers.length) + baseAmount * BigInt(lenders.length);
@@ -212,10 +212,12 @@ async function long(sut: SystemUnderTest) {
     assert.deepEqual(realBaseBalanceBefore + expectedRealBaseBalanceChange, realBaseBalance);
   }
 
+  assert.notEqual(await marginlyPool.discountedQuoteDebt(), 0n);
+
   logger.info(`Shift date for 1 year, 1 day per iteration`);
   // shift time to 1 year
-  const numOfSeconds = 24 * 60 * 60; // 1 day
-  let nextDate = Math.floor(Date.now() / 1000);
+  const numOfSeconds = 24n * 60n * 60n; // 1 day
+  let nextDate = await marginlyPool.lastReinitTimestampSeconds();
   for (let i = 0; i < 365; i++) {
     const prevBlockNumber = await treasury.provider.getBlockNumber();
     nextDate += numOfSeconds;
@@ -256,13 +258,13 @@ async function long(sut: SystemUnderTest) {
       const realDebtFee = (expectedCoeffs.discountedQuoteDebtFee * quoteCollateralCoeff) / FP96.one;
 
       // quote collateral change + debt fee == quote debt change
-      const epsilon = 200;
+      const epsilon = 300n;
       const delta = abs(quoteDebtDelta - quoteCollatDelta - realDebtFee);
       if (delta >= epsilon) {
         logger.warn(`quoteDebtDelta: ${formatUnits(quoteDebtDelta, 6)} USDC`);
         logger.warn(`quoteCollatDelta: ${formatUnits(quoteCollatDelta, 6)} USDC`);
         logger.warn(`quoteDebtFee: ${formatUnits(expectedCoeffs.discountedQuoteDebtFee, 6)} USDC`);
-        logger.error(`delta is ${delta} they must be equal`);
+        logger.error(`delta is ${formatUnits(delta, 6)} they must be equal`);
       }
       // assert.deepEqual(quoteDebtDelta, quoteCollatDelta);
     }

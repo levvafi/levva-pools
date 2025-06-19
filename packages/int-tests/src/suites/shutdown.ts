@@ -109,7 +109,7 @@ async function shortEmergency(sut: SystemUnderTest) {
   logger.info(`Shift date for 1 month, 1 day per iteration`);
   // shift time to 1 year
   const numOfSeconds = 24 * 60 * 60; // 1 day
-  let nextDate = Math.floor(Date.now() / 1000);
+  let nextDate = await time.latest();
   for (let i = 0; i < 30; i++) {
     logger.info(`Iteration ${i + 1} of 30`);
     nextDate += numOfSeconds;
