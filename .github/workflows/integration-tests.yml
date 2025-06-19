@@ -25,10 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Use Node.js 21.1.0
+      - name: Use Node.js 24.2.0
         uses: actions/setup-node@v3
         with:
-          node-version: 21.1.0
+          node-version: 24.2.0
       - name: Build for testing
         run: |
           cd ./packages/contracts/
@@ -40,4 +40,4 @@ jobs:
       - name: Integration testing
         run: |
           cd ./packages/int-tests/
-          yarn test
+          yarn test:parallel

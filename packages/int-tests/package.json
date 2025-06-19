@@ -37,6 +37,7 @@
   },
   "scripts": {
     "test": "hardhat test ./src/suites/*.ts",
+    "test:parallel": "hardhat test --parallel ./src/suites/*.ts",
     "lint:write": "prettier --write ./src"
   }
 }
