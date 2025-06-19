@@ -72,7 +72,7 @@ abstract contract ShortFarming is Liquidations {
     );
     _chargeFee(fee);
 
-    uint256 realBaseDebt = (posDiscountedBaseDebt);
+    uint256 realBaseDebt = _calcRealBaseDebt(posDiscountedBaseDebt);
     uint256 discountedBaseCollateralDelta = baseCollateralCoeff.recipMul(baseAmountOut.sub(realBaseDebt));
 
     discountedQuoteCollateral -= posDiscountedQuoteColl;
