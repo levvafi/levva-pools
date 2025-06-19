@@ -2863,17 +2863,13 @@ describe('MarginlyPool.Base', () => {
     expect(longerToCheckPositionAfter.heapPosition).to.be.eq(0);
 
     const basePrice = (await marginlyPool.getBasePrice()).inner;
-    const baseCollateralCoeff = await marginlyPool.baseCollateralCoeff();
-    const quoteDebtCoeff = await marginlyPool.quoteDebtCoeff();
-    const discountedBaseCollateral = await marginlyPool.discountedBaseCollateral();
-    const discountedQuoteDebt = await marginlyPool.discountedQuoteDebt();
-
-    const realBaseCollateral = (baseCollateralCoeff * discountedBaseCollateral) / FP96.one;
-    const realBaseCollateralInQuote = (realBaseCollateral * basePrice) / FP96.one;
-    const realQuoteDebt = (quoteDebtCoeff * discountedQuoteDebt) / FP96.one;
-
-    const expectedSystemLeverageLong =
-      (realBaseCollateralInQuote * FP96.one) / (realBaseCollateralInQuote - realQuoteDebt);
+    const expectedSystemLeverageLong = calcLeverageLong(
+      basePrice,
+      await marginlyPool.quoteDebtCoeff(),
+      await marginlyPool.baseCollateralCoeff(),
+      await marginlyPool.discountedQuoteDebt(),
+      await marginlyPool.discountedBaseCollateral()
+    );
     expect(await marginlyPool.longLeverageX96()).to.be.eq(expectedSystemLeverageLong);
   });
 
@@ -2929,7 +2925,7 @@ describe('MarginlyPool.Base', () => {
 
     const realBaseCollateral = (baseCollateralCoeff * discountedBaseCollateral) / FP96.one;
     const realBaseCollateralInQuote = (realBaseCollateral * basePrice) / FP96.one;
-    const realQuoteDebt = (quoteDebtCoeff * discountedQuoteDebt) / FP96.one;
+    const realQuoteDebt = (quoteDebtCoeff * discountedQuoteDebt) / FP96.one + 1n;
 
     const expectedSystemLeverageLong =
       (realBaseCollateralInQuote * FP96.one) / (realBaseCollateralInQuote - realQuoteDebt);

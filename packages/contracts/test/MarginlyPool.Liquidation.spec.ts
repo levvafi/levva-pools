@@ -210,7 +210,7 @@ describe('MarginlyPool.Liquidation', () => {
     );
 
     const expectedDiscountedBaseAmount =
-      ((baseAmount - (beforeLiquidationPosition.discountedBaseAmount * baseDebtCoeff) / FP96.one) * FP96.one) /
+      ((baseAmount - (beforeLiquidationPosition.discountedBaseAmount * baseDebtCoeff) / FP96.one - 1n) * FP96.one) /
       baseCollateralCoeff;
     expect(newPosition.discountedBaseAmount).to.be.equal(expectedDiscountedBaseAmount);
 
@@ -305,7 +305,7 @@ describe('MarginlyPool.Liquidation', () => {
       beforeLiquidationPosition.discountedBaseAmount + expectedDiscountedBaseAmountDelta
     ); // should receive bad position collateral
     const expectedDiscountedQuoteAmount =
-      ((quoteAmount - (beforeLiquidationPosition.discountedQuoteAmount * quoteDebtCoeff) / FP96.one) * FP96.one) /
+      ((quoteAmount - (beforeLiquidationPosition.discountedQuoteAmount * quoteDebtCoeff) / FP96.one - 1n) * FP96.one) /
       quoteCollateralCoeff;
     expect(newPosition.discountedQuoteAmount).to.be.equal(expectedDiscountedQuoteAmount);
 
