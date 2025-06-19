@@ -57,11 +57,16 @@ abstract contract LongTrading is Liquidations {
     // realQuoteInMaximum is defined by user input limitPriceX96
     uint256 realQuoteInMaximum = Math.mulDiv(limitPriceX96, realBaseAmount, FP96.Q96);
     uint256 realQuoteAmount = _swapExactOutput(true, realQuoteInMaximum, realBaseAmount, swapCalldata);
+    uint256 swapPriceX96 = _calcSwapPrice(realQuoteAmount, realBaseAmount);
 
-    uint256 realSwapFee = Math.mulDiv(params.swapFee, realQuoteAmount, WHOLE_ONE);
-    _chargeFee(realSwapFee);
+    uint256 discountedQuoteDebtChange;
+    {
+      uint256 realSwapFee = Math.mulDiv(params.swapFee, realQuoteAmount, WHOLE_ONE);
+      _chargeFee(realSwapFee);
 
-    uint256 discountedQuoteDebtChange = quoteDebtCoeff.recipMul(realQuoteAmount.add(realSwapFee));
+      discountedQuoteDebtChange = quoteDebtCoeff.recipMul(realQuoteAmount.add(realSwapFee));
+    }
+
     position.discountedQuoteAmount = positionDisQuoteDebt.add(discountedQuoteDebtChange);
     discountedQuoteDebt = discountedQuoteDebt.add(discountedQuoteDebtChange);
 
@@ -80,7 +85,7 @@ abstract contract LongTrading is Liquidations {
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    emit Long(positionOwner, realBaseAmount, 0, discountedQuoteDebtChange, discountedBaseCollateralChange);
+    emit Long(positionOwner, realBaseAmount, swapPriceX96, discountedQuoteDebtChange, discountedBaseCollateralChange);
   }
 
   /// @notice Close position
@@ -89,10 +94,10 @@ abstract contract LongTrading is Liquidations {
     uint256 limitPriceX96,
     Position storage position,
     uint256 swapCalldata
-  ) internal override returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta) {
+  ) internal override returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta, uint256 swapPriceX96) {
     uint256 positionDiscountedQuoteDebtPrev = position.discountedQuoteAmount;
     uint256 realBaseCollateral = _calcRealBaseCollateral(position.discountedBaseAmount, position.discountedQuoteAmount);
-    uint256 realQuoteDebt = quoteDebtCoeff.mul(positionDiscountedQuoteDebtPrev, Math.Rounding.Ceil);
+    uint256 realQuoteDebt = _calcRealQuoteDebt(positionDiscountedQuoteDebtPrev);
 
     uint256 realFeeAmount = Math.mulDiv(params.swapFee, realQuoteDebt, WHOLE_ONE);
     uint256 exactQuoteOut = realQuoteDebt.add(realFeeAmount);
@@ -103,6 +108,7 @@ abstract contract LongTrading is Liquidations {
 
       realCollateralDelta = _swapExactOutput(false, realBaseCollateral, exactQuoteOut, swapCalldata);
       if (realCollateralDelta > baseInMaximum) revert MarginlyErrors.SlippageLimit();
+      swapPriceX96 = _calcSwapPrice(exactQuoteOut, realCollateralDelta);
 
       _chargeFee(realFeeAmount);
 
@@ -186,7 +192,7 @@ abstract contract LongTrading is Liquidations {
     _chargeFee(fee);
 
     uint256 quoteOutSubFee = quoteAmountOut.sub(fee);
-    uint256 realQuoteDebt = quoteDebtCoeff.mul(posDiscountedQuoteDebt);
+    uint256 realQuoteDebt = _calcRealQuoteDebt(posDiscountedQuoteDebt);
     uint256 discountedQuoteCollateralDelta = quoteCollateralCoeff.recipMul(quoteOutSubFee.sub(realQuoteDebt));
 
     discountedBaseCollateral -= posDiscountedBaseColl;
@@ -218,7 +224,7 @@ abstract contract LongTrading is Liquidations {
 
     // positionRealBaseCollateral > poolBaseBalance = poolBaseCollateral - poolBaseDebt
     // positionRealBaseCollateral + poolBaseDebt > poolBaseCollateral
-    uint256 poolBaseCollateral = _calcRealBaseCollateral(discountedBaseCollateral, discountedQuoteDebt);
+    uint256 poolBaseCollateral = _calcRealBaseCollateralTotal();
     uint256 posBaseCollPlusPoolBaseDebt = _calcRealBaseDebtTotal().add(realBaseCollateral);
 
     if (posBaseCollPlusPoolBaseDebt > poolBaseCollateral) {
@@ -226,7 +232,7 @@ abstract contract LongTrading is Liquidations {
       // = (positionRealBaseCollateral + poolBaseDebt) - poolBaseCollateral
       uint256 baseDebtToReduce = posBaseCollPlusPoolBaseDebt.sub(poolBaseCollateral);
       uint256 quoteCollToReduce = basePrice.mul(baseDebtToReduce);
-      uint256 positionQuoteDebt = quoteDebtCoeff.mul(position.discountedQuoteAmount);
+      uint256 positionQuoteDebt = _calcRealQuoteDebt(position.discountedQuoteAmount);
       if (quoteCollToReduce > positionQuoteDebt) {
         quoteCollToReduce = positionQuoteDebt;
       }
@@ -242,9 +248,11 @@ abstract contract LongTrading is Liquidations {
     }
   }
 
-  function _enactMarginCallLong(Position storage position) internal override {
+  function _enactMarginCallLong(
+    Position storage position
+  ) internal override returns (int256 quoteCollateralSurplus, uint256 swapPriceX96) {
     uint256 realBaseCollateral = _calcRealBaseCollateral(position.discountedBaseAmount, position.discountedQuoteAmount);
-    uint256 realQuoteDebt = quoteDebtCoeff.mul(position.discountedQuoteAmount);
+    uint256 realQuoteDebt = _calcRealQuoteDebt(position.discountedQuoteAmount);
 
     // long position mc
     uint256 swappedQuoteDebt;
@@ -253,7 +261,7 @@ abstract contract LongTrading is Liquidations {
         getLiquidationPrice().mul(realBaseCollateral)
       );
       swappedQuoteDebt = _swapExactInput(false, realBaseCollateral, quoteOutMinimum, defaultSwapCallData);
-      // swapPriceX96 = getSwapPrice(swappedQuoteDebt, realBaseCollateral);
+      swapPriceX96 = _calcSwapPrice(swappedQuoteDebt, realBaseCollateral);
     }
 
     FP96.FixedPoint memory factor;
@@ -261,9 +269,11 @@ abstract contract LongTrading is Liquidations {
     if (swappedQuoteDebt >= realQuoteDebt) {
       // Position has enough collateral to repay debt
       factor = FP96.one().add(FP96.fromRatio(swappedQuoteDebt.sub(realQuoteDebt), _calcRealQuoteCollateralTotal()));
+      quoteCollateralSurplus = int256(swappedQuoteDebt.sub(realQuoteDebt));
     } else {
       // Position's debt has been repaid by pool
       factor = FP96.one().sub(FP96.fromRatio(realQuoteDebt.sub(swappedQuoteDebt), _calcRealQuoteCollateralTotal()));
+      quoteCollateralSurplus = -int256(realQuoteDebt.sub(swappedQuoteDebt));
     }
     _updateQuoteCollateralCoeffs(factor);
 
@@ -285,7 +295,7 @@ abstract contract LongTrading is Liquidations {
     position.discountedBaseAmount = badPosition.discountedBaseAmount.add(discountedBaseCollateralDelta);
 
     uint32 heapIndex = badPosition.heapPosition - 1;
-    uint256 badPositionQuoteDebt = quoteDebtCoeff.mul(badPosition.discountedQuoteAmount);
+    uint256 badPositionQuoteDebt = _calcRealQuoteDebt(badPosition.discountedQuoteAmount);
     uint256 discountedQuoteDebtDelta;
     if (quoteAmount >= badPositionQuoteDebt) {
       discountedQuoteDebtDelta = badPosition.discountedQuoteAmount;
@@ -313,13 +323,13 @@ abstract contract LongTrading is Liquidations {
   }
 
   function _updateSystemLeverageLong(FP96.FixedPoint memory basePrice) internal virtual override {
-    if (discountedBaseCollateral == 0) {
+    if (discountedQuoteDebt == 0) {
       longLeverageX96 = uint128(FP96.Q96);
       return;
     }
 
-    uint256 realBaseCollateral = basePrice.mul(_calcRealBaseCollateral(discountedBaseCollateral, discountedQuoteDebt));
-    uint256 realQuoteDebt = quoteDebtCoeff.mul(discountedQuoteDebt);
+    uint256 realBaseCollateral = basePrice.mul(_calcRealBaseCollateralTotal());
+    uint256 realQuoteDebt = _calcRealQuoteDebtTotal();
     uint128 leverageX96 = uint128(Math.mulDiv(FP96.Q96, realBaseCollateral, realBaseCollateral.sub(realQuoteDebt)));
     uint128 maxLeverageX96 = uint128(params.maxLeverage) << FP96.RESOLUTION;
     longLeverageX96 = leverageX96 < maxLeverageX96 ? leverageX96 : maxLeverageX96;
@@ -330,10 +340,10 @@ abstract contract LongTrading is Liquidations {
     FP96.FixedPoint memory secondsInYear,
     FP96.FixedPoint memory interestRate,
     FP96.FixedPoint memory feeDt
-  ) internal virtual override returns (uint256 discountedQuoteFee) {
-    if (discountedQuoteCollateral != 0) {
+  ) internal virtual override returns (uint256 baseDebtDistributed, uint256 discountedQuoteFee) {
+    if (discountedQuoteDebt != 0) {
       FP96.FixedPoint memory quoteDebtCoeffPrev = quoteDebtCoeff;
-      uint256 realQuoteDebtPrev = quoteDebtCoeffPrev.mul(discountedQuoteDebt);
+      uint256 realQuoteDebtPrev = quoteDebtCoeffPrev.mul(discountedQuoteDebt, Math.Rounding.Ceil);
       FP96.FixedPoint memory onePlusIR = interestRate
         .mul(FP96.FixedPoint({inner: longLeverageX96}))
         .div(secondsInYear)
@@ -342,8 +352,9 @@ abstract contract LongTrading is Liquidations {
       // AR(dt) =  (1+ ir)^dt
       FP96.FixedPoint memory accruedRateDt = FP96.powTaylor(onePlusIR, secondsPassed);
       quoteDebtCoeff = quoteDebtCoeffPrev.mul(accruedRateDt).mul(feeDt);
+      baseDebtDistributed = accruedRateDt.sub(FP96.one()).mul(realQuoteDebtPrev);
       FP96.FixedPoint memory factor = FP96.one().add(
-        FP96.fromRatio(accruedRateDt.sub(FP96.one()).mul(realQuoteDebtPrev), _calcRealQuoteCollateralTotal())
+        FP96.fromRatio(baseDebtDistributed, _calcRealQuoteCollateralTotal())
       );
       _updateQuoteCollateralCoeffs(factor);
       discountedQuoteFee = quoteCollateralCoeff.recipMul(
@@ -383,11 +394,11 @@ abstract contract LongTrading is Liquidations {
     uint256 disBaseCollateral,
     uint256 disQuoteDebt
   ) internal view virtual override returns (uint256) {
-    return baseCollateralCoeff.mul(disBaseCollateral).sub(baseDelevCoeff.mul(disQuoteDebt));
+    return baseCollateralCoeff.mul(disBaseCollateral).sub(baseDelevCoeff.mul(disQuoteDebt, Math.Rounding.Ceil));
   }
 
   function _calcRealQuoteDebt(uint256 disQuoteDebt) internal view virtual override returns (uint256) {
-    return quoteDebtCoeff.mul(disQuoteDebt);
+    return quoteDebtCoeff.mul(disQuoteDebt, Math.Rounding.Ceil);
   }
 
   function _getWorstLongPositionOwner() internal view virtual override returns (address) {
@@ -396,7 +407,7 @@ abstract contract LongTrading is Liquidations {
   }
 
   function _updateHeapLong(Position storage position) internal virtual override {
-    uint96 sortKey = _calcSortKey(initialPrice.mul(position.discountedBaseAmount), position.discountedQuoteAmount);
+    uint96 sortKey = _calcSortKey(position.discountedBaseAmount, position.discountedQuoteAmount);
     uint32 heapIndex = position.heapPosition - 1;
     longHeap.update(positions, heapIndex, sortKey);
   }

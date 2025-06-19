@@ -57,14 +57,14 @@ abstract contract LevvaPoolVirtual is IMarginlyPool {
     FP96.FixedPoint memory secondsInYear,
     FP96.FixedPoint memory interestRate,
     FP96.FixedPoint memory feeDt
-  ) internal virtual returns (uint256 discountedQuoteFee);
+  ) internal virtual returns (uint256 quoteDebtDistributed, uint256 discountedQuoteFee);
 
   function _accrueInterestShort(
     uint256 secondsPassed,
     FP96.FixedPoint memory secondsInYear,
     FP96.FixedPoint memory interestRate,
     FP96.FixedPoint memory feeDt
-  ) internal virtual returns (uint256 discountedBaseFee);
+  ) internal virtual returns (uint256 baseDebtDistributed, uint256 discountedBaseFee);
 
   // =============================================
   // ======== Position liquidation methods =======
@@ -88,9 +88,13 @@ abstract contract LevvaPoolVirtual is IMarginlyPool {
     uint256 quoteAmount
   ) internal virtual;
 
-  function _enactMarginCallLong(Position storage position) internal virtual;
+  function _enactMarginCallLong(
+    Position storage position
+  ) internal virtual returns (int256 quoteCollateralSurplus, uint256 swapPriceX96);
 
-  function _enactMarginCallShort(Position storage position) internal virtual;
+  function _enactMarginCallShort(
+    Position storage position
+  ) internal virtual returns (int256 baseCollateralSurplus, uint256 swapPriceX96);
 
   function _deleverageLong(uint256 realBaseCollateral, uint256 realQuoteDebt) internal virtual;
 
@@ -130,13 +134,13 @@ abstract contract LevvaPoolVirtual is IMarginlyPool {
     uint256 limitPriceX96,
     Position storage position,
     uint256 swapCalldata
-  ) internal virtual returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta);
+  ) internal virtual returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta, uint256 swapPriceX96);
 
   function _closeShortPosition(
     uint256 limitPriceX96,
     Position storage position,
     uint256 swapCalldata
-  ) internal virtual returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta);
+  ) internal virtual returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta, uint256 swapPriceX96);
 
   function _repayBaseDebt(uint256 amount, FP96.FixedPoint memory basePrice, Position storage position) internal virtual;
 

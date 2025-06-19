@@ -433,10 +433,10 @@ describe('MarginlyPool.Shutdown', () => {
 
     const baseCollCoeff = await marginlyPool.baseCollateralCoeff();
     const quoteDebtCoeff = await marginlyPool.quoteDebtCoeff();
-    const initPrice = await marginlyPool.initialPrice();
+    const shutDownPrice = await marginlyPool.shutDownPrice();
     const longerBaseNet =
       (baseCollCoeff * longerPosition.discountedBaseAmount) / FP96.one -
-      (quoteDebtCoeff * longerPosition.discountedQuoteAmount) / initPrice;
+      (quoteDebtCoeff * longerPosition.discountedQuoteAmount) / shutDownPrice;
     const expectedLongerBaseAmount = (emergencyWithdrawCoeff * longerBaseNet) / FP96.one;
     const expectedDepositorBaseAmount =
       (emergencyWithdrawCoeff * ((depositorPosition.discountedBaseAmount * baseCollCoeff) / FP96.one)) / FP96.one;
@@ -529,10 +529,10 @@ describe('MarginlyPool.Shutdown', () => {
 
     const quoteCollCoeff = await marginlyPool.quoteCollateralCoeff();
     const baseDebtCoeff = await marginlyPool.baseDebtCoeff();
-    const initPrice = await marginlyPool.initialPrice();
+    const shutDownPrice = await marginlyPool.shutDownPrice();
     const shorterQuoteNet =
       (quoteCollCoeff * shorterPosition.discountedQuoteAmount) / FP96.one -
-      (((baseDebtCoeff * shorterPosition.discountedBaseAmount) / FP96.one) * initPrice) / FP96.one;
+      (((baseDebtCoeff * shorterPosition.discountedBaseAmount) / FP96.one) * shutDownPrice) / FP96.one;
 
     const expectedShorterQuoteAmount = (emergencyWithdrawCoeff * shorterQuoteNet) / FP96.one;
 

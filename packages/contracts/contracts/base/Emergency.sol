@@ -13,27 +13,20 @@ abstract contract Emergency is Liquidations, LevvaPoolAccess {
 
   /// @dev Ratio of best side collaterals before and after margin call of opposite side in shutdown mode
   FP96.FixedPoint public emergencyWithdrawCoeff;
+  FP96.FixedPoint public shutDownPrice;
 
   /// @inheritdoc IMarginlyPoolOwnerActions
   function shutDown(uint256 swapCalldata) external onlyFactoryOwner lock {
     if (mode != Mode.Regular) revert MarginlyErrors.EmergencyMode();
     _accrueInterest();
 
-    _syncBaseBalance();
-    _syncQuoteBalance();
-
     FP96.FixedPoint memory basePrice = getBasePrice();
 
-    /* We use Rounding.Up in baseDebt/quoteDebt calculation 
-       to avoid case when "surplus = quoteCollateral - quoteDebt"
-       a bit more than IERC20(quoteToken).balanceOf(address(this))
-     */
+    uint256 baseDebt = _calcRealBaseDebtTotal();
+    uint256 quoteDebt = _calcRealQuoteDebtTotal();
 
-    uint256 baseDebt = _calcRealBaseDebtTotal(); // TODO: Math.Rounding.Ceil
-    uint256 quoteCollateral = _calcRealQuoteCollateralTotal();
-
-    uint256 quoteDebt = _calcRealQuoteDebtTotal(); // TODO: Math.Rounding.Ceil
-    uint256 baseCollateral = _calcRealBaseCollateralTotal();
+    uint256 baseCollateral = _getBalance(baseToken).add(baseDebt);
+    uint256 quoteCollateral = _getBalance(quoteToken).add(quoteDebt);
 
     if (basePrice.mul(baseDebt) > quoteCollateral) {
       // removing all non-emergency position with bad leverages (negative net positions included)
@@ -83,7 +76,7 @@ abstract contract Emergency is Liquidations, LevvaPoolAccess {
   ///@dev Set emergency mode and calc emergencyWithdrawCoeff
   function _setEmergencyMode(
     Mode _mode,
-    FP96.FixedPoint memory shutDownPrice,
+    FP96.FixedPoint memory _shutDownPrice,
     uint256 collateral,
     uint256 debt,
     uint256 emergencyCollateral,
@@ -91,7 +84,7 @@ abstract contract Emergency is Liquidations, LevvaPoolAccess {
     uint256 swapCalldata
   ) private {
     mode = _mode;
-    initialPrice = shutDownPrice;
+    shutDownPrice = _shutDownPrice;
 
     uint256 balance = collateral >= debt ? collateral.sub(debt) : 0;
 
@@ -106,12 +99,12 @@ abstract contract Emergency is Liquidations, LevvaPoolAccess {
     if (mode == Mode.ShortEmergency) {
       // coeff = price * baseBalance / (price * baseCollateral - quoteDebt)
       emergencyWithdrawCoeff = FP96.fromRatio(
-        shutDownPrice.mul(balance),
-        shutDownPrice.mul(collateral).sub(emergencyDebt)
+        _shutDownPrice.mul(balance),
+        _shutDownPrice.mul(collateral).sub(emergencyDebt)
       );
     } else {
       // coeff = quoteBalance / (quoteCollateral - price * baseDebt)
-      emergencyWithdrawCoeff = FP96.fromRatio(balance, collateral.sub(shutDownPrice.mul(emergencyDebt)));
+      emergencyWithdrawCoeff = FP96.fromRatio(balance, collateral.sub(_shutDownPrice.mul(emergencyDebt)));
     }
 
     emit Emergency(_mode);
@@ -133,7 +126,7 @@ abstract contract Emergency is Liquidations, LevvaPoolAccess {
 
       // baseNet =  baseColl - quoteDebt / price
       uint256 positionBaseNet = _calcRealBaseCollateral(position.discountedBaseAmount, position.discountedQuoteAmount)
-        .sub(initialPrice.recipMul(_calcRealQuoteDebt(position.discountedQuoteAmount)));
+        .sub(shutDownPrice.recipMul(_calcRealQuoteDebt(position.discountedQuoteAmount)));
       transferAmount = emergencyWithdrawCoeff.mul(positionBaseNet);
       token = baseToken;
     } else {
@@ -141,7 +134,7 @@ abstract contract Emergency is Liquidations, LevvaPoolAccess {
 
       // quoteNet = quoteColl - baseDebt * price
       uint256 positionQuoteNet = _calcRealQuoteCollateral(position.discountedQuoteAmount, position.discountedBaseAmount)
-        .sub(initialPrice.mul(_calcRealBaseDebt(position.discountedBaseAmount)));
+        .sub(shutDownPrice.mul(_calcRealBaseDebt(position.discountedBaseAmount)));
       transferAmount = emergencyWithdrawCoeff.mul(positionQuoteNet);
       token = quoteToken;
     }

@@ -97,18 +97,12 @@ export function toHumanString(fp96Value: bigint): string {
   return (fp96Value / FP96.one).toString();
 }
 
-export function calcLongSortKey(initialPrice: bigint, quoteAmount: bigint, baseAmount: bigint): bigint {
-  const collateral = (initialPrice * baseAmount) / FP96.one;
-  const debt = quoteAmount;
-
-  return (debt * FP48.Q48) / collateral;
+export function calcLongSortKey(quoteAmount: bigint, baseAmount: bigint): bigint {
+  return (quoteAmount * FP48.Q48) / baseAmount;
 }
 
-export function calcShortSortKey(initialPrice: bigint, quoteAmount: bigint, baseAmount: bigint): bigint {
-  const collateral = quoteAmount;
-  const debt = (initialPrice * baseAmount) / FP96.one;
-
-  return (debt * FP48.Q48) / collateral;
+export function calcShortSortKey(quoteAmount: bigint, baseAmount: bigint): bigint {
+  return (baseAmount * FP48.Q48) / quoteAmount;
 }
 
 export function calcLeverageShort(
@@ -118,8 +112,9 @@ export function calcLeverageShort(
   quoteAmount: bigint,
   baseAmount: bigint
 ) {
-  const collateral = ((quoteCollateralCoeff * quoteAmount) / FP96.one) * FP96.one;
-  const debt = ((((baseDebtCoeff * basePrice) / FP96.one) * baseAmount) / FP96.one) * FP96.one;
+  if (baseAmount == 0n) return FP96.one;
+  const collateral = (quoteCollateralCoeff * quoteAmount) / FP96.one;
+  const debt = (ceilDivision(baseDebtCoeff * baseAmount, FP96.one) * basePrice) / FP96.one;
 
   return (collateral * FP96.one) / (collateral - debt);
 }
@@ -131,8 +126,9 @@ export function calcLeverageLong(
   quoteAmount: bigint,
   baseAmount: bigint
 ) {
-  const collateral = ((((baseCollateralCoeff * basePrice) / FP96.one) * baseAmount) / FP96.one) * FP96.one;
-  const debt = ((quoteDebtCoeff * quoteAmount) / FP96.one) * FP96.one;
+  if (quoteAmount == 0n) return FP96.one;
+  const collateral = (((baseCollateralCoeff * baseAmount) / FP96.one) * basePrice) / FP96.one;
+  const debt = ceilDivision(quoteDebtCoeff * quoteAmount, FP96.one);
 
   return (collateral * FP96.one) / (collateral - debt);
 }
@@ -220,7 +216,7 @@ export async function calcAccruedRateCoeffs(marginlyPool: LevvaTradingPool, prev
   const feeDt = powTaylor(onePlusFee, secondsPassed);
 
   if (discountedBaseCollateralPrev != 0n) {
-    const realBaseDebtPrev = (baseDebtCoeffPrev * discountedBaseDebtPrev) / FP96.one;
+    const realBaseDebtPrev = ceilDivision(baseDebtCoeffPrev * discountedBaseDebtPrev, FP96.one);
     const onePlusIRshort = (interestRateX96 * leverageShortX96) / SECONDS_IN_YEAR_X96 + FP96.one;
     const accruedRateDt = powTaylor(onePlusIRshort, secondsPassed);
     const baseDebtCoeffMul = (accruedRateDt * feeDt) / FP96.one;
@@ -238,7 +234,7 @@ export async function calcAccruedRateCoeffs(marginlyPool: LevvaTradingPool, prev
   }
 
   if (discountedQuoteCollateralPrev != 0n) {
-    const realQuoteDebtPrev = (quoteDebtCoeffPrev * discountedQuoteDebtPrev) / FP96.one;
+    const realQuoteDebtPrev = ceilDivision(quoteDebtCoeffPrev * discountedQuoteDebtPrev, FP96.one);
     const onePlusIRLong = (interestRateX96 * leverageLongX96) / SECONDS_IN_YEAR_X96 + FP96.one;
     const accruedRateDt = powTaylor(onePlusIRLong, secondsPassed);
     const quoteDebtCoeffMul = (accruedRateDt * feeDt) / FP96.one;
@@ -344,4 +340,8 @@ export async function getMarginlyPoolState(marginlyPool: LevvaTradingPool): Prom
     discountedBaseCollateral,
     discountedQuoteCollateral,
   };
+}
+
+export function ceilDivision(a: bigint, b: bigint): bigint {
+  return (a + b - 1n) / b;
 }

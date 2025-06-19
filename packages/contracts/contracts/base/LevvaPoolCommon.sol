@@ -39,8 +39,6 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
 
   MarginlyParams public params;
 
-  /// @dev Initial price. Used to sort key and shutdown calculations. Value gets reset for the latter one
-  FP96.FixedPoint public initialPrice;
   /// @notice users positions
   mapping(address => Position) public positions;
 
@@ -76,8 +74,6 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
     baseCollateralCoeff = FP96.one();
     quoteCollateralCoeff = FP96.one();
 
-    initialPrice = getBasePrice(); // TODO: can be replaced with FP96.one?
-
     _setParameters(_params);
 
     Position storage techPosition = _getTechPosition();
@@ -104,10 +100,18 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
     address collateralToken;
     uint256 swapPriceX96;
     if (position._type == PositionType.Long) {
-      (realCollateralDelta, discountedCollateralDelta) = _closeLongPosition(limitPriceX96, position, swapCalldata);
+      (realCollateralDelta, discountedCollateralDelta, swapPriceX96) = _closeLongPosition(
+        limitPriceX96,
+        position,
+        swapCalldata
+      );
       collateralToken = baseToken;
     } else if (position._type == PositionType.Short) {
-      (realCollateralDelta, discountedCollateralDelta) = _closeShortPosition(limitPriceX96, position, swapCalldata);
+      (realCollateralDelta, discountedCollateralDelta, swapPriceX96) = _closeShortPosition(
+        limitPriceX96,
+        position,
+        swapCalldata
+      );
       collateralToken = quoteToken;
     } else {
       revert MarginlyErrors.WrongPositionType();
@@ -211,7 +215,9 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
   /// @dev Charge fee (swap or debt fee) in quote token
   /// @param feeAmount amount of token
   function _chargeFee(uint256 feeAmount) internal {
-    SafeERC20.safeTransfer(IERC20(quoteToken), IMarginlyFactory(factory).feeHolder(), feeAmount);
+    if (feeAmount != 0) {
+      SafeERC20.safeTransfer(IERC20(quoteToken), IMarginlyFactory(factory).feeHolder(), feeAmount);
+    }
   }
 
   /// @dev Returns tech position
@@ -317,6 +323,11 @@ abstract contract LevvaPoolCommon is LevvaPoolVirtual {
     } else {
       return maxValue;
     }
+  }
+
+  /// @dev Calculate swap price in Q96. Used for events data only
+  function _calcSwapPrice(uint256 quoteAmount, uint256 baseAmount) internal pure returns (uint256) {
+    return Math.mulDiv(quoteAmount, FP96.Q96, baseAmount);
   }
 
   function _updateBaseCollateralCoeffs(FP96.FixedPoint memory factor) internal virtual override {

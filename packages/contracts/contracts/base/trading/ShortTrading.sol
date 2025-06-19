@@ -57,9 +57,14 @@ abstract contract ShortTrading is Liquidations {
     // quoteOutMinimum is defined by user input limitPriceX96
     uint256 quoteOutMinimum = Math.mulDiv(limitPriceX96, realBaseAmount, FP96.Q96);
     uint256 realQuoteCollateralChangeWithFee = _swapExactInput(false, realBaseAmount, quoteOutMinimum, swapCalldata);
+    uint256 swapPriceX96 = _calcSwapPrice(realQuoteCollateralChangeWithFee, realBaseAmount);
 
-    uint256 realSwapFee = Math.mulDiv(params.swapFee, realQuoteCollateralChangeWithFee, WHOLE_ONE);
-    uint256 realQuoteCollateralChange = realQuoteCollateralChangeWithFee.sub(realSwapFee);
+    uint256 realQuoteCollateralChange;
+    {
+      uint256 realSwapFee = Math.mulDiv(params.swapFee, realQuoteCollateralChangeWithFee, WHOLE_ONE);
+      _chargeFee(realSwapFee);
+      realQuoteCollateralChange = realQuoteCollateralChangeWithFee.sub(realSwapFee);
+    }
 
     if (_newPoolQuoteBalance(realQuoteCollateralChange) > params.quoteLimit) revert MarginlyErrors.ExceedsLimit();
 
@@ -72,7 +77,6 @@ abstract contract ShortTrading is Liquidations {
     );
     position.discountedQuoteAmount = positionDisQuoteCollateral.add(discountedQuoteChange);
     discountedQuoteCollateral = discountedQuoteCollateral.add(discountedQuoteChange);
-    _chargeFee(realSwapFee);
 
     if (position._type == PositionType.Lend) {
       if (position.heapPosition != 0) revert MarginlyErrors.WrongIndex();
@@ -83,20 +87,25 @@ abstract contract ShortTrading is Liquidations {
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    emit Short(positionOwner, realBaseAmount, 0, discountedQuoteChange, discountedBaseDebtChange);
+    emit Short(positionOwner, realBaseAmount, swapPriceX96, discountedQuoteChange, discountedBaseDebtChange);
   }
 
   function _closeShortPosition(
     uint256 limitPriceX96,
     Position storage position,
     uint256 swapCalldata
-  ) internal virtual override returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta) {
+  )
+    internal
+    virtual
+    override
+    returns (uint256 realCollateralDelta, uint256 discountedCollateralDelta, uint256 swapPriceX96)
+  {
     uint256 positionDiscountedBaseDebtPrev = position.discountedBaseAmount;
     uint256 realQuoteCollateral = _calcRealQuoteCollateral(
       position.discountedQuoteAmount,
       position.discountedBaseAmount
     );
-    uint256 realBaseDebt = baseDebtCoeff.mul(positionDiscountedBaseDebtPrev, Math.Rounding.Ceil);
+    uint256 realBaseDebt = _calcRealBaseDebt(positionDiscountedBaseDebtPrev);
 
     {
       // quoteInMaximum is defined by user input limitPriceX96
@@ -104,6 +113,7 @@ abstract contract ShortTrading is Liquidations {
 
       realCollateralDelta = _swapExactOutput(true, realQuoteCollateral, realBaseDebt, swapCalldata);
       if (realCollateralDelta > quoteInMaximum) revert MarginlyErrors.SlippageLimit();
+      swapPriceX96 = _calcSwapPrice(realCollateralDelta, realBaseDebt);
 
       uint256 realFeeAmount = Math.mulDiv(params.swapFee, realCollateralDelta, WHOLE_ONE);
       _chargeFee(realFeeAmount);
@@ -196,7 +206,7 @@ abstract contract ShortTrading is Liquidations {
     );
     _chargeFee(fee);
 
-    uint256 realBaseDebt = baseDebtCoeff.mul(posDiscountedBaseDebt);
+    uint256 realBaseDebt = _calcRealBaseDebt(posDiscountedBaseDebt);
     uint256 discountedBaseCollateralDelta = baseCollateralCoeff.recipMul(baseAmountOut.sub(realBaseDebt));
 
     discountedQuoteCollateral -= posDiscountedQuoteColl;
@@ -230,7 +240,7 @@ abstract contract ShortTrading is Liquidations {
 
     // positionRealQuoteCollateral > poolQuoteBalance = poolQuoteCollateral - poolQuoteDebt
     // positionRealQuoteCollateral + poolQuoteDebt > poolQuoteCollateral
-    uint256 poolQuoteCollateral = _calcRealQuoteCollateral(discountedQuoteCollateral, discountedBaseDebt);
+    uint256 poolQuoteCollateral = _calcRealQuoteCollateralTotal();
     uint256 posQuoteCollPlusPoolQuoteDebt = _calcRealQuoteDebtTotal().add(realQuoteCollateral);
 
     if (posQuoteCollPlusPoolQuoteDebt > poolQuoteCollateral) {
@@ -238,7 +248,7 @@ abstract contract ShortTrading is Liquidations {
       // = (positionRealQuoteCollateral + poolQuoteDebt) - poolQuoteCollateral
       uint256 quoteDebtToReduce = posQuoteCollPlusPoolQuoteDebt.sub(poolQuoteCollateral);
       uint256 baseCollToReduce = basePrice.recipMul(quoteDebtToReduce);
-      uint256 positionBaseDebt = baseDebtCoeff.mul(position.discountedBaseAmount);
+      uint256 positionBaseDebt = _calcRealBaseDebt(position.discountedBaseAmount);
       if (baseCollToReduce > positionBaseDebt) {
         baseCollToReduce = positionBaseDebt;
       }
@@ -254,7 +264,9 @@ abstract contract ShortTrading is Liquidations {
     }
   }
 
-  function _enactMarginCallShort(Position storage position) internal override {
+  function _enactMarginCallShort(
+    Position storage position
+  ) internal override returns (int256 baseCollateralSurplus, uint256 swapPriceX96) {
     uint256 realQuoteCollateral = _calcRealQuoteCollateral(
       position.discountedQuoteAmount,
       position.discountedBaseAmount
@@ -268,7 +280,7 @@ abstract contract ShortTrading is Liquidations {
         getLiquidationPrice().recipMul(realQuoteCollateral)
       );
       swappedBaseDebt = _swapExactInput(true, realQuoteCollateral, baseOutMinimum, defaultSwapCallData);
-      // swapPriceX96 = getSwapPrice(realQuoteCollateral, swappedBaseDebt);
+      swapPriceX96 = _calcSwapPrice(realQuoteCollateral, swappedBaseDebt);
     }
 
     FP96.FixedPoint memory factor;
@@ -276,9 +288,11 @@ abstract contract ShortTrading is Liquidations {
     if (swappedBaseDebt >= realBaseDebt) {
       // Position has enough collateral to repay debt
       factor = FP96.one().add(FP96.fromRatio(swappedBaseDebt.sub(realBaseDebt), _calcRealBaseCollateralTotal()));
+      baseCollateralSurplus = int256(swappedBaseDebt.sub(realBaseDebt));
     } else {
       // Position's debt has been repaid by pool
       factor = FP96.one().sub(FP96.fromRatio(realBaseDebt.sub(swappedBaseDebt), _calcRealBaseCollateralTotal()));
+      baseCollateralSurplus = -int256(realBaseDebt.sub(swappedBaseDebt));
     }
     _updateBaseCollateralCoeffs(factor);
 
@@ -300,7 +314,7 @@ abstract contract ShortTrading is Liquidations {
     position.discountedQuoteAmount = badPosition.discountedQuoteAmount.add(discountedQuoteCollateralDelta);
 
     uint32 heapIndex = badPosition.heapPosition - 1;
-    uint256 badPositionBaseDebt = baseDebtCoeff.mul(badPosition.discountedBaseAmount);
+    uint256 badPositionBaseDebt = _calcRealBaseDebt(badPosition.discountedBaseAmount);
     uint256 discountedBaseDebtDelta;
     if (baseAmount >= badPositionBaseDebt) {
       discountedBaseDebtDelta = badPosition.discountedBaseAmount;
@@ -328,13 +342,13 @@ abstract contract ShortTrading is Liquidations {
   }
 
   function _updateSystemLeverageShort(FP96.FixedPoint memory basePrice) internal virtual override {
-    if (discountedQuoteCollateral == 0) {
+    if (discountedBaseDebt == 0) {
       shortLeverageX96 = uint128(FP96.Q96);
       return;
     }
 
-    uint256 realQuoteCollateral = _calcRealQuoteCollateral(discountedQuoteCollateral, discountedBaseDebt);
-    uint256 realBaseDebt = baseDebtCoeff.mul(basePrice).mul(discountedBaseDebt);
+    uint256 realQuoteCollateral = _calcRealQuoteCollateralTotal();
+    uint256 realBaseDebt = basePrice.mul(_calcRealBaseDebtTotal());
     uint128 leverageX96 = uint128(Math.mulDiv(FP96.Q96, realQuoteCollateral, realQuoteCollateral.sub(realBaseDebt)));
     uint128 maxLeverageX96 = uint128(params.maxLeverage) << FP96.RESOLUTION;
     shortLeverageX96 = leverageX96 < maxLeverageX96 ? leverageX96 : maxLeverageX96;
@@ -345,10 +359,10 @@ abstract contract ShortTrading is Liquidations {
     FP96.FixedPoint memory secondsInYear,
     FP96.FixedPoint memory interestRate,
     FP96.FixedPoint memory feeDt
-  ) internal virtual override returns (uint256 discountedBaseFee) {
-    if (discountedBaseCollateral != 0) {
+  ) internal virtual override returns (uint256 quoteDebtDistributed, uint256 discountedBaseFee) {
+    if (discountedBaseDebt != 0) {
       FP96.FixedPoint memory baseDebtCoeffPrev = baseDebtCoeff;
-      uint256 realBaseDebtPrev = baseDebtCoeffPrev.mul(discountedBaseDebt);
+      uint256 realBaseDebtPrev = baseDebtCoeffPrev.mul(discountedBaseDebt, Math.Rounding.Ceil);
       FP96.FixedPoint memory onePlusIR = interestRate
         .mul(FP96.FixedPoint({inner: shortLeverageX96}))
         .div(secondsInYear)
@@ -357,8 +371,9 @@ abstract contract ShortTrading is Liquidations {
       // AR(dt) =  (1+ ir)^dt
       FP96.FixedPoint memory accruedRateDt = FP96.powTaylor(onePlusIR, secondsPassed);
       baseDebtCoeff = baseDebtCoeffPrev.mul(accruedRateDt).mul(feeDt);
+      quoteDebtDistributed = accruedRateDt.sub(FP96.one()).mul(realBaseDebtPrev);
       FP96.FixedPoint memory factor = FP96.one().add(
-        FP96.fromRatio(accruedRateDt.sub(FP96.one()).mul(realBaseDebtPrev), _calcRealBaseCollateralTotal())
+        FP96.fromRatio(quoteDebtDistributed, _calcRealBaseCollateralTotal())
       );
       _updateBaseCollateralCoeffs(factor);
       discountedBaseFee = baseCollateralCoeff.recipMul(accruedRateDt.mul(feeDt.sub(FP96.one())).mul(realBaseDebtPrev));
@@ -396,11 +411,11 @@ abstract contract ShortTrading is Liquidations {
     uint256 disQuoteCollateral,
     uint256 disBaseDebt
   ) internal view virtual override returns (uint256) {
-    return quoteCollateralCoeff.mul(disQuoteCollateral).sub(quoteDelevCoeff.mul(disBaseDebt));
+    return quoteCollateralCoeff.mul(disQuoteCollateral).sub(quoteDelevCoeff.mul(disBaseDebt, Math.Rounding.Ceil));
   }
 
   function _calcRealBaseDebt(uint256 disBaseDebt) internal view virtual override returns (uint256) {
-    return baseDebtCoeff.mul(disBaseDebt);
+    return baseDebtCoeff.mul(disBaseDebt, Math.Rounding.Ceil);
   }
 
   function _getWorstShortPositionOwner() internal view virtual override returns (address) {
@@ -409,7 +424,7 @@ abstract contract ShortTrading is Liquidations {
   }
 
   function _updateHeapShort(Position storage position) internal virtual override {
-    uint96 sortKey = _calcSortKey(position.discountedQuoteAmount, initialPrice.mul(position.discountedBaseAmount));
+    uint96 sortKey = _calcSortKey(position.discountedQuoteAmount, position.discountedBaseAmount);
     uint32 heapIndex = position.heapPosition - 1;
     shortHeap.update(positions, heapIndex, sortKey);
   }

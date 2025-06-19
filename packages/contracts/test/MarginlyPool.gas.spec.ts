@@ -880,7 +880,7 @@ describe('Liquidation', () => {
       .connect(longer)
       .execute(CallType.DepositBase, baseCollateral, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
-    const longAmount = 1970; // leverage 19.8
+    const longAmount = 1900;
     await marginlyPool
       .connect(longer)
       .execute(CallType.Long, longAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());
@@ -942,7 +942,7 @@ describe('Liquidation', () => {
       .connect(longer)
       .execute(CallType.DepositBase, baseCollateral, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
-    const longAmount = 1970; // leverage 19.8
+    const longAmount = 1900;
     await marginlyPool
       .connect(longer)
       .execute(CallType.Long, longAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata());

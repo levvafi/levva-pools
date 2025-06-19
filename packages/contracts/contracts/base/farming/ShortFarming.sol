@@ -29,7 +29,11 @@ abstract contract ShortFarming is Liquidations {
     revert ShortUnavailable();
   }
 
-  function _closeShortPosition(uint256, Position storage, uint256) internal pure override returns (uint256, uint256) {
+  function _closeShortPosition(
+    uint256,
+    Position storage,
+    uint256
+  ) internal pure override returns (uint256, uint256, uint256) {
     revert ShortUnavailable();
   }
 
@@ -68,7 +72,7 @@ abstract contract ShortFarming is Liquidations {
     );
     _chargeFee(fee);
 
-    uint256 realBaseDebt = baseDebtCoeff.mul(posDiscountedBaseDebt);
+    uint256 realBaseDebt = _calcRealBaseDebt(posDiscountedBaseDebt);
     uint256 discountedBaseCollateralDelta = baseCollateralCoeff.recipMul(baseAmountOut.sub(realBaseDebt));
 
     discountedQuoteCollateral -= posDiscountedQuoteColl;
@@ -89,8 +93,8 @@ abstract contract ShortFarming is Liquidations {
     return;
   }
 
-  function _enactMarginCallShort(Position storage) internal pure override {
-    return;
+  function _enactMarginCallShort(Position storage) internal pure override returns (int256, uint256) {
+    return (0, 0);
   }
 
   function _receiveShort(Position storage, Position storage, uint256, uint256) internal pure virtual override {
@@ -106,8 +110,8 @@ abstract contract ShortFarming is Liquidations {
     FP96.FixedPoint memory,
     FP96.FixedPoint memory,
     FP96.FixedPoint memory
-  ) internal pure virtual override returns (uint256 discountedBaseFee) {
-    return 0;
+  ) internal pure virtual override returns (uint256 baseDebtDelta, uint256 discountedBaseFee) {
+    return (0, 0);
   }
 
   function _deleverageShort(uint256, uint256) internal virtual override {
