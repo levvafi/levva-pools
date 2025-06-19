@@ -1,7 +1,6 @@
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
-import { FP96 } from '../utils/fixed-point';
-import { logger } from '../utils/logger';
+import { ceilDivision, FP96 } from '../utils/fixed-point';
 import { changeWethPrice } from '../utils/uniswap-ops';
 import { showSystemAggregates } from '../utils/log-utils';
 import { prepareAccounts } from './simulation';
@@ -13,11 +12,13 @@ describe('Shutdown', () => {
   it('Short emergency', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await shortEmergency(sut);
+    sut.logger.flush();
   });
 
   it('Long emergency', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await longEmergency(sut);
+    sut.logger.flush();
   });
 });
 
@@ -26,8 +27,8 @@ System shutdown case, when price of WETH token drastically increased
 ShortEmergency
 */
 async function shortEmergency(sut: SystemUnderTest) {
+  const { marginlyPool, usdc, weth, accounts, treasury, logger } = sut;
   logger.info(`Starting shortEmergency test suite`);
-  const { marginlyPool, usdc, weth, accounts, treasury } = sut;
 
   await prepareAccounts(sut);
 
@@ -102,7 +103,7 @@ async function shortEmergency(sut: SystemUnderTest) {
   const wethPriceX96 = (await marginlyPool.getBasePrice()).inner * 10n ** 12n;
 
   logger.info(`Increasing WETH price by ~80%`);
-  await changeWethPrice(treasury, sut, (wethPriceX96 * 18n) / 10n / FP96.one);
+  await changeWethPrice(treasury, sut, (wethPriceX96 * 18n) / 10n / FP96.one, logger);
 
   //shift dates and reinit
   logger.info(`Shift date for 1 month, 1 day per iteration`);
@@ -168,7 +169,8 @@ async function shortEmergency(sut: SystemUnderTest) {
 
   const longerPosition = await marginlyPool.positions(longer);
   const longerCollateral = (baseCollCoeff * longerPosition.discountedBaseAmount) / FP96.one;
-  const longerDebt = (((quoteDebtCoeff * longerPosition.discountedQuoteAmount) / FP96.one) * FP96.one) / shutDownPrice;
+  const longerDebt =
+    (ceilDivision(quoteDebtCoeff * longerPosition.discountedQuoteAmount, FP96.one) * FP96.one) / shutDownPrice;
   const longerNet = longerCollateral - longerDebt;
 
   const longerAmount = (longerNet * emWithdrawCoeff) / FP96.one;
@@ -187,8 +189,8 @@ async function shortEmergency(sut: SystemUnderTest) {
 }
 
 async function longEmergency(sut: SystemUnderTest) {
+  const { marginlyPool, usdc, weth, accounts, treasury, logger } = sut;
   logger.info(`Starting longEmergency test suite`);
-  const { marginlyPool, usdc, weth, accounts, treasury } = sut;
 
   await prepareAccounts(sut);
 
@@ -256,7 +258,7 @@ async function longEmergency(sut: SystemUnderTest) {
   const wethPriceX96 = (await marginlyPool.getBasePrice()).inner * 10n ** 12n;
 
   logger.info(`Decreasing WETH price by ~40%`);
-  await changeWethPrice(treasury, sut, (wethPriceX96 * 6n) / 10n / FP96.one);
+  await changeWethPrice(treasury, sut, (wethPriceX96 * 6n) / 10n / FP96.one, logger);
 
   //shift dates and reinit
   logger.info(`Shift date for 1 month, 1 day per iteration`);
@@ -325,7 +327,8 @@ async function longEmergency(sut: SystemUnderTest) {
 
   const longerPosition = await marginlyPool.positions(shorter);
   const shorterCollateral = (quoteCollCoeff * longerPosition.discountedQuoteAmount) / FP96.one;
-  const shorterDebt = (((baseDebtCoeff * longerPosition.discountedBaseAmount) / FP96.one) * shutDownPrice) / FP96.one;
+  const shorterDebt =
+    (ceilDivision(baseDebtCoeff * longerPosition.discountedBaseAmount, FP96.one) * shutDownPrice) / FP96.one;
   const shorterNet = shorterCollateral - shorterDebt;
   const shorterAmount = (shorterNet * emWithdrawCoeff) / FP96.one;
   logger.info(`Trying to withdraw ${shorterAmount}`);

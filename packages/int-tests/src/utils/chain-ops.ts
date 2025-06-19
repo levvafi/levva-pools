@@ -1,8 +1,8 @@
-import { logger } from '../utils/logger';
 import { AbiCoder, Addressable, BrowserProvider, ContractTransactionReceipt, Log } from 'ethers';
 import { FP96, powTaylor } from './fixed-point';
 import { TechnicalPositionOwner } from '../suites';
 import { LevvaTradingPool } from '../../../contracts/typechain-types';
+import { Logger } from 'pino';
 
 export const PositionType = {
   Uninitialized: 0n,
@@ -105,7 +105,11 @@ export function decodeSwapEvent(
   };
 }
 
-export async function getLongSortKeyX48(marginlyPool: LevvaTradingPool, accountAddress: string): Promise<bigint> {
+export async function getLongSortKeyX48(
+  marginlyPool: LevvaTradingPool,
+  accountAddress: string,
+  logger: Logger
+): Promise<bigint> {
   const position = await marginlyPool.positions(accountAddress);
   const index = position.heapPosition - 1n;
   logger.debug(`  heap position is ${position.heapPosition}`);
@@ -113,7 +117,11 @@ export async function getLongSortKeyX48(marginlyPool: LevvaTradingPool, accountA
   return leverage.key;
 }
 
-export async function getShortSortKeyX48(marginlyPool: LevvaTradingPool, accountAddress: string): Promise<bigint> {
+export async function getShortSortKeyX48(
+  marginlyPool: LevvaTradingPool,
+  accountAddress: string,
+  logger: Logger
+): Promise<bigint> {
   const position = await marginlyPool.positions(accountAddress);
   const index = position.heapPosition - 1n;
   logger.debug(`  heap position is ${position.heapPosition}`);

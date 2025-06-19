@@ -1,16 +1,17 @@
 import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
-import { logger } from '../utils/logger';
 import { encodeLiquidationParamsBalancer } from '../utils/marginly-keeper';
 import { LevvaTradingPool } from '../../../contracts/typechain-types';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { FP96 } from '../utils/fixed-point';
+import { Logger } from 'pino';
 
 describe('KeeperBalancer', () => {
   it('KeeperBalancer', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await keeperBalancer(sut);
+    sut.logger.flush();
   });
 });
 
@@ -25,7 +26,8 @@ async function getDebtAmount(
   marginlyPool: LevvaTradingPool,
   positionAddress: string,
   basePriceX96: bigint,
-  poolCoeffs: PoolCoeffs
+  poolCoeffs: PoolCoeffs,
+  logger: Logger
 ): Promise<bigint> {
   const Fp96One = 2n ** 96n;
   const position = await marginlyPool.positions(positionAddress);
@@ -52,10 +54,10 @@ async function getDebtAmount(
 }
 
 async function keeperBalancer(sut: SystemUnderTest) {
+  const { marginlyPool, keeperBalancer, treasury, usdc, weth, accounts, gasReporter, logger } = sut;
+
   logger.info(`Starting keeper liquidation test suite`);
   const ethArgs = { gasLimit: 1_000_000 };
-
-  const { marginlyPool, keeperBalancer, treasury, usdc, weth, accounts, gasReporter } = sut;
 
   const lender = accounts[0];
   logger.info(`Deposit lender account`);
@@ -165,9 +167,9 @@ async function keeperBalancer(sut: SystemUnderTest) {
 
   // get 1% more than calculated debt value
   const longerDebtAmount =
-    ((await getDebtAmount(marginlyPool, longer.address, basePriceX96, poolCoeffs)) * 101n) / 100n;
+    ((await getDebtAmount(marginlyPool, longer.address, basePriceX96, poolCoeffs, logger)) * 101n) / 100n;
   const shorterDebtAmount =
-    ((await getDebtAmount(marginlyPool, shorter.address, basePriceX96, poolCoeffs)) * 101n) / 100n;
+    ((await getDebtAmount(marginlyPool, shorter.address, basePriceX96, poolCoeffs, logger)) * 101n) / 100n;
 
   const liquidator = accounts[4];
 

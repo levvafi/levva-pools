@@ -1,4 +1,3 @@
-import { logger } from './logger';
 import { INITIAL_USDC, INITIAL_ETH } from './const';
 import assert from 'assert';
 import { Provider } from 'ethers';
@@ -7,8 +6,9 @@ import { IWETH9, IUSDC } from '../../../contracts/typechain-types';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { ethers } from 'hardhat';
 import { setBalance } from '@nomicfoundation/hardhat-network-helpers';
+import { Logger } from 'pino';
 
-export async function initWeth(signer: SignerWithAddress, provider: Provider): Promise<IWETH9> {
+export async function initWeth(signer: SignerWithAddress, provider: Provider, logger: Logger): Promise<IWETH9> {
   const weth = wethContract(provider);
   logger.info(`weth erc20 address: ${await weth.getAddress()}`);
   await setBalance(signer.address, 2n * INITIAL_ETH);
@@ -23,7 +23,7 @@ export async function initWeth(signer: SignerWithAddress, provider: Provider): P
   return weth;
 }
 
-export async function initUsdc(signer: SignerWithAddress, provider: Provider): Promise<IUSDC> {
+export async function initUsdc(signer: SignerWithAddress, provider: Provider, logger: Logger): Promise<IUSDC> {
   const usdc = usdcContract(provider);
   const address = await signer.getAddress();
   logger.info(`usdc erc20 address: ${await usdc.getAddress()}`);

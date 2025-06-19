@@ -1,5 +1,4 @@
 import { initializeTestSystem, SystemUnderTest } from '.';
-import { logger } from '../utils/logger';
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { abs, fp48ToHumanString, FP96, toHumanString } from '../utils/fixed-point';
 import {
@@ -17,6 +16,7 @@ describe('Short', () => {
   it('Short', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await short(sut);
+    sut.logger.flush();
   });
 });
 
@@ -32,10 +32,10 @@ async function prepareAccounts(sut: SystemUnderTest) {
 }
 
 async function short(sut: SystemUnderTest) {
+  const { marginlyPool, marginlyFactory, usdc, weth, accounts, treasury, uniswap, gasReporter, logger } = sut;
   logger.info(`Starting short test suite`);
   await prepareAccounts(sut);
   logger.info(`Prepared accounts`);
-  const { marginlyPool, marginlyFactory, usdc, weth, accounts, treasury, uniswap, gasReporter } = sut;
 
   const lendersNumber = 2;
   const shortersNumber = 10;
@@ -320,7 +320,7 @@ async function short(sut: SystemUnderTest) {
       continue;
     }
 
-    const sortKeyX48 = await getShortSortKeyX48(marginlyPool, shorter.address);
+    const sortKeyX48 = await getShortSortKeyX48(marginlyPool, shorter.address, logger);
     const debtCoeff = await marginlyPool.baseDebtCoeff();
     const realBaseAmount = (debtCoeff * position.discountedBaseAmount) / FP96.one;
     const realQuoteAmount = (quoteCollateralCoeff * position.discountedQuoteAmount) / FP96.one;

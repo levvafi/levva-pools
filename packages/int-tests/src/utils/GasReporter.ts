@@ -1,7 +1,7 @@
-import { ContractTransaction, ContractTransactionReceipt, ContractTransactionResponse } from 'ethers';
-import { logger } from './logger';
+import { ContractTransactionReceipt, ContractTransactionResponse } from 'ethers';
 import { promises as fsPromises, existsSync } from 'fs';
 import { join } from 'path';
+import { Logger } from 'pino';
 
 type GasUsage = {
   max: bigint;
@@ -13,8 +13,11 @@ type GasUsage = {
 export class GasReporter {
   private gasUsageStatistics: { [key: string]: GasUsage } = {};
   private gasUsage: { [key: string]: [number, bigint][] } = {};
+  private logger: Logger;
 
-  constructor(private suiteName: string) {}
+  constructor(private suiteName: string, logger: Logger) {
+    this.logger = logger;
+  }
 
   public async saveGasUsage(
     txName: string,
@@ -30,7 +33,7 @@ export class GasReporter {
     const gasUsed = txReceipt.gasUsed;
     const blockNumber = txReceipt.blockNumber;
 
-    logger.debug(`⛽ Gas used: ${txName}    ${gasUsed}`);
+    this.logger.debug(`⛽ Gas used: ${txName}    ${gasUsed}`);
 
     const existedStatistic = this.gasUsageStatistics[txName];
     if (existedStatistic) {
@@ -60,8 +63,8 @@ export class GasReporter {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const gasUsageStatistics = this.gasUsageStatistics;
     if (Object.keys(gasUsageStatistics).length > 0) {
-      setTimeout(function () {
-        logger.info('Gas usage statistics');
+      setTimeout(() => {
+        this.logger.info('Gas usage statistics');
         console.table(gasUsageStatistics);
       }, 10);
     }

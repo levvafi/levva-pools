@@ -1,7 +1,6 @@
 import assert from 'assert';
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
-import { logger } from '../utils/logger';
 import { CallType, decodeSwapEvent, uniswapV3Swapdata, WHOLE_ONE } from '../utils/chain-ops';
 import { FP96, toHumanString } from '../utils/fixed-point';
 import { changeWethPrice } from '../utils/uniswap-ops';
@@ -11,12 +10,13 @@ describe('Short income', () => {
   it('Short income', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await shortIncome(sut);
+    sut.logger.flush();
   });
 });
 
 async function shortIncome(sut: SystemUnderTest) {
+  const { marginlyPool, treasury, usdc, weth, accounts, uniswap, gasReporter, logger } = sut;
   logger.info(`Starting shortIncome test suite`);
-  const { marginlyPool, treasury, usdc, weth, accounts, uniswap, gasReporter } = sut;
 
   const swapFeeX96 = ((await marginlyPool.params()).swapFee * FP96.one) / WHOLE_ONE;
   logger.info(`swapFee: ${toHumanString(swapFeeX96)}`);
@@ -78,7 +78,7 @@ async function shortIncome(sut: SystemUnderTest) {
   );
 
   logger.info(`Decreasing WETH price by ~10%`);
-  await changeWethPrice(treasury, sut, (wethPriceX96 * 9n) / 10n / FP96.one);
+  await changeWethPrice(treasury, sut, (wethPriceX96 * 9n) / 10n / FP96.one, logger);
 
   const shiftInDays = 10;
   logger.info(`Shift date by ${shiftInDays} days`);

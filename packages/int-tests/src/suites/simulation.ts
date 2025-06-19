@@ -1,6 +1,5 @@
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
-import { logger } from '../utils/logger';
 import { showSystemAggregates } from '../utils/log-utils';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
@@ -10,21 +9,24 @@ describe('Simulation', () => {
   it('Simulation1', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await simulation1(sut);
+    sut.logger.flush();
   });
 
   it('Simulation2', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await simulation2(sut);
+    sut.logger.flush();
   });
 
   it('Simulation3', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await simulation3(sut);
+    sut.logger.flush();
   });
 });
 
 export async function prepareAccounts(sut: SystemUnderTest) {
-  const { treasury, usdc, weth, accounts } = sut;
+  const { treasury, usdc, weth, accounts, logger } = sut;
   logger.debug(`Depositing accounts`);
   for (let i = 0; i < 4; i++) {
     const account = accounts[i];
@@ -44,8 +46,8 @@ export async function prepareAccounts(sut: SystemUnderTest) {
  Liquidator receive short position with deposit of 1000 USDC
 */
 async function simulation1(sut: SystemUnderTest) {
+  const { marginlyPool, usdc, weth, accounts, treasury, logger } = sut;
   logger.info(`Starting simulation1 test suite`);
-  const { marginlyPool, usdc, weth, accounts, treasury } = sut;
 
   await prepareAccounts(sut);
 
@@ -163,8 +165,8 @@ async function simulation1(sut: SystemUnderTest) {
 
 /// Lender USDC
 async function simulation2(sut: SystemUnderTest) {
+  const { marginlyPool, usdc, weth, accounts, treasury, logger } = sut;
   logger.info(`Starting simulation2 test suite`);
-  const { marginlyPool, usdc, weth, accounts, treasury } = sut;
 
   await prepareAccounts(sut);
 
@@ -281,8 +283,8 @@ async function simulation2(sut: SystemUnderTest) {
 }
 
 async function simulation3(sut: SystemUnderTest) {
+  const { marginlyPool, usdc, weth, accounts, treasury, logger } = sut;
   logger.info(`Starting simulation2 test suite`);
-  const { marginlyPool, usdc, weth, accounts, treasury } = sut;
 
   await prepareAccounts(sut);
 

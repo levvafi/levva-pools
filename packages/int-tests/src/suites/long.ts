@@ -1,7 +1,6 @@
 import assert from 'assert';
 import { EventLog, formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
-import { logger } from '../utils/logger';
 import {
   getLongSortKeyX48,
   decodeSwapEvent,
@@ -18,13 +17,13 @@ describe('Long', () => {
   it('Long', async () => {
     const sut = await loadFixture(initializeTestSystem);
     await long(sut);
+    sut.logger.flush();
   });
 });
 
 async function long(sut: SystemUnderTest) {
+  const { marginlyPool, marginlyFactory, treasury, usdc, weth, accounts, uniswap, gasReporter, logger } = sut;
   logger.info(`Starting long test suite`);
-
-  const { marginlyPool, marginlyFactory, treasury, usdc, weth, accounts, uniswap, gasReporter } = sut;
 
   const lenders = accounts.slice(0, 20); // 2 lenders
   const quoteAmount = parseUnits('1000000', 6); // 1_000_000 USDC
@@ -133,7 +132,7 @@ async function long(sut: SystemUnderTest) {
     const feeHolderBalance = await usdc.balanceOf(feeHolder);
     const position = await marginlyPool.positions(borrowers[i].address);
     const realQuoteBalance = await usdc.balanceOf(marginlyPool);
-    const sortKeyX48 = await getLongSortKeyX48(marginlyPool, borrowers[i].address);
+    const sortKeyX48 = await getLongSortKeyX48(marginlyPool, borrowers[i].address, logger);
     const baseCollateralCoeff = await marginlyPool.baseCollateralCoeff();
     const quoteDebtCoeff = await marginlyPool.quoteDebtCoeff();
     const realBaseBalance = await weth.balanceOf(marginlyPool);
@@ -249,10 +248,10 @@ async function long(sut: SystemUnderTest) {
     const discountedQuoteCollateral = await marginlyPool.discountedQuoteCollateral();
 
     if (!marginCallEvent) {
-      const quoteDebtDelta = quoteDebtCoeff - (quoteDebtCoeffBefore * discountedQuoteDebt) / FP96.one;
+      const quoteDebtDelta = ((quoteDebtCoeff - quoteDebtCoeffBefore) * discountedQuoteDebt) / FP96.one;
 
       const quoteCollatDelta =
-        quoteCollateralCoeff - (quoteCollateralCoeffBefore * discountedQuoteCollateral) / FP96.one;
+        ((quoteCollateralCoeff - quoteCollateralCoeffBefore) * discountedQuoteCollateral) / FP96.one;
 
       const realDebtFee = (expectedCoeffs.discountedQuoteDebtFee * quoteCollateralCoeff) / FP96.one;
 
@@ -262,7 +261,7 @@ async function long(sut: SystemUnderTest) {
       if (delta >= epsilon) {
         logger.warn(`quoteDebtDelta: ${formatUnits(quoteDebtDelta, 6)} USDC`);
         logger.warn(`quoteCollatDelta: ${formatUnits(quoteCollatDelta, 6)} USDC`);
-        logger.warn(`quoteDbtFee: ${formatUnits(expectedCoeffs.discountedQuoteDebtFee, 6)} USDC`);
+        logger.warn(`quoteDebtFee: ${formatUnits(expectedCoeffs.discountedQuoteDebtFee, 6)} USDC`);
         logger.error(`delta is ${delta} they must be equal`);
       }
       // assert.deepEqual(quoteDebtDelta, quoteCollatDelta);
@@ -297,7 +296,7 @@ async function long(sut: SystemUnderTest) {
       continue;
     }
 
-    const sortKeyX48 = await getLongSortKeyX48(marginlyPool, borrowers[i].address);
+    const sortKeyX48 = await getLongSortKeyX48(marginlyPool, borrowers[i].address, logger);
 
     const realBaseAmount = (baseCollateralCoeff * position.discountedBaseAmount) / FP96.one;
     const realQuoteAmount = (quoteDebtCoeff * position.discountedQuoteAmount) / FP96.one;

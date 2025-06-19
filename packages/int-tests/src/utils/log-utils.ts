@@ -1,10 +1,9 @@
 import { formatUnits } from 'ethers';
 import { FP96, toHumanString } from '../utils/fixed-point';
-import { logger } from '../utils/logger';
 import { SystemUnderTest, TechnicalPositionOwner } from '../suites';
 
 export async function showSystemAggregates(sut: SystemUnderTest) {
-  const { marginlyPool, marginlyFactory, accounts, usdc, weth } = sut;
+  const { marginlyPool, marginlyFactory, accounts, usdc, weth, logger } = sut;
   const discountedBaseCollateral = await marginlyPool.discountedBaseCollateral();
   const discountedBaseDebt = await marginlyPool.discountedBaseDebt();
   const discountedQuoteCollateral = await marginlyPool.discountedQuoteCollateral();

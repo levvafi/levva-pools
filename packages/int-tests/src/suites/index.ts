@@ -1,6 +1,6 @@
 import { EventLog, parseUnits } from 'ethers';
 import { ethers } from 'hardhat';
-import { logger } from '../utils/logger';
+import { createTestLogger } from '../utils/logger';
 import { initUsdc, initWeth } from '../utils/erc20-init';
 import { uniswapFactoryContract, uniswapPoolContract } from '../utils/known-contracts';
 import { Dex } from '../utils/chain-ops';
@@ -38,6 +38,7 @@ import {
 
 import { UniswapV3TickOracle__factory } from '../../../periphery/typechain-types';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
+import { Logger } from 'pino';
 
 /// @dev theme paddle front firm patient burger forward little enter pause rule limb
 export const FeeHolder = '0x4c576Bf4BbF1d9AB9c359414e5D2b466bab085fa';
@@ -60,17 +61,19 @@ export type SystemUnderTest = {
   usdc: IUSDC;
   weth: IWETH9;
   gasReporter: GasReporter;
+  logger: Logger;
 };
 
 export async function initializeTestSystem(): Promise<SystemUnderTest> {
+  const logger = createTestLogger();
   logger.info('Initializing');
   const accounts = await ethers.getSigners();
   const count = accounts.length - 1;
   for (let i = 0; i < count; ++i) {}
   const treasury = accounts[0];
 
-  const weth = await initWeth(treasury, treasury.provider);
-  const usdc = await initUsdc(treasury, treasury.provider);
+  const weth = await initWeth(treasury, treasury.provider, logger);
+  const usdc = await initUsdc(treasury, treasury.provider, logger);
 
   const uniswapFactory = uniswapFactoryContract(treasury);
   logger.info(`uniswapFactory: ${await uniswapFactory.getAddress()}`);
@@ -169,7 +172,7 @@ export async function initializeTestSystem(): Promise<SystemUnderTest> {
   };
 
   const defaultSwapCallData = 0;
-  const gasReporter = new GasReporter('FIXME');
+  const gasReporter = new GasReporter('FIXME', logger);
   const txReceipt = await gasReporter.saveGasUsage(
     'factory.createPool',
     marginlyFactory.createPool(usdc, weth, priceOracle, defaultSwapCallData, initialParams)
@@ -217,5 +220,6 @@ export async function initializeTestSystem(): Promise<SystemUnderTest> {
     keeperBalancer,
     keeperAlgebra,
     gasReporter,
+    logger,
   };
 }
