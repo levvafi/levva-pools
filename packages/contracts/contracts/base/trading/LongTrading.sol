@@ -30,51 +30,44 @@ abstract contract LongTrading is Liquidations {
   }
 
   /// @notice Long with leverage
-  /// @param realBaseAmount Amount of base token
   /// @param basePrice current oracle base price, got by getBasePrice() method
   /// @param position msg.sender position
   function _long(
-    uint256 realBaseAmount,
+    uint256 amount,
+    bool amountInQuote,
     uint256 limitPriceX96,
     FP96.FixedPoint memory basePrice,
     Position storage position,
     address positionOwner,
     uint256 swapCalldata
   ) internal virtual override {
-    if (basePrice.mul(_newPoolBaseBalance(realBaseAmount)) > params.quoteLimit) revert MarginlyErrors.ExceedsLimit();
-
     // this function guaranties the position is gonna be either Long or Lend with 0 quote balance
     _sellQuoteForBase(position, positionOwner, limitPriceX96, swapCalldata);
 
     uint256 positionDisQuoteDebt = position.discountedQuoteAmount;
     uint256 positionDisBaseCollateral = position.discountedBaseAmount;
-
-    {
-      uint256 currentBaseCollateral = _calcRealBaseCollateral(positionDisBaseCollateral, positionDisQuoteDebt);
-      if (currentBaseCollateral < params.positionMinAmount) revert MarginlyErrors.LessThanMinimalAmount();
+    if (_calcRealBaseCollateral(positionDisBaseCollateral, positionDisQuoteDebt) < params.positionMinAmount) {
+      revert MarginlyErrors.LessThanMinimalAmount();
     }
 
-    // realQuoteInMaximum is defined by user input limitPriceX96
-    uint256 realQuoteInMaximum = Math.mulDiv(limitPriceX96, realBaseAmount, FP96.Q96);
-    uint256 realQuoteAmount = _swapExactOutput(true, realQuoteInMaximum, realBaseAmount, swapCalldata);
-    uint256 swapPriceX96 = _calcSwapPrice(realQuoteAmount, realBaseAmount);
-
-    uint256 discountedQuoteDebtChange;
-    {
-      uint256 realSwapFee = Math.mulDiv(params.swapFee, realQuoteAmount, WHOLE_ONE);
-      _chargeFee(realSwapFee);
-
-      discountedQuoteDebtChange = quoteDebtCoeff.recipMul(realQuoteAmount.add(realSwapFee));
-    }
-
-    position.discountedQuoteAmount = positionDisQuoteDebt.add(discountedQuoteDebtChange);
-    discountedQuoteDebt = discountedQuoteDebt.add(discountedQuoteDebtChange);
-
-    uint256 discountedBaseCollateralChange = baseCollateralCoeff.recipMul(
-      realBaseAmount.add(baseDelevCoeff.mul(discountedQuoteDebtChange))
+    (uint256 baseCollateralDelta, uint256 quoteDebtDelta, uint256 swapPriceX96) = _longSwap(
+      amount,
+      amountInQuote,
+      limitPriceX96,
+      swapCalldata
     );
-    position.discountedBaseAmount = positionDisBaseCollateral.add(discountedBaseCollateralChange);
-    discountedBaseCollateral = discountedBaseCollateral.add(discountedBaseCollateralChange);
+    if (basePrice.mul(_newPoolBaseBalance(baseCollateralDelta)) > params.quoteLimit)
+      revert MarginlyErrors.ExceedsLimit();
+
+    uint256 discountedQuoteDebtDelta = quoteDebtCoeff.recipMul(quoteDebtDelta);
+    position.discountedQuoteAmount = positionDisQuoteDebt.add(discountedQuoteDebtDelta);
+    discountedQuoteDebt = discountedQuoteDebt.add(discountedQuoteDebtDelta);
+
+    uint256 discountedBaseCollateralDelta = baseCollateralCoeff.recipMul(
+      baseCollateralDelta.add(baseDelevCoeff.mul(discountedQuoteDebtDelta))
+    );
+    position.discountedBaseAmount = positionDisBaseCollateral.add(discountedBaseCollateralDelta);
+    discountedBaseCollateral = discountedBaseCollateral.add(discountedBaseCollateralDelta);
 
     if (position._type == PositionType.Lend) {
       if (position.heapPosition != 0) revert MarginlyErrors.WrongIndex();
@@ -85,7 +78,14 @@ abstract contract LongTrading is Liquidations {
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    emit Long(positionOwner, realBaseAmount, swapPriceX96, discountedQuoteDebtChange, discountedBaseCollateralChange);
+    emit Long(
+      positionOwner,
+      amount,
+      amountInQuote,
+      swapPriceX96,
+      discountedQuoteDebtDelta,
+      discountedBaseCollateralDelta
+    );
   }
 
   /// @notice Close position
@@ -410,5 +410,31 @@ abstract contract LongTrading is Liquidations {
     uint96 sortKey = _calcSortKey(position.discountedBaseAmount, position.discountedQuoteAmount);
     uint32 heapIndex = position.heapPosition - 1;
     longHeap.update(positions, heapIndex, sortKey);
+  }
+
+  function _longSwap(
+    uint256 amount,
+    bool amountInQuote,
+    uint256 limitPriceX96,
+    uint256 swapCalldata
+  ) private returns (uint256 baseCollateralDelta, uint256 quoteDebtDelta, uint256 swapPriceX96) {
+    if (amountInQuote) {
+      uint256 baseOutMinimum = Math.mulDiv(amount, FP96.Q96, limitPriceX96);
+      baseCollateralDelta = _swapExactInput(true, amount, baseOutMinimum, swapCalldata);
+      swapPriceX96 = _calcSwapPrice(amount, baseCollateralDelta);
+
+      uint256 swapFee = Math.mulDiv(params.swapFee, amount, WHOLE_ONE);
+      quoteDebtDelta = amount.add(swapFee);
+      _chargeFee(swapFee);
+    } else {
+      baseCollateralDelta = amount;
+      uint256 quoteInMaximum = Math.mulDiv(limitPriceX96, amount, FP96.Q96);
+      uint256 quoteIn = _swapExactOutput(true, quoteInMaximum, amount, swapCalldata);
+      swapPriceX96 = _calcSwapPrice(quoteIn, amount);
+
+      uint256 swapFee = Math.mulDiv(params.swapFee, quoteIn, WHOLE_ONE);
+      quoteDebtDelta = quoteIn.add(swapFee);
+      _chargeFee(swapFee);
+    }
   }
 }

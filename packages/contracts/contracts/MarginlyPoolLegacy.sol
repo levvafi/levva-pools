@@ -856,7 +856,7 @@ contract MarginlyPoolLegacy is IMarginlyPool {
 
     if (positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    emit Short(msg.sender, realBaseAmount, swapPriceX96, discountedQuoteChange, discountedBaseDebtChange);
+    emit Short(msg.sender, realBaseAmount, false, swapPriceX96, discountedQuoteChange, discountedBaseDebtChange);
   }
 
   /// @notice Long with leverage
@@ -910,7 +910,14 @@ contract MarginlyPoolLegacy is IMarginlyPool {
 
     if (positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    emit Long(msg.sender, realBaseAmount, swapPriceX96, discountedQuoteDebtChange, discountedBaseCollateralChange);
+    emit Long(
+      msg.sender,
+      realBaseAmount,
+      false,
+      swapPriceX96,
+      discountedQuoteDebtChange,
+      discountedBaseCollateralChange
+    );
   }
 
   /// @notice sells all the base tokens from lend position for quote ones
