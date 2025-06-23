@@ -1,16 +1,16 @@
 import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
-import { encodeLiquidationParamsBalancer } from '../utils/marginly-keeper';
-import { LevvaTradingPool } from '../../../contracts/typechain-types';
+import { encodeLiquidationParamsAave } from '../utils/marginly-keeper';
+import { LevvaTradingPool } from '../../../../contracts/typechain-types';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { FP96 } from '../utils/fixed-point';
 import { Logger } from 'pino';
 
-describe('KeeperBalancer', () => {
-  it('KeeperBalancer', async () => {
+describe('KeeperAave', () => {
+  it('KeeperAave', async () => {
     const sut = await loadFixture(initializeTestSystem);
-    await keeperBalancer(sut);
+    await keeperAave(sut);
     sut.logger.flush();
   });
 });
@@ -53,8 +53,8 @@ async function getDebtAmount(
   }
 }
 
-async function keeperBalancer(sut: SystemUnderTest) {
-  const { marginlyPool, keeperBalancer, treasury, usdc, weth, accounts, gasReporter, logger } = sut;
+async function keeperAave(sut: SystemUnderTest) {
+  const { marginlyPool, keeperAave, treasury, usdc, weth, accounts, gasReporter, logger } = sut;
 
   logger.info(`Starting keeper liquidation test suite`);
   const ethArgs = { gasLimit: 1_000_000 };
@@ -73,7 +73,7 @@ async function keeperBalancer(sut: SystemUnderTest) {
 
     await marginlyPool
       .connect(lender)
-      .execute(CallType.DepositBase, baseAmount, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), ethArgs);
+      .execute(CallType.DepositBase, baseAmount, 0, 0, false, ZeroAddress, uniswapV3Swapdata());
     await marginlyPool
       .connect(lender)
       .execute(CallType.DepositQuote, quoteAmount, 0, 0, false, ZeroAddress, uniswapV3Swapdata(), ethArgs);
@@ -82,8 +82,8 @@ async function keeperBalancer(sut: SystemUnderTest) {
   const longer = accounts[1];
   logger.info(`Deposit longer account`);
   {
-    const baseAmount = parseUnits('1', 18); // 0.1 WETH
-    const longAmount = parseUnits('17', 18); //1.7 WETH
+    const baseAmount = parseUnits('1', 18); // 1 WETH
+    const longAmount = parseUnits('17', 18); // 17 WETH
 
     await (await weth.connect(treasury).transfer(longer, baseAmount)).wait();
     await (await weth.connect(longer).approve(marginlyPool, baseAmount)).wait();
@@ -178,20 +178,21 @@ async function keeperBalancer(sut: SystemUnderTest) {
   const swapCallData = 0n;
   const minProfit = 0n;
 
-  const longerLiqParams = encodeLiquidationParamsBalancer(
+  const longerLiqParams = encodeLiquidationParamsAave(
     marginlyPool.target,
     longer.address,
     liquidator.address,
     minProfit,
     swapCallData
   );
-  const ethOpts = {
+
+  const ethOptions = {
     gasLimit: 1_000_000,
   };
 
   await gasReporter.saveGasUsage(
-    'keeperBalancer.liquidatePosition',
-    keeperBalancer.connect(liquidator).liquidatePosition(usdc, longerDebtAmount, longerLiqParams, ethOpts)
+    'keeperAave.liquidatePosition',
+    keeperAave.connect(liquidator).liquidatePosition(usdc, longerDebtAmount, longerLiqParams, ethOptions)
   );
 
   let balanceAfter = await usdc.balanceOf(liquidator);
@@ -199,7 +200,7 @@ async function keeperBalancer(sut: SystemUnderTest) {
   let profit = formatUnits(balanceAfter - balanceBefore, await usdc.decimals());
   logger.info(`Profit after long position liquidation is ${profit} USDC`);
 
-  const shorterLiqParams = encodeLiquidationParamsBalancer(
+  const shorterLiqParams = encodeLiquidationParamsAave(
     marginlyPool.target,
     shorter.address,
     liquidator.address,
@@ -207,10 +208,10 @@ async function keeperBalancer(sut: SystemUnderTest) {
     swapCallData
   );
 
-  balanceBefore = await weth.balanceOf(liquidator);
+  balanceBefore = await weth.balanceOf(liquidator.address);
   await gasReporter.saveGasUsage(
     'keeperAave.liquidatePosition',
-    keeperBalancer.connect(liquidator).liquidatePosition(weth, shorterDebtAmount, shorterLiqParams, ethOpts)
+    keeperAave.connect(liquidator).liquidatePosition(weth, shorterDebtAmount, shorterLiqParams, ethOptions)
   );
 
   balanceAfter = await weth.balanceOf(liquidator);

@@ -1,5 +1,5 @@
 import { formatUnits } from 'ethers';
-import { FP96, toHumanString } from '../utils/fixed-point';
+import { FP96, toHumanString } from './fixed-point';
 import { SystemUnderTest, TechnicalPositionOwner } from '../suites';
 
 export async function showSystemAggregates(sut: SystemUnderTest) {

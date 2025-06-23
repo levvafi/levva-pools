@@ -18,13 +18,13 @@ import {
   MarginlyKeeperUniswapV3__factory,
   LevvaTradingPool,
   LevvaTradingPool__factory,
-} from '../../../contracts/typechain-types';
+} from '../../../../contracts/typechain-types';
 import {
   MarginlyKeeperAave,
   MarginlyKeeperUniswapV3,
   MarginlyKeeperBalancer,
   MarginlyKeeperAlgebra,
-} from '../../../contracts/typechain-types';
+} from '../../../../contracts/typechain-types';
 import {
   MarginlyRouter,
   UniswapV3Adapter__factory,
@@ -34,9 +34,9 @@ import {
   DodoV1Adapter__factory,
   DodoV2Adapter__factory,
   MarginlyRouter__factory,
-} from '../../../router/typechain-types';
+} from '../../../../router/typechain-types';
 
-import { UniswapV3TickOracle__factory } from '../../../periphery/typechain-types';
+import { UniswapV3TickOracle__factory } from '../../../../periphery/typechain-types';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { Logger } from 'pino';
 

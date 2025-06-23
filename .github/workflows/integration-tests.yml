@@ -31,13 +31,11 @@ jobs:
           node-version: 24.2.0
       - name: Build for testing
         run: |
-          cd ./packages/contracts/
-          yarn && yarn compile
-          cd ../router
+          cd ./packages/router/
           yarn && yarn compile
           cd ../periphery
           yarn && yarn compile
       - name: Integration testing
         run: |
-          cd ./packages/int-tests/
-          yarn test:parallel
+          cd ./packages/contracts/
+          yarn test:int-pool-parallel

@@ -1,16 +1,16 @@
 import { formatUnits, parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
-import { encodeLiquidationParams } from '../utils/marginly-keeper';
-import { LevvaTradingPool } from '../../../contracts/typechain-types';
+import { encodeLiquidationParamsBalancer } from '../utils/marginly-keeper';
+import { LevvaTradingPool } from '../../../../contracts/typechain-types';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { FP96 } from '../utils/fixed-point';
 import { Logger } from 'pino';
 
-describe('KeeperUniswapV3', () => {
-  it('KeeperUniswapV3', async () => {
+describe('KeeperBalancer', () => {
+  it('KeeperBalancer', async () => {
     const sut = await loadFixture(initializeTestSystem);
-    await keeperUniswapV3(sut);
+    await keeperBalancer(sut);
     sut.logger.flush();
   });
 });
@@ -21,9 +21,6 @@ type PoolCoeffs = {
   quoteCollateralCoeffX96: bigint;
   quoteDebtCoeffX96: bigint;
 };
-
-//To generate swapCallData use script here https://dotnetfiddle.net/zAmYaP
-const keeperSwapCallData = 7864321n;
 
 async function getDebtAmount(
   marginlyPool: LevvaTradingPool,
@@ -56,8 +53,8 @@ async function getDebtAmount(
   }
 }
 
-async function keeperUniswapV3(sut: SystemUnderTest) {
-  const { marginlyPool, keeperUniswapV3, treasury, usdc, weth, accounts, uniswap, gasReporter, logger } = sut;
+async function keeperBalancer(sut: SystemUnderTest) {
+  const { marginlyPool, keeperBalancer, treasury, usdc, weth, accounts, gasReporter, logger } = sut;
 
   logger.info(`Starting keeper liquidation test suite`);
   const ethArgs = { gasLimit: 1_000_000 };
@@ -125,7 +122,7 @@ async function keeperUniswapV3(sut: SystemUnderTest) {
     ).wait();
   }
 
-  // Set parameters.maxLeverage to leverage 15
+  // Set parameters to leverage 15
   {
     const params = await marginlyPool.params();
     const newParams = {
@@ -178,55 +175,43 @@ async function keeperUniswapV3(sut: SystemUnderTest) {
 
   let balanceBefore = await usdc.balanceOf(liquidator);
 
-  {
-    const [amount0, amount1] =
-      (await uniswap.token0()) == (await usdc.getAddress()) ? [longerDebtAmount, 0] : [0, longerDebtAmount];
-    const liquidationParams = encodeLiquidationParams(
-      usdc.target,
-      longerDebtAmount,
-      marginlyPool.target,
-      longer.address,
-      liquidator.address,
-      uniswap.target,
-      0n,
-      keeperSwapCallData
-    );
+  const swapCallData = 0n;
+  const minProfit = 0n;
 
-    await gasReporter.saveGasUsage(
-      'keeperUniswapV3.liquidatePosition',
-      keeperUniswapV3.connect(liquidator).liquidatePosition(uniswap, amount0, amount1, liquidationParams, {
-        gasLimit: 1_000_000,
-      })
-    );
-  }
+  const longerLiqParams = encodeLiquidationParamsBalancer(
+    marginlyPool.target,
+    longer.address,
+    liquidator.address,
+    minProfit,
+    swapCallData
+  );
+  const ethOpts = {
+    gasLimit: 1_000_000,
+  };
+
+  await gasReporter.saveGasUsage(
+    'keeperBalancer.liquidatePosition',
+    keeperBalancer.connect(liquidator).liquidatePosition(usdc, longerDebtAmount, longerLiqParams, ethOpts)
+  );
 
   let balanceAfter = await usdc.balanceOf(liquidator);
 
   let profit = formatUnits(balanceAfter - balanceBefore, await usdc.decimals());
   logger.info(`Profit after long position liquidation is ${profit} USDC`);
 
-  balanceBefore = await weth.balanceOf(liquidator);
-  {
-    const [amount0, amount1] =
-      (await uniswap.token0()) == (await weth.getAddress()) ? [shorterDebtAmount, 0] : [0, shorterDebtAmount];
-    const liquidationParams = encodeLiquidationParams(
-      weth.target,
-      shorterDebtAmount,
-      marginlyPool.target,
-      shorter.address,
-      liquidator.address,
-      uniswap.target,
-      0n,
-      keeperSwapCallData
-    );
+  const shorterLiqParams = encodeLiquidationParamsBalancer(
+    marginlyPool.target,
+    shorter.address,
+    liquidator.address,
+    minProfit,
+    swapCallData
+  );
 
-    await gasReporter.saveGasUsage(
-      'keeper.liquidatePosition',
-      keeperUniswapV3.connect(liquidator).liquidatePosition(uniswap, amount0, amount1, liquidationParams, {
-        gasLimit: 1_000_000,
-      })
-    );
-  }
+  balanceBefore = await weth.balanceOf(liquidator);
+  await gasReporter.saveGasUsage(
+    'keeperAave.liquidatePosition',
+    keeperBalancer.connect(liquidator).liquidatePosition(weth, shorterDebtAmount, shorterLiqParams, ethOpts)
+  );
 
   balanceAfter = await weth.balanceOf(liquidator);
   profit = formatUnits(balanceAfter - balanceBefore, await weth.decimals());

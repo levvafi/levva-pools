@@ -1,10 +1,4 @@
-# Marginly integration tests
-
-Generate types for contracts before start
-
-```
-yarn gen
-```
+# Levva pool integration tests
 
 ## Run test
 

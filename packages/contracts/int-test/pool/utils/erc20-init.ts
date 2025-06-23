@@ -2,7 +2,7 @@ import { INITIAL_USDC, INITIAL_ETH } from './const';
 import assert from 'assert';
 import { Provider } from 'ethers';
 import { usdcContract, wethContract } from './known-contracts';
-import { IWETH9, IUSDC } from '../../../contracts/typechain-types';
+import { IWETH9, IUSDC } from '../../../../contracts/typechain-types';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { ethers } from 'hardhat';
 import { setBalance } from '@nomicfoundation/hardhat-network-helpers';

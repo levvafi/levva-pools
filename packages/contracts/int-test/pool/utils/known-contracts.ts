@@ -1,7 +1,7 @@
 import { ContractRunner } from 'ethers';
-import { IUniswapV3Factory__factory } from '../../../contracts/typechain-types';
-import { IUniswapV3Pool__factory } from '../../../contracts/typechain-types';
-import { IWETH9__factory, IUSDC__factory } from '../../../contracts/typechain-types';
+import { IUniswapV3Factory__factory } from '../../../../contracts/typechain-types';
+import { IUniswapV3Pool__factory } from '../../../../contracts/typechain-types';
+import { IWETH9__factory, IUSDC__factory } from '../../../../contracts/typechain-types';
 
 export const wethContract = (signerOrProvider?: ContractRunner) =>
   IWETH9__factory.connect(`0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2`, signerOrProvider);

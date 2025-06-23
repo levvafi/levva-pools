@@ -1,7 +1,7 @@
 import { AbiCoder, Addressable, BrowserProvider, ContractTransactionReceipt, formatUnits, Log } from 'ethers';
 import { ceilDivision, FP96, powTaylor } from './fixed-point';
 import { TechnicalPositionOwner } from '../suites';
-import { LevvaTradingPool } from '../../../contracts/typechain-types';
+import { LevvaTradingPool } from '../../../../contracts/typechain-types';
 import { Logger } from 'pino';
 
 export const PositionType = {
