@@ -23,3 +23,6 @@ jobs:
         cd packages/contracts
         yarn
         yarn test
+      env:
+        ETH_NODE_URL: ${{ secrets.ETH_NODE_URL }}
+        ARB_NODE_URL: ${{ secrets.ARB_NODE_URL }}

@@ -39,3 +39,6 @@ jobs:
         run: |
           cd ./packages/contracts/
           yarn test:int-pool-parallel
+        env:
+          ETH_NODE_URL: ${{ secrets.ETH_NODE_URL }}
+          ARB_NODE_URL: ${{ secrets.ARB_NODE_URL }}
