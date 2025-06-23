@@ -15,7 +15,7 @@
     "test:coverage": "UPDATE_SNAPSHOT=1 REPORT_GAS=true hardhat coverage  --testfiles './test/*.spec.ts'",
     "test:bench": "REPORT_GAS=true hardhat test ./test/benchmarks/*.bench.ts",
     "test:benchFP": "REPORT_GAS=true hardhat test ./test/benchmarks/FixedPoint.bench.ts",
-    "lint:write": "prettier --write ./contracts ./test",
+    "lint:write": "prettier --write ./contracts ./test ./int-test",
     "docgen": "hardhat docgen"
   },
   "devDependencies": {
@@ -43,6 +43,8 @@
     "hardhat-gas-reporter": "^2.3.0",
     "mocha-chai-jest-snapshot": "^1.1.4",
     "optifat-snapshot-gas-cost": "1.1.0",
+    "pino": "^9.7.0",
+    "pino-pretty": "^13.0.0",
     "solhint": "5.1.0",
     "solhint-plugin-prettier": "0.1.0",
     "solidity-coverage": "^0.8.2",
