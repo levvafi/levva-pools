@@ -2,7 +2,7 @@ import { ethers } from 'hardhat';
 import { expect } from 'chai';
 import { MockPriceOracleV2, PriceOracleProxy, PriceOracleProxy__factory } from '../../typechain-types';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
-import { ZeroAddress } from './shared/fixtures';
+import { ZeroAddress } from 'ethers';
 
 describe('PriceOracleProxy', () => {
   let owner: SignerWithAddress;

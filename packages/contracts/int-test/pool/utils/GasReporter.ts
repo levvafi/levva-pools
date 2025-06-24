@@ -15,7 +15,10 @@ export class GasReporter {
   private gasUsage: { [key: string]: [number, bigint][] } = {};
   private logger: Logger;
 
-  constructor(private suiteName: string, logger: Logger) {
+  constructor(
+    private suiteName: string,
+    logger: Logger
+  ) {
     this.logger = logger;
   }
 

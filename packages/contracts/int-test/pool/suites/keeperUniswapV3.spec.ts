@@ -146,7 +146,7 @@ async function keeperUniswapV3(sut: SystemUnderTest) {
     bigint,
     bigint,
     bigint,
-    bigint
+    bigint,
   ] = await Promise.all([
     marginlyPool.getBasePrice(),
     marginlyPool.params(),

@@ -1,5 +1,8 @@
 import { ethers } from 'hardhat';
 
+export const oneX96 = 2n ** 96n;
+export const one = 10n ** 18n;
+
 export function printPrices(balancePrice: bigint, mcPrice: bigint, decimalsDiff: bigint) {
   console.log(`Balance price is ${toHumanPrice(balancePrice, decimalsDiff)}  (${balancePrice})`);
   console.log(`MC price is ${toHumanPrice(mcPrice, decimalsDiff)} (${mcPrice})`);

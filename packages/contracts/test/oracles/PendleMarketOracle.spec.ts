@@ -5,7 +5,7 @@ import {
   createPendleMarketOracleAfterMaturity,
   createPendleMarketOracleWithoutPairs,
 } from './shared/fixtures';
-import { one, oneX96 } from './int/pendle/common';
+import { one, oneX96 } from './shared/common';
 
 describe('PendleMarketOracle prices before maturity', () => {
   it('getBalancePrice', async () => {

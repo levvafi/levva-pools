@@ -1,10 +1,10 @@
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
-import { getDecimalsDiff, printPrices } from '../../shared/common';
+import { getDecimalsDiff, printPrices } from '../shared/common';
 import { EulerPriceOracle } from '../../../typechain-types';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { reset } from '@nomicfoundation/hardhat-network-helpers';
-const hre = require('hardhat');
+import hre from 'hardhat';
 
 async function resetFork(blockNumber?: number) {
   const hardhatConfig = (<HardhatRuntimeEnvironment>hre).config;

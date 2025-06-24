@@ -7,11 +7,10 @@ import {
   createCurveNGOracleBackward,
   createCurveNGOracleForward,
   createCurveNGOracleWithoutAddingPool,
-  ZeroAddress,
 } from './shared/fixtures';
 import { ethers } from 'hardhat';
 import { TestCurveEMAPool } from '../../typechain-types';
-import { Addressable } from 'ethers';
+import { Addressable, ZeroAddress } from 'ethers';
 
 const X96One = 1n << 96n;
 

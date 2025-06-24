@@ -62,9 +62,8 @@ describe('PythOracle prices', () => {
     });
 
     it(`${getPrice} composite price`, async () => {
-      const { oracle, pyth, quoteToken, baseToken, quotePythId, basePythId } = await loadFixture(
-        createSomePythCompositeOracle
-      );
+      const { oracle, pyth, quoteToken, baseToken, quotePythId, basePythId } =
+        await loadFixture(createSomePythCompositeOracle);
       const currentTime = await time.latest();
       await pyth.setPrice(quotePythId, 2000, 0, currentTime);
       await pyth.setPrice(basePythId, 40000, 0, currentTime);

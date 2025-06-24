@@ -1,9 +1,9 @@
 import { ethers } from 'hardhat';
 import { MarginlyCompositeOracle, PendleMarketOracle, PythOracle } from '../../../typechain-types/contracts/oracles';
-import { getDecimalsDiff, printPrices } from '../../shared/common';
+import { getDecimalsDiff, printPrices } from '../shared/common';
 import { CurveOracle } from '../../../typechain-types';
 
-describe.only('Composite oracle PT-wstUSR/USR with Pendle for PT-wstUSR/wstUSR, Pyth wstUSR/USR', () => {
+describe('Composite oracle PT-wstUSR/USR with Pendle for PT-wstUSR/wstUSR, Pyth wstUSR/USR', () => {
   //https://docs.pyth.network/home/pyth-token/pyth-token-addresses
   const pythContractAddress = '0x4305fb66699c3b2702d4d05cf36551390a4c69c6';
   const priceFeedId = '0xb74c2bc175c2dab850ce5a5451608501c293fe8410cb4aba7449dd1c355ab706';
@@ -62,7 +62,7 @@ describe.only('Composite oracle PT-wstUSR/USR with Pendle for PT-wstUSR/wstUSR, 
   });
 });
 
-describe.only('Composite oracle Spectra PT-wstUSR/USR, Pyth wstUSR/USR', () => {
+describe('Composite oracle Spectra PT-wstUSR/USR, Pyth wstUSR/USR', () => {
   //https://docs.pyth.network/home/pyth-token/pyth-token-addresses
   const pythContractAddress = '0x4305fb66699c3b2702d4d05cf36551390a4c69c6';
   const priceFeedId = '0xb74c2bc175c2dab850ce5a5451608501c293fe8410cb4aba7449dd1c355ab706';

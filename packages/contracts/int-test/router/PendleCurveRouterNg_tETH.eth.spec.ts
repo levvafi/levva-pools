@@ -262,7 +262,7 @@ describe('Pendle PT-tETH - WETH', () => {
       );
     });
 
-    it.only('pt-tETH to WETH exact output', async () => {
+    it('pt-tETH to WETH exact output', async () => {
       const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `ptBalanceBefore: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`

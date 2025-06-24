@@ -4,9 +4,9 @@ import {
   MarginlyCompositeOracle,
   PendleMarketOracle,
 } from '../../../typechain-types/contracts/oracles';
-import { getDecimalsDiff, printPrices } from '../../shared/common';
+import { getDecimalsDiff, printPrices } from '../shared/common';
 
-describe.only('Composite oracle PT-asonUSDC/USDC.e with Pendle for PT-asonUSDC/asonUSDC, Aave asonUSDC/USDC.e', () => {
+describe('Composite oracle PT-asonUSDC/USDC.e with Pendle for PT-asonUSDC/asonUSDC, Aave asonUSDC/USDC.e', () => {
   const ptAsonUSDC14Aug2025 = '0x930441aa7ab17654df5663781ca0c02cc17e6643';
   const aSonUsdc = '0x578Ee1ca3a8E1b54554Da1Bf7C583506C4CD11c6';
   const usdce = '0x29219dd400f2bf60e5a23d13be72b486d4038894';

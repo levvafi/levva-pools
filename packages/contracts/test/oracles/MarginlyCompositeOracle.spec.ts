@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { ZeroAddress, createEmptyMarginlyCompositeOracle, createMarginlyCompositeOracle } from './shared/fixtures';
+import { createEmptyMarginlyCompositeOracle, createMarginlyCompositeOracle } from './shared/fixtures';
+import { ZeroAddress } from 'ethers';
 
 describe('MarginlyCompositeOracle', () => {
   it('should fail when zero address passed', async () => {

@@ -95,9 +95,8 @@ describe('TimelockWhitelist', function () {
     });
 
     it('Should set predefined whitelisted targets and methods', async () => {
-      const { timelock, minDelay, whitelistedMethods, whitelistedTargets } = await loadFixture(
-        deployTimelockWithWhitelist
-      );
+      const { timelock, minDelay, whitelistedMethods, whitelistedTargets } =
+        await loadFixture(deployTimelockWithWhitelist);
 
       for (let i = 0; i < whitelistedMethods.length; i++) {
         expect(await timelock.isWhitelisted(whitelistedTargets[i], whitelistedMethods[i])).to.equal(true);

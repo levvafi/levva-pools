@@ -35,10 +35,8 @@ import {
   UniswapV3TickOracle,
   UniswapV3TickOracleDouble,
 } from '../../../typechain-types';
-import { one, oneX96 } from '../int/pendle/common';
 import { Addressable, parseUnits } from 'ethers';
-
-export const ZeroAddress = '0x0000000000000000000000000000000000000000';
+import { one, oneX96 } from './common';
 
 //Some random addresses for testing purposes
 export const Tokens = {

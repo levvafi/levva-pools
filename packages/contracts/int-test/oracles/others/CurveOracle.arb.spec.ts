@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { createCurveCaseCrvUsdUsdc, createCurveCaseFrxEthWeth, CurveOracleCaseParams } from '../../shared/fixtures';
+import { createCurveCaseCrvUsdUsdc, createCurveCaseFrxEthWeth, CurveOracleCaseParams } from '../shared/fixtures';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { oneX96 } from '../pendle/common';
 import { formatEther } from 'ethers';

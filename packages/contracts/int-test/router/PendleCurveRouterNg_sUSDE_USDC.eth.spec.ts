@@ -148,7 +148,7 @@ describe('Pendle PT-sUSDe - USDC', () => {
       expect(tokenBalanceBefore - tokenBalanceAfter).to.be.lessThanOrEqual(usdcSwapAmount);
     });
 
-    it.only('USDC to pt-sUSDe exact output', async () => {
+    it('USDC to pt-sUSDe exact output', async () => {
       const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `pt-susde balance Before: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
@@ -196,7 +196,7 @@ describe('Pendle PT-sUSDe - USDC', () => {
       );
     });
 
-    it.only('USDC to pt-SUSDE exact output, small amount', async () => {
+    it('USDC to pt-SUSDE exact output, small amount', async () => {
       const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `pt-susde balance Before: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`
@@ -277,7 +277,7 @@ describe('Pendle PT-sUSDe - USDC', () => {
       );
     });
 
-    it.only('pt-sUSDe to USDC exact output', async () => {
+    it('pt-sUSDe to USDC exact output', async () => {
       const ptBalanceBefore = await ptToken.balanceOf(user);
       const usdcBalanceBefore = await usdc.balanceOf(user);
 

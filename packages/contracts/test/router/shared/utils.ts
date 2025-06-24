@@ -4,7 +4,7 @@ import { formatUnits } from 'ethers';
 import { reset } from '@nomicfoundation/hardhat-network-helpers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { expect } from 'chai';
-const hre = require('hardhat');
+import hre from 'hardhat';
 
 export const SWAP_ONE = 1 << 15;
 

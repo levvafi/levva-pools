@@ -6,7 +6,7 @@ import { MarginlyRouter__factory } from '../../../typechain-types';
 import { PendleAdapter__factory } from '../../../typechain-types';
 import { Addressable, formatUnits, keccak256, parseUnits, toBeHex } from 'ethers';
 import { MarginlyFactory__factory, LevvaTradingPool__factory } from '../../../typechain-types';
-import { MarginlyParamsStruct } from '../../../typechain-types/contracts/interfaces/IMarginlyPool';
+import { MarginlyParamsStruct } from '../../../typechain-types/contracts/pool/interfaces/IMarginlyPool';
 import { ZeroAddress } from 'ethers';
 
 export const CallType = {

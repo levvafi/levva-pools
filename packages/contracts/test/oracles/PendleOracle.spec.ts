@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { createPendleUnitTestCase } from './shared/fixtures';
 import { ethers } from 'hardhat';
-import { one, oneX96 } from './int/pendle/common';
+import { one, oneX96 } from './shared/common';
 
 describe('PendleOracle prices before maturity', () => {
   it('getBalancePrice', async () => {

@@ -31,9 +31,8 @@ function encodeLiquidationParams(
 
 describe('MarginlyKeeperBalancer', () => {
   it('Should liquidate short bad position', async () => {
-    const { keeper, swapRouter, baseToken, marginlyPool, balancerVault } = await loadFixture(
-      createMarginlyKeeperBalancer
-    );
+    const { keeper, swapRouter, baseToken, marginlyPool, balancerVault } =
+      await loadFixture(createMarginlyKeeperBalancer);
     const [, badPosition, liquidator] = await ethers.getSigners();
     const decimals = await baseToken.decimals();
     const price = 1500; // 1 ETH = 1500 USDC
@@ -74,9 +73,8 @@ describe('MarginlyKeeperBalancer', () => {
   });
 
   it('Should liquidate long position', async () => {
-    const { keeper, swapRouter, baseToken, quoteToken, marginlyPool, balancerVault } = await loadFixture(
-      createMarginlyKeeperBalancer
-    );
+    const { keeper, swapRouter, baseToken, quoteToken, marginlyPool, balancerVault } =
+      await loadFixture(createMarginlyKeeperBalancer);
     const [, badPosition, liquidator] = await ethers.getSigners();
     const decimals = await baseToken.decimals();
     const price = 1500; // 1 ETH = 1500 USDC
@@ -117,9 +115,8 @@ describe('MarginlyKeeperBalancer', () => {
   });
 
   it('Should fail when profit after liquidation less than minimum', async () => {
-    const { keeper, swapRouter, baseToken, quoteToken, marginlyPool, balancerVault } = await loadFixture(
-      createMarginlyKeeperBalancer
-    );
+    const { keeper, swapRouter, baseToken, quoteToken, marginlyPool, balancerVault } =
+      await loadFixture(createMarginlyKeeperBalancer);
     const [, badPosition, liquidator] = await ethers.getSigners();
     const decimals = await baseToken.decimals();
     const price = 1500; // 1 ETH = 1500 USDC

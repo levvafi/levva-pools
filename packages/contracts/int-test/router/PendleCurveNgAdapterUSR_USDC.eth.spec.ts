@@ -77,7 +77,7 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
       ({ ptToken, usdcToken: usdc, usrToken: usr, router, pendleCurveAdapter, owner, user } = await initializeRouter());
     });
 
-    it.only('USDC to PT-wstUSR exact input', async () => {
+    it('USDC to PT-wstUSR exact input', async () => {
       const ptBalanceBefore = await ptToken.balanceOf(user);
       console.log(
         `PT-wstUSR balance Before: ${formatUnits(ptBalanceBefore, await ptToken.decimals())} ${await ptToken.symbol()}`

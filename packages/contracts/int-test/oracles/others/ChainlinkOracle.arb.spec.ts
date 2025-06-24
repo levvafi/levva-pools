@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import { ChainlinkOracle } from '../../../typechain-types/contracts/oracles';
-import { getDecimalsDiff, printPrices } from '../../shared/common';
+import { getDecimalsDiff, printPrices } from '../shared/common';
 
 describe('ChainlinkOracle', () => {
   let oracle: ChainlinkOracle;

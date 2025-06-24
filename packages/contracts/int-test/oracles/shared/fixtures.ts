@@ -3,7 +3,6 @@ import { time } from '@nomicfoundation/hardhat-network-helpers';
 import {
   TestUniswapPool,
   TestUniswapFactory,
-  TestUniswapV3Factory,
   PythOracle,
   MockPyth,
   ChainlinkOracle,
@@ -28,18 +27,16 @@ import {
   MarginlyCompositeOracle,
   IPPYLpOracle__factory,
   TestCurveStableSwapNGPool__factory,
-} from '../../typechain-types';
+} from '../../../typechain-types';
 import {
   AlgebraTickOracle,
   AlgebraTickOracleDouble,
   UniswapV2Oracle,
   UniswapV3TickOracle,
   UniswapV3TickOracleDouble,
-} from '../../typechain-types';
-import { one, oneX96 } from '../int/pendle/common';
-import { Addressable, ContractFactory, parseUnits } from 'ethers';
-
-export const ZeroAddress = '0x0000000000000000000000000000000000000000';
+} from '../../../typechain-types';
+import { one, oneX96 } from '../pendle/common';
+import { Addressable, parseUnits } from 'ethers';
 
 //Some random addresses for testing purposes
 export const Tokens = {
@@ -129,7 +126,7 @@ async function createUniswapV3TickOracle(quoteToken: string, baseToken: string):
   await pool.setTokenPriceAndTickCumulative(14073748835, 198080);
 
   const factory = await ethers.getContractFactory('TestUniswapFactory');
-  const uniswapFactory = await factory.deploy();
+  const uniswapFactory = await factory.deploy([]);
   await uniswapFactory.addPool(pool);
 
   const oracleFactory = await ethers.getContractFactory('UniswapV3TickOracle');
@@ -171,7 +168,7 @@ async function createUniswapV3TickOracleDouble(
   await secondPool.setTokenPriceAndTickCumulative(5910974510923776, -60894);
 
   const factory = await ethers.getContractFactory('TestUniswapFactory');
-  const uniswapFactory = await factory.deploy();
+  const uniswapFactory = await factory.deploy([]);
   await uniswapFactory.addPool(firstPool);
   await uniswapFactory.addPool(secondPool);
 

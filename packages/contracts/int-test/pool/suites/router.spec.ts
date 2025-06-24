@@ -33,7 +33,7 @@ async function routerSwaps(sut: SystemUnderTest) {
     if (adapterAddress == ZeroAddress) continue;
 
     // balancer adapter abi is used since it has both getPool and balancerVault methods
-    const adapter =  BalancerAdapter__factory.connect(await swapRouter.adapters(dexInfo[1]), swapRouter.runner);
+    const adapter = BalancerAdapter__factory.connect(await swapRouter.adapters(dexInfo[1]), swapRouter.runner);
     const dexPoolAddress = dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth, usdc);
 
     if (dexPoolAddress == ZeroAddress) continue;
@@ -157,7 +157,7 @@ async function routerMultipleSwaps(sut: SystemUnderTest) {
     if (adapterAddress == ZeroAddress || dexInfo[1] == Dex.DodoV1) continue;
 
     // balancer adapter abi is used since it has both getPool and balancerVault methods
-    const adapter =  BalancerAdapter__factory.connect(await swapRouter.adapters(dexInfo[1]), swapRouter.runner);
+    const adapter = BalancerAdapter__factory.connect(await swapRouter.adapters(dexInfo[1]), swapRouter.runner);
     const dexPoolAddress = dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth, usdc);
 
     const element =

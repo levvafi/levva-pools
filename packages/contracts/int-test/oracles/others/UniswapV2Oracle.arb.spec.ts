@@ -3,7 +3,7 @@ import { time, setBalance } from '@nomicfoundation/hardhat-network-helpers';
 import { UniswapV2Oracle } from '../../../typechain-types/contracts/oracles';
 import { parseEther, parseUnits } from 'ethers';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
-import { printPrices } from '../../shared/common';
+import { printPrices } from '../shared/common';
 
 async function initSystem(
   uniswapV2Factory: string,
