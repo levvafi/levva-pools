@@ -114,6 +114,7 @@ abstract contract LevvaPoolVirtual is IMarginlyPool {
 
   function _long(
     uint256 realBaseAmount,
+    bool amountInQuote,
     uint256 limitPriceX96,
     FP96.FixedPoint memory basePrice,
     Position storage position,
@@ -123,6 +124,7 @@ abstract contract LevvaPoolVirtual is IMarginlyPool {
 
   function _short(
     uint256 realBaseAmount,
+    bool amountInQuote,
     uint256 limitPriceX96,
     FP96.FixedPoint memory basePrice,
     Position storage position,

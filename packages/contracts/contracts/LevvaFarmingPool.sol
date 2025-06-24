@@ -62,25 +62,25 @@ contract LevvaFarmingPool is LongTrading, ShortFarming, Emergency {
     if (call == CallType.DepositBase) {
       _depositBase(amount1, basePrice, position, positionOwner);
       if (amount2 > 0) {
-        _long(uint256(amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
+        _long(uint256(amount2), flag, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       } else if (amount2 < 0) {
-        _short(uint256(-amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
+        _short(uint256(-amount2), flag, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       }
     } else if (call == CallType.DepositQuote) {
       _depositQuote(amount1, position, positionOwner);
       if (amount2 > 0) {
-        _short(uint256(amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
+        _short(uint256(amount2), flag, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       } else if (amount2 < 0) {
-        _long(uint256(-amount2), limitPriceX96, basePrice, position, positionOwner, swapCalldata);
+        _long(uint256(-amount2), flag, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       }
     } else if (call == CallType.WithdrawBase) {
       _withdrawBase(amount1, flag, basePrice, position);
     } else if (call == CallType.WithdrawQuote) {
       _withdrawQuote(amount1, flag, basePrice, position);
     } else if (call == CallType.Short) {
-      _short(amount1, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
+      _short(amount1, flag, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
     } else if (call == CallType.Long) {
-      _long(amount1, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
+      _long(amount1, flag, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
     } else if (call == CallType.ClosePosition) {
       _closePosition(limitPriceX96, position, swapCalldata);
       if (flag) {
