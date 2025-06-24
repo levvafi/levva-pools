@@ -1,7 +1,6 @@
 import { time, loadFixture } from '@nomicfoundation/hardhat-toolbox/network-helpers';
-import { anyValue } from '@nomicfoundation/hardhat-chai-matchers/withArgs';
 import { expect } from 'chai';
-import hre, { ethers } from 'hardhat';
+import { ethers } from 'hardhat';
 import {
   TimelockWhitelist,
   TimelockWhitelist__factory,
@@ -9,18 +8,19 @@ import {
   MockMarginlyFactory,
   MockMarginlyPool__factory,
   MockMarginlyPool,
-} from '../typechain-types';
-import { MarginlyParamsStruct } from '../typechain-types/contracts/test/MockMarginlyFactory.sol/MockMarginlyPool';
+} from '../../typechain-types';
+import { MarginlyParamsStruct } from '../../typechain-types/contracts/MarginlyFactory';
+import { ZeroAddress } from 'ethers';
 
 describe('TimelockWhitelist', function () {
   async function deployTimelock() {
-    const [signer, proposer1, proposer2, executor1, executor2] = await hre.ethers.getSigners();
+    const [signer, proposer1, proposer2, executor1, executor2] = await ethers.getSigners();
     const proposers = [signer, proposer1, proposer2];
     const executors = [signer, executor1, executor2];
     const admin = ethers.ZeroAddress;
     const minDelay = 259_200; // 3 days
 
-    const timelock = (await new TimelockWhitelist__factory(signer).deploy(
+    const timelock = (await new TimelockWhitelist__factory().connect(signer).deploy(
       minDelay,
       proposers,
       executors,
@@ -29,21 +29,21 @@ describe('TimelockWhitelist', function () {
       []
     )) as any as TimelockWhitelist;
 
-    const factory = (await new MockMarginlyFactory__factory(signer).deploy(timelock)) as any as MockMarginlyFactory;
-    const pool = (await new MockMarginlyPool__factory(signer).deploy(factory)) as any as MockMarginlyPool;
+    const factory = (await new MockMarginlyFactory__factory().connect(signer).deploy(timelock, ZeroAddress));
+    const pool = (await new MockMarginlyPool__factory().connect(signer).deploy(factory, ZeroAddress, ZeroAddress));
 
     return { timelock, proposers, executors, minDelay, factory, pool };
   }
 
   async function deployTimelockWithWhitelist() {
-    const [signer, proposer1, proposer2, executor1, executor2] = await hre.ethers.getSigners();
+    const [signer, proposer1, proposer2, executor1, executor2] = await ethers.getSigners();
     const proposers = [signer, proposer1, proposer2];
     const executors = [signer, executor1, executor2];
     const admin = ethers.ZeroAddress;
     const minDelay = 259_200; // 3 days
 
-    const factory = (await new MockMarginlyFactory__factory(signer).deploy(signer)) as any as MockMarginlyFactory;
-    const pool = (await new MockMarginlyPool__factory(signer).deploy(factory)) as any as MockMarginlyPool;
+    const factory = (await new MockMarginlyFactory__factory().connect(signer).deploy(signer, ZeroAddress));
+    const pool = (await new MockMarginlyPool__factory().connect(signer).deploy(factory, ZeroAddress, ZeroAddress));
 
     const createPoolSignature = factory.createPool.fragment.selector;
     const setParametersSignature = pool.setParameters.fragment.selector;
@@ -56,14 +56,14 @@ describe('TimelockWhitelist', function () {
     const whitelistedTargets = [factoryAddress, poolAddress, poolAddress, poolAddress];
     const whitelistedMethods = [createPoolSignature, setParametersSignature, sweepSignature, shutdownSignature];
 
-    const timelock = (await new TimelockWhitelist__factory(signer).deploy(
+    const timelock = (await new TimelockWhitelist__factory().connect(signer).deploy(
       minDelay,
       proposers,
       executors,
       admin,
       whitelistedTargets,
       whitelistedMethods
-    )) as any as TimelockWhitelist;
+    ));
 
     await factory.connect(signer).transferOwnership(timelock);
 

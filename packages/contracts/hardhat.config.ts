@@ -57,7 +57,7 @@ const config = {
     disambiguatePaths: false,
     runOnCompile: true,
     strict: false,
-    only: ['Marginly', 'Levva'],
+    only: ['Marginly', 'Levva', 'TimelockWhitelist'],
     except: ['Mock', 'Test'],
   },
   docgen: {

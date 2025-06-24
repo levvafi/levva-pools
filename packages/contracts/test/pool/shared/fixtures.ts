@@ -460,7 +460,7 @@ export async function createAavePoolAddressProvider(
 
 export async function createMockMarginlyFactory(swapRouterAddress: string | Addressable): Promise<MockMarginlyFactory> {
   const factory = await ethers.getContractFactory('MockMarginlyFactory');
-  return factory.deploy(swapRouterAddress);
+  return factory.deploy(ZeroAddress, swapRouterAddress);
 }
 
 export async function createMockMarginlyPool(
