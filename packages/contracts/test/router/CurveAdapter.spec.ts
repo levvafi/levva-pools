@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
-import { MarginlyRouter, TestERC20Token, TestStableSwap2EMAOraclePool } from '../../typechain-types';
+import { MarginlyRouter, TestERC20, TestStableSwap2EMAOraclePool } from '../../typechain-types';
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { createCurveAdapter, createCurveAdapterInverse } from './shared/fixtures';
@@ -14,8 +14,8 @@ async function swapExactInput(
   router: MarginlyRouter,
   signer: SignerWithAddress,
   price: bigint,
-  token0: TestERC20Token,
-  token1: TestERC20Token,
+  token0: TestERC20,
+  token1: TestERC20,
   amountIn: bigint,
   minAmountOut: bigint,
   zeroToOne: boolean
@@ -42,8 +42,8 @@ async function swapExactOutput(
   router: MarginlyRouter,
   signer: SignerWithAddress,
   price: bigint,
-  token0: TestERC20Token,
-  token1: TestERC20Token,
+  token0: TestERC20,
+  token1: TestERC20,
   maxAmountIn: bigint,
   amountOut: bigint,
   zeroToOne: boolean

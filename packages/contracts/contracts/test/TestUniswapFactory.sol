@@ -6,7 +6,32 @@ import '@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolImmutables.sol'
 
 /// @dev Stub of UniswapFactory
 contract TestUniswapFactory is IUniswapV3Factory {
+  struct Pool {
+    address pool;
+    address tokenA;
+    address tokenB;
+    uint24 fee;
+  }
+
   mapping(address => mapping(address => mapping(uint24 => address))) public override getPool;
+  address public override owner;
+
+  constructor(Pool[] memory _pools) {
+    owner = msg.sender;
+
+    uint256 length = _pools.length;
+    Pool memory input;
+    for (uint256 i; i < length; ) {
+      input = _pools[i];
+
+      getPool[input.tokenA][input.tokenB][input.fee] = input.pool;
+      getPool[input.tokenB][input.tokenA][input.fee] = input.pool;
+
+      unchecked {
+        ++i;
+      }
+    }
+  }
 
   function addPool(address pool) external {
     IUniswapV3PoolImmutables uniswapPool = IUniswapV3PoolImmutables(pool);
@@ -18,12 +43,8 @@ contract TestUniswapFactory is IUniswapV3Factory {
     getPool[token1][token0][fee] = pool;
   }
 
-  function owner() external view override returns (address) {
-    return address(this);
-  }
-
   function feeAmountTickSpacing(uint24) external pure override returns (int24) {
-    revert('not implemented');
+    return 0;
   }
 
   function createPool(address, address, uint24) external pure override returns (address) {

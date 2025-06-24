@@ -15,6 +15,11 @@ contract MockPriceOracle is IPriceOracle {
     marginCallPrice = FP96.fromRatio(1, 4).inner;
   }
 
+  function setPrice(uint256 newBalancePriceX96, uint256 newMargincallPriceX96) public {
+    balancePrice = newBalancePriceX96;
+    marginCallPrice = newMargincallPriceX96;
+  }
+
   function setBalancePrice(uint256 price) external {
     balancePrice = price;
   }
@@ -27,7 +32,7 @@ contract MockPriceOracle is IPriceOracle {
     return balancePrice;
   }
 
-  /// @notice Returns marcin call price as FP96 value
+  /// @notice Returns margin call price as FP96 value
   function getMargincallPrice(address, address) external view returns (uint256) {
     return marginCallPrice;
   }

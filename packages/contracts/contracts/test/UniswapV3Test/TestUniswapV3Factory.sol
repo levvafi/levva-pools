@@ -36,13 +36,7 @@ contract RouterTestUniswapV3Factory is IUniswapV3Factory {
     getPool[token1][token0][fee] = pool;
   }
 
-  function deploy(
-    address,
-    address token0,
-    address token1,
-    uint24 fee,
-    int24
-  ) private returns (address pool) {
+  function deploy(address, address token0, address token1, uint24 fee, int24) private returns (address pool) {
     // parameters = Parameters({factory: factory, token0: token0, token1: token1, fee: fee, tickSpacing: tickSpacing});
     pool = address(new RouterTestUniswapV3Pool{salt: keccak256(abi.encode(token0, token1, fee))}(token0, token1));
     emit TestPoolCreated(pool);

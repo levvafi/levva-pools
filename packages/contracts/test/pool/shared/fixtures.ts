@@ -46,7 +46,7 @@ export interface UniswapPoolInfo {
 export async function createToken(name: string, symbol: string): Promise<TestERC20> {
   const [_, signer] = await ethers.getSigners();
   const factory = await ethers.getContractFactory('TestERC20');
-  const tokenContract = await factory.deploy(name, symbol);
+  const tokenContract = await factory.deploy(name, symbol, 18);
   await signer.sendTransaction({
     to: tokenContract,
     value: parseEther('100'),
@@ -79,7 +79,7 @@ export async function createUniswapFactory(): Promise<{
   uniswapPoolInfo: UniswapPoolInfo;
 }> {
   const factory = await ethers.getContractFactory('TestUniswapFactory');
-  const contract = await factory.deploy();
+  const contract = await factory.deploy([]);
   const { uniswapPool: pool, token0, token1 } = await createUniswapPool();
   await contract.addPool(pool);
   const fee = await pool.fee();

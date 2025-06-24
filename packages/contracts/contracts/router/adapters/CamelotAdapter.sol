@@ -45,7 +45,7 @@ contract CamelotAdapter is AdapterStorage, UniswapV2LikeSwap, UniswapV3LikeSwap 
     IMarginlyRouter(msg.sender).adapterCallback(pool, amountIn, data);
     uniswapV2LikeSwap(recipient, pool, tokenIn, tokenOut, camelotAmountOut);
 
-    address uniswapV3 = AdapterStorage(RouterStorage(msg.sender).adapters(UNISWAP_V3_ADAPTER_INDEX)).getPool(
+    address uniswapV3 = AdapterStorage(IMarginlyRouter(msg.sender).adapters(UNISWAP_V3_ADAPTER_INDEX)).getPool(
       tokenIn,
       tokenOut
     );
@@ -73,7 +73,7 @@ contract CamelotAdapter is AdapterStorage, UniswapV2LikeSwap, UniswapV3LikeSwap 
     require(amount0Delta > 0 || amount1Delta > 0); // swaps entirely within 0-liquidity regions are not supported
     CallbackData memory data = abi.decode(_data, (CallbackData));
     (address tokenIn, address tokenOut) = (data.tokenIn, data.tokenOut);
-    address uniswapV3 = AdapterStorage(RouterStorage(data.initiator).adapters(UNISWAP_V3_ADAPTER_INDEX)).getPool(
+    address uniswapV3 = AdapterStorage(IMarginlyRouter(data.initiator).adapters(UNISWAP_V3_ADAPTER_INDEX)).getPool(
       tokenIn,
       tokenOut
     );

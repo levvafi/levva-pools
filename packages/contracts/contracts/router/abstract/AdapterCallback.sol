@@ -5,12 +5,6 @@ import '@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol';
 
 import './RouterStorage.sol';
 
-struct AdapterCallbackData {
-  address payer;
-  address tokenIn;
-  uint256 dexIndex;
-}
-
 abstract contract AdapterCallback is RouterStorage {
   /// @inheritdoc IMarginlyRouter
   function adapterCallback(address recipient, uint256 amount, bytes calldata _data) external {

@@ -10,7 +10,10 @@ import '../pool/dataTypes/Position.sol';
 contract MockMarginlyFactory is IMarginlyFactory, Ownable2Step {
   address public override swapRouter;
 
-  constructor(address initialOwner, address _swapRouter) Ownable(initialOwner == address(0) ? msg.sender : initialOwner) {
+  constructor(
+    address initialOwner,
+    address _swapRouter
+  ) Ownable(initialOwner == address(0) ? msg.sender : initialOwner) {
     swapRouter = _swapRouter;
   }
 

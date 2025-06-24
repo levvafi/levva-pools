@@ -104,7 +104,7 @@ contract DodoV1Adapter is AdapterStorage, UniswapV3LikeSwap, IDODOCallee {
     require(amount0Delta > 0 || amount1Delta > 0); // swaps entirely within 0-liquidity regions are not supported
     CallbackData memory data = abi.decode(_data, (CallbackData));
     (address tokenIn, address tokenOut) = (data.tokenIn, data.tokenOut);
-    address uniswapV3 = AdapterStorage(RouterStorage(data.initiator).adapters(UNISWAP_V3_ADAPTER_INDEX)).getPool(
+    address uniswapV3 = AdapterStorage(IMarginlyRouter(data.initiator).adapters(UNISWAP_V3_ADAPTER_INDEX)).getPool(
       tokenIn,
       tokenOut
     );
@@ -139,7 +139,7 @@ contract DodoV1Adapter is AdapterStorage, UniswapV3LikeSwap, IDODOCallee {
   }
 
   function getUniswapV3Pool(address tokenA, address tokenB) private view returns (address) {
-    return AdapterStorage(RouterStorage(msg.sender).adapters(UNISWAP_V3_ADAPTER_INDEX)).getPool(tokenA, tokenB);
+    return AdapterStorage(IMarginlyRouter(msg.sender).adapters(UNISWAP_V3_ADAPTER_INDEX)).getPool(tokenA, tokenB);
   }
 
   function transferOut(address token, address recipient, uint256 amount) private {

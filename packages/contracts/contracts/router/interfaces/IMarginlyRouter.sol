@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.28;
 
-import '../abstract/AdapterCallback.sol';
-import '../abstract/RouterStorage.sol';
-
 interface IMarginlyRouter {
+  struct AdapterCallbackData {
+    address payer;
+    address tokenIn;
+    uint256 dexIndex;
+  }
+
   /// @notice Emitted when swap with zero input or output was called
   error ZeroAmount();
   /// @notice Emitted if balance difference doesn't equal amountOut
@@ -65,4 +68,6 @@ interface IMarginlyRouter {
   /// @param amount amount of tokens to transfer
   /// @param data callback data with transfer details and info to verify sender
   function adapterCallback(address recipient, uint256 amount, bytes calldata data) external;
+
+  function adapters(uint256 dexId) external view returns (address adapter);
 }

@@ -20,17 +20,12 @@ describe('TimelockWhitelist', function () {
     const admin = ethers.ZeroAddress;
     const minDelay = 259_200; // 3 days
 
-    const timelock = (await new TimelockWhitelist__factory().connect(signer).deploy(
-      minDelay,
-      proposers,
-      executors,
-      admin,
-      [],
-      []
-    )) as any as TimelockWhitelist;
+    const timelock = (await new TimelockWhitelist__factory()
+      .connect(signer)
+      .deploy(minDelay, proposers, executors, admin, [], [])) as any as TimelockWhitelist;
 
-    const factory = (await new MockMarginlyFactory__factory().connect(signer).deploy(timelock, ZeroAddress));
-    const pool = (await new MockMarginlyPool__factory().connect(signer).deploy(factory, ZeroAddress, ZeroAddress));
+    const factory = await new MockMarginlyFactory__factory().connect(signer).deploy(timelock, ZeroAddress);
+    const pool = await new MockMarginlyPool__factory().connect(signer).deploy(factory, ZeroAddress, ZeroAddress);
 
     return { timelock, proposers, executors, minDelay, factory, pool };
   }
@@ -42,8 +37,8 @@ describe('TimelockWhitelist', function () {
     const admin = ethers.ZeroAddress;
     const minDelay = 259_200; // 3 days
 
-    const factory = (await new MockMarginlyFactory__factory().connect(signer).deploy(signer, ZeroAddress));
-    const pool = (await new MockMarginlyPool__factory().connect(signer).deploy(factory, ZeroAddress, ZeroAddress));
+    const factory = await new MockMarginlyFactory__factory().connect(signer).deploy(signer, ZeroAddress);
+    const pool = await new MockMarginlyPool__factory().connect(signer).deploy(factory, ZeroAddress, ZeroAddress);
 
     const createPoolSignature = factory.createPool.fragment.selector;
     const setParametersSignature = pool.setParameters.fragment.selector;
@@ -56,14 +51,9 @@ describe('TimelockWhitelist', function () {
     const whitelistedTargets = [factoryAddress, poolAddress, poolAddress, poolAddress];
     const whitelistedMethods = [createPoolSignature, setParametersSignature, sweepSignature, shutdownSignature];
 
-    const timelock = (await new TimelockWhitelist__factory().connect(signer).deploy(
-      minDelay,
-      proposers,
-      executors,
-      admin,
-      whitelistedTargets,
-      whitelistedMethods
-    ));
+    const timelock = await new TimelockWhitelist__factory()
+      .connect(signer)
+      .deploy(minDelay, proposers, executors, admin, whitelistedTargets, whitelistedMethods);
 
     await factory.connect(signer).transferOwnership(timelock);
 
@@ -105,8 +95,9 @@ describe('TimelockWhitelist', function () {
     });
 
     it('Should set predefined whitelisted targets and methods', async () => {
-      const { timelock, minDelay, whitelistedMethods, whitelistedTargets } =
-        await loadFixture(deployTimelockWithWhitelist);
+      const { timelock, minDelay, whitelistedMethods, whitelistedTargets } = await loadFixture(
+        deployTimelockWithWhitelist
+      );
 
       for (let i = 0; i < whitelistedMethods.length; i++) {
         expect(await timelock.isWhitelisted(whitelistedTargets[i], whitelistedMethods[i])).to.equal(true);

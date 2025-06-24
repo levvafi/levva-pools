@@ -1,7 +1,7 @@
 import { EventLog, parseEther, parseUnits } from 'ethers';
 import { ethers } from 'hardhat';
 import { CurveAdapter, IMarginlyAdapter, MarginlyRouter, TestStableSwap2EMAOraclePool } from '../../../typechain-types';
-import { TestERC20Token } from '../../../typechain-types';
+import { TestERC20 } from '../../../typechain-types';
 import { RouterTestUniswapV3Pool } from '../../../typechain-types';
 import { RouterTestUniswapV2Pair } from '../../../typechain-types';
 import { TestVault } from '../../../typechain-types';
@@ -13,16 +13,16 @@ import { TestSwapInfo } from '../../../typechain-types';
 import { Dex } from './utils';
 
 export interface UniswapPoolInfo {
-  token0: TestERC20Token;
-  token1: TestERC20Token;
+  token0: TestERC20;
+  token1: TestERC20;
   fee: number;
   address: string;
   pool: RouterTestUniswapV3Pool;
 }
 
-export async function createToken(name: string, symbol: string): Promise<TestERC20Token> {
+export async function createToken(name: string, symbol: string): Promise<TestERC20> {
   const [, signer] = await ethers.getSigners();
-  const factory = await ethers.getContractFactory('TestERC20Token');
+  const factory = await ethers.getContractFactory('TestERC20');
   const tokenContract = await factory.deploy(name, symbol);
   await signer.sendTransaction({
     to: tokenContract,
@@ -33,8 +33,8 @@ export async function createToken(name: string, symbol: string): Promise<TestERC
 }
 
 export async function createUniswapV3Pool(
-  token0: TestERC20Token,
-  token1: TestERC20Token
+  token0: TestERC20,
+  token1: TestERC20
 ): Promise<{
   uniswapV3Pool: RouterTestUniswapV3Pool;
   uniswapV3Adapter: IMarginlyAdapter;
@@ -57,8 +57,8 @@ export async function createUniswapV3Pool(
 }
 
 export async function createUniswapV2Pair(
-  token0: TestERC20Token,
-  token1: TestERC20Token
+  token0: TestERC20,
+  token1: TestERC20
 ): Promise<{
   uniswapV2Pair: RouterTestUniswapV2Pair;
   uniswapV2Adapter: IMarginlyAdapter;
@@ -85,8 +85,8 @@ export async function createUniswapV2Pair(
 }
 
 export async function createBalancer(
-  token0: TestERC20Token,
-  token1: TestERC20Token
+  token0: TestERC20,
+  token1: TestERC20
 ): Promise<{
   balancerVault: TestVault;
   balancerPool: TestBalancerPool;
@@ -109,8 +109,8 @@ export async function createBalancer(
 }
 
 export async function createWooPool(
-  token0: TestERC20Token,
-  token1: TestERC20Token
+  token0: TestERC20,
+  token1: TestERC20
 ): Promise<{
   wooPool: TestWooPPV2;
   wooFiAdapter: IMarginlyAdapter;
@@ -131,8 +131,8 @@ export async function createWooPool(
 }
 
 export async function createDodoV1Pool(
-  token0: TestERC20Token,
-  token1: TestERC20Token
+  token0: TestERC20,
+  token1: TestERC20
 ): Promise<{
   dodoV1Pool: TestDodoV1Pool;
   dodoV1Adapter: IMarginlyAdapter;
@@ -151,8 +151,8 @@ export async function createDodoV1Pool(
 }
 
 export async function createDodoV2Pool(
-  token0: TestERC20Token,
-  token1: TestERC20Token
+  token0: TestERC20,
+  token1: TestERC20
 ): Promise<{
   dodoV2Pool: TestDodoV2Pool;
   dodoV2Adapter: IMarginlyAdapter;
@@ -172,8 +172,8 @@ export async function createDodoV2Pool(
 
 export async function createMarginlyRouter(): Promise<{
   marginlyRouter: MarginlyRouter;
-  token0: TestERC20Token;
-  token1: TestERC20Token;
+  token0: TestERC20;
+  token1: TestERC20;
   uniswapV3: { pool: RouterTestUniswapV3Pool; adapter: IMarginlyAdapter };
   uniswapV2: { pool: RouterTestUniswapV2Pair; adapter: IMarginlyAdapter };
   balancer: { vault: TestVault; adapter: IMarginlyAdapter };
@@ -243,8 +243,8 @@ async function createCurveAdapterInner(inverse: boolean): Promise<{
   router: MarginlyRouter;
   adapter: CurveAdapter;
   pool: TestStableSwap2EMAOraclePool;
-  token0: TestERC20Token;
-  token1: TestERC20Token;
+  token0: TestERC20;
+  token1: TestERC20;
 }> {
   const token0 = await createToken('Token0', 'TK0');
   const token1 = await createToken('Token1', 'TK1');
@@ -278,8 +278,8 @@ export async function createCurveAdapter(): Promise<{
   router: MarginlyRouter;
   adapter: CurveAdapter;
   pool: TestStableSwap2EMAOraclePool;
-  token0: TestERC20Token;
-  token1: TestERC20Token;
+  token0: TestERC20;
+  token1: TestERC20;
 }> {
   return await createCurveAdapterInner(false);
 }
@@ -288,8 +288,8 @@ export async function createCurveAdapterInverse(): Promise<{
   router: MarginlyRouter;
   adapter: CurveAdapter;
   pool: TestStableSwap2EMAOraclePool;
-  token0: TestERC20Token;
-  token1: TestERC20Token;
+  token0: TestERC20;
+  token1: TestERC20;
 }> {
   return await createCurveAdapterInner(true);
 }

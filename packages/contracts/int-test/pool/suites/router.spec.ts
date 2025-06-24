@@ -35,7 +35,7 @@ async function routerSwaps(sut: SystemUnderTest) {
     // balancer adapter abi is used since it has both getPool and balancerVault methods
     const adapter = new ethers.Contract(
       adapterAddress,
-      require(`@marginly/router/artifacts/contracts/adapters/BalancerAdapter.sol/BalancerAdapter.json`).abi,
+      require(`../../../artifacts/contracts/adapters/BalancerAdapter.sol/BalancerAdapter.json`).abi,
       treasury.provider
     );
     const dexPoolAddress = dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth, usdc);

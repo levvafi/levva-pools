@@ -35,12 +35,7 @@ contract MockAavePool is IPool {
     address onBehalfOf
   ) external {}
 
-  function repay(
-    address,
-    uint256,
-    uint256,
-    address
-  ) external pure returns (uint256) {
+  function repay(address, uint256, uint256, address) external pure returns (uint256) {
     return 0;
   }
 

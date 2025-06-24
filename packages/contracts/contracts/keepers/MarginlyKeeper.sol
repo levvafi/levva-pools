@@ -3,7 +3,7 @@ pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@marginly/router/contracts/interfaces/IMarginlyRouter.sol';
+import '../router/interfaces/IMarginlyRouter.sol';
 import '../pool/interfaces/IMarginlyPool.sol';
 import '../pool/interfaces/IMarginlyFactory.sol';
 import '../pool/dataTypes/Call.sol';

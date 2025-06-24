@@ -66,7 +66,11 @@ contract BalancerAdapter is AdapterStorage {
     amountIn = IVault(balancerVault).swap(swap, funds, maxAmountIn, block.timestamp);
     if (amountIn > maxAmountIn) revert TooMuchRequested();
     SafeERC20.forceApprove(IERC20(tokenIn), balancerVault, 0);
-    TransferHelper.safeTransfer(tokenIn, abi.decode(data, (AdapterCallbackData)).payer, maxAmountIn - amountIn);
+    TransferHelper.safeTransfer(
+      tokenIn,
+      abi.decode(data, (IMarginlyRouter.AdapterCallbackData)).payer,
+      maxAmountIn - amountIn
+    );
   }
 }
 
