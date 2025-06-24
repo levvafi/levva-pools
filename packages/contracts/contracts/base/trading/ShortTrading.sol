@@ -30,53 +30,44 @@ abstract contract ShortTrading is Liquidations {
   }
 
   /// @notice Short with leverage
-  /// @param realBaseAmount Amount of base token
   /// @param basePrice current oracle base price, got by getBasePrice() method
   /// @param position msg.sender position
   function _short(
-    uint256 realBaseAmount,
+    uint256 amount,
+    bool amountInQuote,
     uint256 limitPriceX96,
     FP96.FixedPoint memory basePrice,
     Position storage position,
     address positionOwner,
     uint256 swapCalldata
   ) internal virtual override {
-    // revert MarginlyErrors.Forbidden();
     // this function guaranties the position is gonna be either Short or Lend with 0 base balance
     _sellBaseForQuote(position, positionOwner, limitPriceX96, swapCalldata);
 
     uint256 positionDisBaseDebt = position.discountedBaseAmount;
     uint256 positionDisQuoteCollateral = position.discountedQuoteAmount;
+    if (
+      _calcRealQuoteCollateral(positionDisQuoteCollateral, positionDisBaseDebt) <
+      basePrice.mul(params.positionMinAmount)
+    ) revert MarginlyErrors.LessThanMinimalAmount();
 
-    {
-      uint256 currentQuoteCollateral = _calcRealQuoteCollateral(positionDisQuoteCollateral, positionDisBaseDebt);
-      if (currentQuoteCollateral < basePrice.mul(params.positionMinAmount))
-        revert MarginlyErrors.LessThanMinimalAmount();
-    }
-
-    // quoteOutMinimum is defined by user input limitPriceX96
-    uint256 quoteOutMinimum = Math.mulDiv(limitPriceX96, realBaseAmount, FP96.Q96);
-    uint256 realQuoteCollateralChangeWithFee = _swapExactInput(false, realBaseAmount, quoteOutMinimum, swapCalldata);
-    uint256 swapPriceX96 = _calcSwapPrice(realQuoteCollateralChangeWithFee, realBaseAmount);
-
-    uint256 realQuoteCollateralChange;
-    {
-      uint256 realSwapFee = Math.mulDiv(params.swapFee, realQuoteCollateralChangeWithFee, WHOLE_ONE);
-      _chargeFee(realSwapFee);
-      realQuoteCollateralChange = realQuoteCollateralChangeWithFee.sub(realSwapFee);
-    }
-
-    if (_newPoolQuoteBalance(realQuoteCollateralChange) > params.quoteLimit) revert MarginlyErrors.ExceedsLimit();
-
-    uint256 discountedBaseDebtChange = baseDebtCoeff.recipMul(realBaseAmount);
-    position.discountedBaseAmount = positionDisBaseDebt.add(discountedBaseDebtChange);
-    discountedBaseDebt = discountedBaseDebt.add(discountedBaseDebtChange);
-
-    uint256 discountedQuoteChange = quoteCollateralCoeff.recipMul(
-      realQuoteCollateralChange.add(quoteDelevCoeff.mul(discountedBaseDebtChange))
+    (uint256 quoteCollateralDelta, uint256 baseDebtDelta, uint256 swapPriceX96) = _shortSwap(
+      amount,
+      amountInQuote,
+      limitPriceX96,
+      swapCalldata
     );
-    position.discountedQuoteAmount = positionDisQuoteCollateral.add(discountedQuoteChange);
-    discountedQuoteCollateral = discountedQuoteCollateral.add(discountedQuoteChange);
+    if (_newPoolQuoteBalance(quoteCollateralDelta) > params.quoteLimit) revert MarginlyErrors.ExceedsLimit();
+
+    uint256 discountedBaseDebtDelta = baseDebtCoeff.recipMul(baseDebtDelta);
+    position.discountedBaseAmount = positionDisBaseDebt.add(discountedBaseDebtDelta);
+    discountedBaseDebt = discountedBaseDebt.add(discountedBaseDebtDelta);
+
+    uint256 discountedQuoteDelta = quoteCollateralCoeff.recipMul(
+      quoteCollateralDelta.add(quoteDelevCoeff.mul(discountedBaseDebtDelta))
+    );
+    position.discountedQuoteAmount = positionDisQuoteCollateral.add(discountedQuoteDelta);
+    discountedQuoteCollateral = discountedQuoteCollateral.add(discountedQuoteDelta);
 
     if (position._type == PositionType.Lend) {
       if (position.heapPosition != 0) revert MarginlyErrors.WrongIndex();
@@ -87,7 +78,7 @@ abstract contract ShortTrading is Liquidations {
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    emit Short(positionOwner, realBaseAmount, swapPriceX96, discountedQuoteChange, discountedBaseDebtChange);
+    emit Short(positionOwner, amount, amountInQuote, swapPriceX96, discountedQuoteDelta, discountedBaseDebtDelta);
   }
 
   function _closeShortPosition(
@@ -427,5 +418,31 @@ abstract contract ShortTrading is Liquidations {
     uint96 sortKey = _calcSortKey(position.discountedQuoteAmount, position.discountedBaseAmount);
     uint32 heapIndex = position.heapPosition - 1;
     shortHeap.update(positions, heapIndex, sortKey);
+  }
+
+  function _shortSwap(
+    uint256 amount,
+    bool amountInQuote,
+    uint256 limitPriceX96,
+    uint256 swapCalldata
+  ) private returns (uint256 quoteCollateralDelta, uint256 baseDebtDelta, uint256 swapPriceX96) {
+    if (amountInQuote) {
+      uint256 baseInMaximum = Math.mulDiv(amount, FP96.Q96, limitPriceX96);
+      baseDebtDelta = _swapExactOutput(false, baseInMaximum, amount, swapCalldata);
+      swapPriceX96 = _calcSwapPrice(amount, baseDebtDelta);
+
+      uint256 swapFee = Math.mulDiv(params.swapFee, amount, WHOLE_ONE);
+      quoteCollateralDelta = amount.sub(swapFee);
+      _chargeFee(swapFee);
+    } else {
+      baseDebtDelta = amount;
+      uint256 quoteOutMinimum = Math.mulDiv(limitPriceX96, amount, FP96.Q96);
+      uint256 quoteOutWithFee = _swapExactInput(false, amount, quoteOutMinimum, swapCalldata);
+      swapPriceX96 = _calcSwapPrice(quoteOutWithFee, amount);
+
+      uint256 swapFee = Math.mulDiv(params.swapFee, quoteOutWithFee, WHOLE_ONE);
+      quoteCollateralDelta = quoteOutWithFee.sub(swapFee);
+      _chargeFee(swapFee);
+    }
   }
 }

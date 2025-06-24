@@ -54,6 +54,7 @@ interface IMarginlyPool is IMarginlyPoolOwnerActions {
   event Short(
     address indexed user,
     uint256 amount,
+    bool amountInQuote,
     uint256 swapPriceX96,
     uint256 quoteDiscountedDelta,
     uint256 baseDiscountedDelta
@@ -68,6 +69,7 @@ interface IMarginlyPool is IMarginlyPoolOwnerActions {
   event Long(
     address indexed user,
     uint256 amount,
+    bool amountInQuote,
     uint256 swapPriceX96,
     uint256 quoteDiscountedDelta,
     uint256 baseDiscountedDelta
