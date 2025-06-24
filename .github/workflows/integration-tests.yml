@@ -31,9 +31,7 @@ jobs:
           node-version: 24.2.0
       - name: Build for testing
         run: |
-          cd ./packages/router/
-          yarn && yarn compile
-          cd ../periphery
+          cd ./packages/contracts/
           yarn && yarn compile
       - name: Integration testing
         run: |
