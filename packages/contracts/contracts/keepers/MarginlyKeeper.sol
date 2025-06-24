@@ -4,9 +4,9 @@ pragma solidity 0.8.28;
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@marginly/router/contracts/interfaces/IMarginlyRouter.sol';
-import '../interfaces/IMarginlyPool.sol';
-import '../interfaces/IMarginlyFactory.sol';
-import '../dataTypes/Call.sol';
+import '../pool/interfaces/IMarginlyPool.sol';
+import '../pool/interfaces/IMarginlyFactory.sol';
+import '../pool/dataTypes/Call.sol';
 
 /// @notice Contract helper for Marginly position liquidators.
 /// @dev It make liquidation with help of AAVE flashloan

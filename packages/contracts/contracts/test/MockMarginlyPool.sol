@@ -4,9 +4,9 @@ pragma solidity 0.8.28;
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 
-import '../interfaces/IMarginlyPool.sol';
-import '../dataTypes/Position.sol';
-import '../dataTypes/Call.sol';
+import '../pool/interfaces/IMarginlyPool.sol';
+import '../pool/dataTypes/Position.sol';
+import '../pool/dataTypes/Call.sol';
 
 contract MockMarginlyPool is IMarginlyPool {
   address public override quoteToken;

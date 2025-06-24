@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.28;
 
-import '../dataTypes/Call.sol';
+import '../pool/dataTypes/Call.sol';
 import './MarginlyKeeper.sol';
 
 interface IVault {

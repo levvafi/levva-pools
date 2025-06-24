@@ -4,9 +4,8 @@ pragma solidity 0.8.28;
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 
-import '../interfaces/IMarginlyFactory.sol';
-
-import '../dataTypes/Position.sol';
+import '../pool/interfaces/IMarginlyFactory.sol';
+import '../pool/dataTypes/Position.sol';
 
 contract MockMarginlyFactory is IMarginlyFactory, Ownable2Step {
   address public override swapRouter;

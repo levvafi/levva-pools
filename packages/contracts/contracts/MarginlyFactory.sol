@@ -5,10 +5,10 @@ import '@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol';
 import '@openzeppelin/contracts/proxy/Clones.sol';
 import '@openzeppelin/contracts/access/Ownable2Step.sol';
 
-import './interfaces/IMarginlyFactory.sol';
-import './interfaces/IMarginlyPool.sol';
-import './dataTypes/MarginlyParams.sol';
-import './libraries/MarginlyErrors.sol';
+import './pool/interfaces/IMarginlyFactory.sol';
+import './pool/interfaces/IMarginlyPool.sol';
+import './pool/dataTypes/MarginlyParams.sol';
+import './pool/libraries/MarginlyErrors.sol';
 
 /// @title Marginly contract factory
 /// @notice Deploys Marginly and manages ownership and control over pool

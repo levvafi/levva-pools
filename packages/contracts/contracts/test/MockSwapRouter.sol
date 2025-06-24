@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@marginly/router/contracts/interfaces/IMarginlyRouter.sol';
+import '../router/interfaces/IMarginlyRouter.sol';
 
 contract MockSwapRouter is IMarginlyRouter {
   uint256 public price = 1500;
@@ -21,11 +21,11 @@ contract MockSwapRouter is IMarginlyRouter {
   }
 
   function swapExactInput(
-    uint256 swapCalldata,
+    uint256,
     address tokenIn,
     address tokenOut,
     uint256 amountIn,
-    uint256 minAmountOut
+    uint256
   ) external returns (uint256 amountOut) {
     IERC20(tokenIn).transferFrom(msg.sender, address(this), amountIn);
 

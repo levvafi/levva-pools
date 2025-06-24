@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import '../interfaces/IPriceOracle.sol';
-import '../libraries/FP96.sol';
+import '../pool/interfaces/IPriceOracle.sol';
+import '../pool/libraries/FP96.sol';
 
 contract MockPriceOracle is IPriceOracle {
   using FP96 for FP96.FixedPoint;

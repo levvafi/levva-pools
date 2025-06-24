@@ -2,7 +2,7 @@
 pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import '../interfaces/IWETH9.sol';
+import '../pool/interfaces/IWETH9.sol';
 
 /// @dev Test ERC20 token.
 contract TestERC20 is ERC20, IWETH9 {
