@@ -2,8 +2,8 @@ import assert from 'assert';
 import { parseUnits, ZeroAddress } from 'ethers';
 import { initializeTestSystem, SystemUnderTest } from '.';
 import { constructSwap, Dex, SWAP_ONE } from '../utils/chain-ops';
-import { ethers } from 'ethers';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
+import { BalancerAdapter__factory } from '../../../typechain-types';
 
 describe('Router', () => {
   it('Router swaps', async () => {
@@ -33,11 +33,7 @@ async function routerSwaps(sut: SystemUnderTest) {
     if (adapterAddress == ZeroAddress) continue;
 
     // balancer adapter abi is used since it has both getPool and balancerVault methods
-    const adapter = new ethers.Contract(
-      adapterAddress,
-      require(`../../../artifacts/contracts/adapters/BalancerAdapter.sol/BalancerAdapter.json`).abi,
-      treasury.provider
-    );
+    const adapter =  BalancerAdapter__factory.connect(await swapRouter.adapters(dexInfo[1]), swapRouter.runner);
     const dexPoolAddress = dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth, usdc);
 
     if (dexPoolAddress == ZeroAddress) continue;
@@ -161,11 +157,7 @@ async function routerMultipleSwaps(sut: SystemUnderTest) {
     if (adapterAddress == ZeroAddress || dexInfo[1] == Dex.DodoV1) continue;
 
     // balancer adapter abi is used since it has both getPool and balancerVault methods
-    const adapter = new ethers.Contract(
-      await swapRouter.adapters(dexInfo[1]),
-      require(`@marginly/router/artifacts/contracts/adapters/BalancerAdapter.sol/BalancerAdapter.json`).abi,
-      treasury.provider
-    );
+    const adapter =  BalancerAdapter__factory.connect(await swapRouter.adapters(dexInfo[1]), swapRouter.runner);
     const dexPoolAddress = dexInfo[0] == 'Balancer' ? await adapter.balancerVault() : await adapter.getPool(weth, usdc);
 
     const element =
