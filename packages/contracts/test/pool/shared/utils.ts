@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat';
 import { HDNodeWallet } from 'ethers';
-import { LevvaTradingPool } from '../../typechain-types';
+import { LevvaTradingPool } from '../../../typechain-types';
 import { expect } from 'chai';
 import { TechnicalPositionOwner } from './fixtures';
 

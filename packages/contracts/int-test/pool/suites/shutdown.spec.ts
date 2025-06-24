@@ -3,7 +3,7 @@ import { initializeTestSystem, SystemUnderTest } from '.';
 import { ceilDivision, FP96 } from '../utils/fixed-point';
 import { changeWethPrice } from '../utils/uniswap-ops';
 import { showSystemAggregates } from '../utils/log-utils';
-import { prepareAccounts } from './simulation';
+import { prepareAccounts } from './simulation.spec';
 import { CallType, uniswapV3Swapdata } from '../utils/chain-ops';
 import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
 import assert from 'assert';

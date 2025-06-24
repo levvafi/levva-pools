@@ -18,7 +18,7 @@ import {
   WHOLE_ONE,
 } from './shared/utils';
 import { EventLog, parseUnits, ZeroAddress } from 'ethers';
-import { MarginlyParamsStruct } from '../typechain-types/contracts/LevvaTradingPool';
+import { MarginlyParamsStruct } from '../../typechain-types/contracts/LevvaTradingPool';
 
 describe('MarginlyPool.Base', () => {
   it('should revert when second try of initialization', async () => {

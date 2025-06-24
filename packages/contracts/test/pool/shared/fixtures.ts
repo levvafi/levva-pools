@@ -21,8 +21,8 @@ import {
   LevvaFarmingPool__factory,
   LevvaTradingPool,
   LevvaTradingPool__factory,
-} from '../../typechain-types';
-import { MarginlyParamsStruct } from '../../typechain-types/contracts/MarginlyFactory';
+} from '../../../typechain-types';
+import { MarginlyParamsStruct } from '../../../typechain-types/contracts/MarginlyFactory';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { CallType, paramsDefaultLeverageWithoutIr, paramsLowLeverageWithoutIr, uniswapV3Swapdata } from './utils';
 import { time } from '@nomicfoundation/hardhat-network-helpers';

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "compile": "hardhat compile",
-    "test": "UPDATE_SNAPSHOT=1 REPORT_GAS=true hardhat test ./test/*.spec.ts",
+    "test": "UPDATE_SNAPSHOT=1 REPORT_GAS=true hardhat test ./test/*/*.spec.ts",
     "test:int-pool": "MODE=INT-TEST-ETH hardhat test ./int-test/pool/suites/*.ts",
     "test:int-pool-parallel": "MODE=INT-TEST-ETH hardhat test --parallel ./int-test/pool/suites/*.ts",
     "test:coverage": "UPDATE_SNAPSHOT=1 REPORT_GAS=true hardhat coverage  --testfiles './test/*.spec.ts'",

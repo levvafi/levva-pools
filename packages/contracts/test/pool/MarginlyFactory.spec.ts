@@ -1,9 +1,9 @@
 import { expect } from 'chai';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { MarginlyParamsStruct } from '../typechain-types/contracts/MarginlyFactory';
+import { MarginlyParamsStruct } from '../../typechain-types/contracts/MarginlyFactory';
 import { createMarginlyFactory } from './shared/fixtures';
 import snapshotGasCost from 'optifat-snapshot-gas-cost';
-import { LevvaTradingPool } from '../typechain-types';
+import { LevvaTradingPool } from '../../typechain-types';
 import { ethers } from 'hardhat';
 import { PositionType } from './shared/utils';
 import { ZeroAddress } from 'ethers';
