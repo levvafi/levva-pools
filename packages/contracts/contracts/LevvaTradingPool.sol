@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity 0.8.28;
 
-import './base/trading/LongTrading.sol';
-import './base/trading/ShortTrading.sol';
-import './base/Emergency.sol';
+import './pool/base/trading/LongTrading.sol';
+import './pool/base/trading/ShortTrading.sol';
+import './pool/base/Emergency.sol';
 
 contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
   using FP96 for FP96.FixedPoint;

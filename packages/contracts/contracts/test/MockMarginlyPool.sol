@@ -2,16 +2,18 @@
 pragma solidity 0.8.28;
 
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/access/Ownable2Step.sol';
 
-import '../interfaces/IMarginlyPool.sol';
-import '../dataTypes/Position.sol';
-import '../dataTypes/Call.sol';
+import '../pool/interfaces/IMarginlyPool.sol';
+import '../pool/dataTypes/Position.sol';
+import '../pool/dataTypes/Call.sol';
 
 contract MockMarginlyPool is IMarginlyPool {
   address public override quoteToken;
   address public override baseToken;
   address public override factory;
   uint32 public override defaultSwapCallData;
+  MarginlyParams public params;
 
   address private badPositionAddress;
   uint256 private quoteAmount;
@@ -23,6 +25,15 @@ contract MockMarginlyPool is IMarginlyPool {
     factory = _factory;
     quoteToken = _quoteToken;
     baseToken = _baseToken;
+  }
+
+  function _onlyFactoryOwner() private view {
+    if (msg.sender != Ownable2Step(factory).owner()) revert('Access denied');
+  }
+
+  modifier onlyFactoryOwner() {
+    _onlyFactoryOwner();
+    _;
   }
 
   function setBadPosition(
@@ -47,9 +58,13 @@ contract MockMarginlyPool is IMarginlyPool {
     MarginlyParams memory _params
   ) external {}
 
-  function setParameters(MarginlyParams calldata _params) external {}
+  function setParameters(MarginlyParams calldata _params) external onlyFactoryOwner {
+    params = _params;
+  }
 
-  function shutDown(uint256 swapCalldata) external {}
+  function shutDown(uint256 swapCalldata) external onlyFactoryOwner {}
+
+  function sweepETH() external onlyFactoryOwner {}
 
   function setRecoveryMode(bool set) external {}
 
@@ -83,8 +98,6 @@ contract MockMarginlyPool is IMarginlyPool {
       }
     }
   }
-
-  function sweepETH() external {}
 
   function getBasePrice() external view returns (FP96.FixedPoint memory) {}
 }

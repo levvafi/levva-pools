@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import '../interfaces/IPriceOracle.sol';
-import '../libraries/FP96.sol';
+import '../pool/interfaces/IPriceOracle.sol';
+import '../pool/libraries/FP96.sol';
 
 contract MockPriceOracle is IPriceOracle {
   using FP96 for FP96.FixedPoint;
@@ -13,6 +13,11 @@ contract MockPriceOracle is IPriceOracle {
   constructor() {
     balancePrice = FP96.fromRatio(1, 4).inner;
     marginCallPrice = FP96.fromRatio(1, 4).inner;
+  }
+
+  function setPrice(uint256 newBalancePriceX96, uint256 newMargincallPriceX96) public {
+    balancePrice = newBalancePriceX96;
+    marginCallPrice = newMargincallPriceX96;
   }
 
   function setBalancePrice(uint256 price) external {
@@ -27,7 +32,7 @@ contract MockPriceOracle is IPriceOracle {
     return balancePrice;
   }
 
-  /// @notice Returns marcin call price as FP96 value
+  /// @notice Returns margin call price as FP96 value
   function getMargincallPrice(address, address) external view returns (uint256) {
     return marginCallPrice;
   }

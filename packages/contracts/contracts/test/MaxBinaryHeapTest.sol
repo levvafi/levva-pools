@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import '../libraries/MaxBinaryHeapLib.sol';
+import '../pool/libraries/MaxBinaryHeapLib.sol';
 
 /// @dev Minimal contract to test MinHeapLib internal functions
 contract MaxBinaryHeapTest {

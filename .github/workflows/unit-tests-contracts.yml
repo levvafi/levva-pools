@@ -21,5 +21,8 @@ jobs:
     - name: Build for testing contracts
       run: |
         cd packages/contracts
-        yarn
+        yarn && yarn compile
         yarn test
+      env:
+        ETH_NODE_URL: ${{ secrets.ETH_NODE_URL }}
+        ARB_NODE_URL: ${{ secrets.ARB_NODE_URL }}

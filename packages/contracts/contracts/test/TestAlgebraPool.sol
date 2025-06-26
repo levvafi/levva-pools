@@ -285,4 +285,25 @@ contract TestAlgebraPool {
 
     emit Flash(msg.sender, recipient, amount0, amount1, paid0, paid1);
   }
+
+  function getTimepoints(
+    uint32[] calldata secondsAgos
+  )
+    external
+    view
+    returns (
+      int56[] memory tickCumulatives,
+      uint160[] memory secondsPerLiquidityCumulatives,
+      uint112[] memory volatilityCumulatives,
+      uint256[] memory volumePerAvgLiquiditys
+    )
+  {
+    tickCumulatives = new int56[](2);
+    tickCumulatives[0] = 0;
+    tickCumulatives[1] = tickCumulativesSecond * int56(uint56(secondsAgos[0] - secondsAgos[1]));
+
+    secondsPerLiquidityCumulatives = new uint160[](2);
+    volatilityCumulatives = new uint112[](2);
+    volumePerAvgLiquiditys = new uint256[](2);
+  }
 }

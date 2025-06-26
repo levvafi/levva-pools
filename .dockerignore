@@ -1,9 +1,0 @@
-**/node_modules/
-**/artifacts
-**/cache
-**/dist
-**/coverage
-**/typechain-types
-.coverage
-.coverage.*
-packages/*/tsconfig.tsbuildinfo

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import '../libraries/FP96.sol';
+import '../pool/libraries/FP96.sol';
 
 contract FixedPointTest {
   using FP96 for FP96.FixedPoint;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.28;
 
-import '@marginly/router/contracts/interfaces/IMarginlyRouter.sol';
+import '../router/interfaces/IMarginlyRouter.sol';
 import './TestUniswapPool.sol';
 import '@openzeppelin/contracts/utils/math/Math.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
@@ -63,4 +63,6 @@ contract TestSwapRouter is IMarginlyRouter {
   }
 
   function adapterCallback(address recipient, uint256 amount, bytes calldata data) external {}
+
+  function adapters(uint256) external view returns (address) {}
 }

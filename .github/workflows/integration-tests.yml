@@ -29,15 +29,11 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 24.2.0
-      - name: Build for testing
+      - name: Integration testing
         run: |
           cd ./packages/contracts/
           yarn && yarn compile
-          cd ../router
-          yarn && yarn compile
-          cd ../periphery
-          yarn && yarn compile
-      - name: Integration testing
-        run: |
-          cd ./packages/int-tests/
-          yarn test:parallel
+          yarn test:int-pool-parallel
+        env:
+          ETH_NODE_URL: ${{ secrets.ETH_NODE_URL }}
+          ARB_NODE_URL: ${{ secrets.ARB_NODE_URL }}

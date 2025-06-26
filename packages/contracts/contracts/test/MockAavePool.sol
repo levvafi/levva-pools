@@ -8,7 +8,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 contract MockAavePool is IPool {
   function mintUnbacked(address asset, uint256 amount, address onBehalfOf, uint16 referralCode) external {}
 
-  function backUnbacked(address asset, uint256 amount, uint256 fee) external pure returns (uint256) {
+  function backUnbacked(address, uint256, uint256) external pure returns (uint256) {
     return 0;
   }
 
@@ -35,29 +35,24 @@ contract MockAavePool is IPool {
     address onBehalfOf
   ) external {}
 
-  function repay(
-    address asset,
-    uint256 amount,
-    uint256 interestRateMode,
-    address onBehalfOf
-  ) external returns (uint256) {
+  function repay(address, uint256, uint256, address) external pure returns (uint256) {
     return 0;
   }
 
   function repayWithPermit(
-    address asset,
-    uint256 amount,
-    uint256 interestRateMode,
-    address onBehalfOf,
-    uint256 deadline,
-    uint8 permitV,
-    bytes32 permitR,
-    bytes32 permitS
-  ) external returns (uint256) {
+    address,
+    uint256,
+    uint256,
+    address,
+    uint256,
+    uint8,
+    bytes32,
+    bytes32
+  ) external pure returns (uint256) {
     return 0;
   }
 
-  function repayWithATokens(address asset, uint256 amount, uint256 interestRateMode) external pure returns (uint256) {
+  function repayWithATokens(address, uint256, uint256) external pure returns (uint256) {
     return 0;
   }
 
@@ -90,7 +85,7 @@ contract MockAavePool is IPool {
     address asset,
     uint256 amount,
     bytes calldata params,
-    uint16 referralCode
+    uint16
   ) external {
     uint256 balanceBefore = IERC20(asset).balanceOf(address(this));
 

@@ -257,18 +257,16 @@ contract TestUniswapPool is IUniswapV3PoolImmutables, IUniswapV3PoolState {
   /// you must call it with secondsAgos = [3600, 0].
   /// @dev The time weighted average tick represents the geometric time weighted average price of the pool, in
   /// log base sqrt(1.0001) of token1 / token0. The TickMath library can be used to go from a tick value to a ratio.
-  /// @param /*secondsAgos*/ From how long ago each cumulative tick and liquidity value should be returned
+  /// @param secondsAgos From how long ago each cumulative tick and liquidity value should be returned
   /// @return tickCumulatives Cumulative tick values as of each `secondsAgos` from the current block timestamp
   /// @return secondsPerLiquidityCumulativeX128s Cumulative seconds per liquidity-in-range value as of each `secondsAgos` from the current block
   /// timestamp
   function observe(
-    uint32[] calldata /*secondsAgos*/
+    uint32[] calldata secondsAgos
   ) external view returns (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) {
     tickCumulatives = new int56[](2);
-    // 1.0001 ^ ((tickCumulatives[0] - tickCumulatives[1]) / secsAgo) = 1/ (TOKEN1_TO_TOKEN0_SQRT_PRICE ^ 2)
-    // 1.0001 ^ (-13863.6) = 0.25
     tickCumulatives[0] = 0;
-    tickCumulatives[1] = tickCumulativesSecond;
+    tickCumulatives[1] = tickCumulativesSecond * int56(uint56(secondsAgos[0] - secondsAgos[1]));
     secondsPerLiquidityCumulativeX128s = new uint160[](2);
   }
 
