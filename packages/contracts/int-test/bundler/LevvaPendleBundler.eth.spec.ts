@@ -7,7 +7,7 @@ import { PENDLE_MARKET_WSTETH_30_12_27, WSTETH } from './shared/registry';
 import { parseUnits, ZeroAddress } from 'ethers';
 import { EthereumMainnetERC20BalanceOfSlot, setTokenBalance } from './shared/tokens';
 
-describe.only('LevvaPendleBundler', () => {
+describe('LevvaPendleBundler', () => {
   it('long PT token', async () => {
     const { pool, bundler } = await loadFixture(deployPendleBundlerWithPool);
     const wstEth = IERC20__factory.connect(WSTETH, ethers.provider);
