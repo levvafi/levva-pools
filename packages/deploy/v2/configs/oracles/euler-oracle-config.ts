@@ -9,7 +9,7 @@ export interface IEulerOraclePairSettings {
 }
 
 export interface IEulerOracleDeployConfig {
-  settings: IEulerOraclePairSettings[];
+  settings?: IEulerOraclePairSettings[];
 }
 
 export class EulerOracleDeployConfig implements IEulerOracleDeployConfig {
@@ -17,7 +17,7 @@ export class EulerOracleDeployConfig implements IEulerOracleDeployConfig {
 
   constructor(jsonParsed: IEulerOracleDeployConfig) {
     this.settings = [];
-    jsonParsed.settings.forEach((settings) => {
+    (jsonParsed.settings ?? []).forEach((settings) => {
       this.settings.push({
         eulerOracleAddress: settings.eulerOracleAddress,
         quoteToken: new Erc20Config(settings.quoteToken),

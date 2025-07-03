@@ -19,6 +19,10 @@ export class UniswapV3TickDoubleOracleDeployer extends Deployer<UniswapV3TickOra
   }
 
   public async setup(config: IUniswapV3TickDoubleOracleDeployConfig): Promise<void> {
+    if (config.settings === undefined) {
+      throw new Error('Oracle setup settings are not provided');
+    }
+
     const address = this.getDeployedAddressSafe();
     const oracle = UniswapV3TickOracleDouble__factory.connect(address, this.factory.runner);
 

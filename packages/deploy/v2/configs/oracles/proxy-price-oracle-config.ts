@@ -2,7 +2,7 @@ import { Provider } from 'ethers';
 import { Erc20Config, IErc20Config } from '../erc20-config';
 import { validateAddress } from '../../base/utils';
 
-export interface IPriceOracleProxyPairSettings {
+export interface IProxyPriceOraclePairSettings {
   quoteToken: IErc20Config;
   baseToken: IErc20Config;
   underlyingQuoteToken: IErc20Config;
@@ -10,16 +10,16 @@ export interface IPriceOracleProxyPairSettings {
   priceOracleAddress: string;
 }
 
-export interface IPriceOracleProxyDeployConfig {
-  settings: IPriceOracleProxyPairSettings[];
+export interface IProxyPriceOracleDeployConfig {
+  settings?: IProxyPriceOraclePairSettings[];
 }
 
-export class PriceOracleProxyDeployConfig implements IPriceOracleProxyDeployConfig {
-  public readonly settings: IPriceOracleProxyPairSettings[];
+export class ProxyPriceOracleDeployConfig implements IProxyPriceOracleDeployConfig {
+  public readonly settings: IProxyPriceOraclePairSettings[];
 
-  constructor(jsonParsed: IPriceOracleProxyDeployConfig) {
+  constructor(jsonParsed: IProxyPriceOracleDeployConfig) {
     this.settings = [];
-    jsonParsed.settings.forEach((settings) => {
+    (jsonParsed.settings ?? []).forEach((settings) => {
       this.settings.push({
         quoteToken: new Erc20Config(settings.quoteToken),
         baseToken: new Erc20Config(settings.baseToken),

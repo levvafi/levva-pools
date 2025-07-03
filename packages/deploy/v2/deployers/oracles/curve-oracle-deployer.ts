@@ -19,6 +19,10 @@ export class CurveOracleDeployer extends Deployer<CurveOracle__factory> {
   }
 
   public async setup(config: ICurveOracleDeployConfig): Promise<void> {
+    if (config.settings === undefined) {
+      throw new Error('Oracle setup settings are not provided');
+    }
+
     const address = this.getDeployedAddressSafe();
     const oracle = CurveOracle__factory.connect(address, this.factory.runner);
 

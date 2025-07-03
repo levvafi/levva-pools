@@ -19,6 +19,10 @@ export class AavePriceOracleDeployer extends Deployer<AavePriceOracle__factory> 
   }
 
   public async setup(config: IAavePriceOracleDeployConfig): Promise<void> {
+    if (config.settings === undefined) {
+      throw new Error('Oracle setup settings are not provided');
+    }
+
     const address = this.getDeployedAddressSafe();
     const oracle = AavePriceOracle__factory.connect(address, this.factory.runner);
 

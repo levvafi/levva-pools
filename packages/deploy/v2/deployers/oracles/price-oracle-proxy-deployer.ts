@@ -2,9 +2,9 @@ import { Signer } from 'ethers';
 import { PriceOracleProxy__factory } from '../../../../contracts/typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
 import { Deployer } from '../../base/deployers/deployer';
-import { IPriceOracleProxyDeployConfig } from '../../configs/oracles';
+import { IProxyPriceOracleDeployConfig } from '../../configs/oracles';
 
-export class PriceOracleProxyDeployer extends Deployer<PriceOracleProxy__factory> {
+export class ProxyPriceOracleDeployer extends Deployer<PriceOracleProxy__factory> {
   constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
     super(
       PriceOracleProxy__factory.name.replace('__factory', ''),
@@ -14,11 +14,15 @@ export class PriceOracleProxyDeployer extends Deployer<PriceOracleProxy__factory
     );
   }
 
-  public async performDeployment(config: IPriceOracleProxyDeployConfig): Promise<string> {
+  public async performDeployment(config: IProxyPriceOracleDeployConfig): Promise<string> {
     return super.performDeploymentRaw();
   }
 
-  public async setup(config: IPriceOracleProxyDeployConfig): Promise<void> {
+  public async setup(config: IProxyPriceOracleDeployConfig): Promise<void> {
+    if (config.settings === undefined) {
+      throw new Error('Oracle setup settings are not provided');
+    }
+
     const address = this.getDeployedAddressSafe();
     const oracle = PriceOracleProxy__factory.connect(address, this.factory.runner);
 

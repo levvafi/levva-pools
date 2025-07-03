@@ -9,7 +9,7 @@ export interface IAavePriceOraclePairSettings {
 
 export interface IAavePriceOracleDeployConfig {
   aavePoolProviderAddress: string;
-  settings: IAavePriceOraclePairSettings[];
+  settings?: IAavePriceOraclePairSettings[];
 }
 
 export class AavePriceOracleDeployConfig implements IAavePriceOracleDeployConfig {
@@ -19,7 +19,7 @@ export class AavePriceOracleDeployConfig implements IAavePriceOracleDeployConfig
   constructor(jsonParsed: IAavePriceOracleDeployConfig) {
     this.aavePoolProviderAddress = jsonParsed.aavePoolProviderAddress;
     this.settings = [];
-    jsonParsed.settings.forEach((settings) => {
+    (jsonParsed.settings ?? []).forEach((settings) => {
       this.settings.push({
         quoteToken: new Erc20Config(settings.quoteToken),
         aToken: new Erc20Config(settings.aToken),

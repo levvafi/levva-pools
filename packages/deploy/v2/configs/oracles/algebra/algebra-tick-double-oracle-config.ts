@@ -12,7 +12,7 @@ export interface IAlgebraTickDoubleOraclePairSettings {
 
 export interface IAlgebraTickDoubleOracleDeployConfig {
   factoryAddress: string;
-  settings: IAlgebraTickDoubleOraclePairSettings[];
+  settings?: IAlgebraTickDoubleOraclePairSettings[];
 }
 
 export class AlgebraTickDoubleOracleDeployConfig implements IAlgebraTickDoubleOracleDeployConfig {
@@ -22,7 +22,7 @@ export class AlgebraTickDoubleOracleDeployConfig implements IAlgebraTickDoubleOr
   constructor(jsonParsed: IAlgebraTickDoubleOracleDeployConfig) {
     this.factoryAddress = jsonParsed.factoryAddress;
     this.settings = [];
-    jsonParsed.settings.forEach((settings) => {
+    (jsonParsed.settings ?? []).forEach((settings) => {
       this.settings.push({
         quoteToken: new Erc20Config(settings.quoteToken),
         baseToken: new Erc20Config(settings.baseToken),

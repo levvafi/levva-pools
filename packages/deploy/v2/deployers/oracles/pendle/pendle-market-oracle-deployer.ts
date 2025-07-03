@@ -19,6 +19,10 @@ export class PendleMarketOracleDeployer extends Deployer<PendleMarketOracle__fac
   }
 
   public async setup(config: IPendleMarketOracleDeployConfig): Promise<void> {
+    if (config.settings === undefined) {
+      throw new Error('Oracle setup settings are not provided');
+    }
+
     const address = this.getDeployedAddressSafe();
     const oracle = PendleMarketOracle__factory.connect(address, this.factory.runner);
 

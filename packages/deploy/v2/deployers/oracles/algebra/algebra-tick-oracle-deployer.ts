@@ -19,6 +19,10 @@ export class AlgebraTickOracleDeployer extends Deployer<AlgebraTickOracle__facto
   }
 
   public async setup(config: IAlgebraTickOracleDeployConfig): Promise<void> {
+    if (config.settings === undefined) {
+      throw new Error('Oracle setup settings are not provided');
+    }
+
     const address = this.getDeployedAddressSafe();
     const oracle = AlgebraTickOracle__factory.connect(address, this.factory.runner);
 

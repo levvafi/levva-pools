@@ -11,7 +11,7 @@ export interface IAlgebraTickOraclePairSettings {
 
 export interface IAlgebraTickOracleDeployConfig {
   factoryAddress: string;
-  settings: IAlgebraTickOraclePairSettings[];
+  settings?: IAlgebraTickOraclePairSettings[];
 }
 
 export class AlgebraTickOracleDeployConfig implements IAlgebraTickOracleDeployConfig {
@@ -21,7 +21,7 @@ export class AlgebraTickOracleDeployConfig implements IAlgebraTickOracleDeployCo
   constructor(jsonParsed: IAlgebraTickOracleDeployConfig) {
     this.factoryAddress = jsonParsed.factoryAddress;
     this.settings = [];
-    jsonParsed.settings.forEach((settings) => {
+    (jsonParsed.settings ?? []).forEach((settings) => {
       this.settings.push({
         quoteToken: new Erc20Config(settings.quoteToken),
         baseToken: new Erc20Config(settings.baseToken),

@@ -9,7 +9,7 @@ export interface ICurveOraclePairSettings {
 }
 
 export interface ICurveOracleDeployConfig {
-  settings: ICurveOraclePairSettings[];
+  settings?: ICurveOraclePairSettings[];
 }
 
 export class CurveOracleDeployConfig implements ICurveOracleDeployConfig {
@@ -17,7 +17,7 @@ export class CurveOracleDeployConfig implements ICurveOracleDeployConfig {
 
   constructor(jsonParsed: ICurveOracleDeployConfig) {
     this.settings = [];
-    jsonParsed.settings.forEach((settings) => {
+    (jsonParsed.settings ?? []).forEach((settings) => {
       this.settings.push({
         poolAddress: settings.poolAddress,
         quoteToken: new Erc20Config(settings.quoteToken),

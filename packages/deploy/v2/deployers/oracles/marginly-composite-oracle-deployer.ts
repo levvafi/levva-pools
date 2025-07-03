@@ -19,6 +19,10 @@ export class MarginlyCompositeOracleDeployer extends Deployer<MarginlyCompositeO
   }
 
   public async setup(config: IMarginlyCompositeOracleDeployConfig): Promise<void> {
+    if (config.settings === undefined) {
+      throw new Error('Oracle setup settings are not provided');
+    }
+
     const address = this.getDeployedAddressSafe();
     const oracle = MarginlyCompositeOracle__factory.connect(address, this.factory.runner);
 

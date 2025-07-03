@@ -19,6 +19,10 @@ export class EulerOracleDeployer extends Deployer<EulerPriceOracle__factory> {
   }
 
   public async setup(config: IEulerOracleDeployConfig): Promise<void> {
+    if (config.settings === undefined) {
+      throw new Error('Oracle setup settings are not provided');
+    }
+
     const address = this.getDeployedAddressSafe();
     const oracle = EulerPriceOracle__factory.connect(address, this.factory.runner);
 

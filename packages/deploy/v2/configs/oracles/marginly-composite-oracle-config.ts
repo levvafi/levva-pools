@@ -11,7 +11,7 @@ export interface IMarginlyCompositeOraclePairSettings {
 }
 
 export interface IMarginlyCompositeOracleDeployConfig {
-  settings: IMarginlyCompositeOraclePairSettings[];
+  settings?: IMarginlyCompositeOraclePairSettings[];
 }
 
 export class MarginlyCompositeOracleDeployConfig implements IMarginlyCompositeOracleDeployConfig {
@@ -19,7 +19,7 @@ export class MarginlyCompositeOracleDeployConfig implements IMarginlyCompositeOr
 
   constructor(jsonParsed: IMarginlyCompositeOracleDeployConfig) {
     this.settings = [];
-    jsonParsed.settings.forEach((settings) => {
+    (jsonParsed.settings ?? []).forEach((settings) => {
       this.settings.push({
         quoteToken: new Erc20Config(settings.quoteToken),
         intermediateToken: new Erc20Config(settings.intermediateToken),

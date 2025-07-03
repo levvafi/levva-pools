@@ -20,13 +20,13 @@ export type PairChainlinkOracleDeployConfig =
   | SinglePairChainlinkOracleDeployConfig
   | DoublePairChainlinkOracleDeployConfig;
 
-export function isSinglePairChainlinkOracleDeployConfig(
+function isSinglePairChainlinkOracleDeployConfig(
   config: PairChainlinkOracleDeployConfig
 ): config is SinglePairChainlinkOracleDeployConfig {
   return config.type === 'single';
 }
 
-export function isDoublePairChainlinkOracleDeployConfig(
+function isDoublePairChainlinkOracleDeployConfig(
   config: PairChainlinkOracleDeployConfig
 ): config is DoublePairChainlinkOracleDeployConfig {
   return config.type === 'double';

@@ -12,7 +12,7 @@ export interface IPendleMarketOraclePairSettings {
 
 export interface IPendleMarketOracleDeployConfig {
   pendlePtLpOracleAddress: string;
-  settings: IPendleMarketOraclePairSettings[];
+  settings?: IPendleMarketOraclePairSettings[];
 }
 
 export class PendleMarketOracleDeployConfig implements IPendleMarketOracleDeployConfig {
@@ -22,7 +22,7 @@ export class PendleMarketOracleDeployConfig implements IPendleMarketOracleDeploy
   constructor(jsonParsed: IPendleMarketOracleDeployConfig) {
     this.pendlePtLpOracleAddress = jsonParsed.pendlePtLpOracleAddress;
     this.settings = [];
-    jsonParsed.settings.forEach((settings) => {
+    (jsonParsed.settings ?? []).forEach((settings) => {
       this.settings.push({
         quoteToken: new Erc20Config(settings.quoteToken),
         baseToken: new Erc20Config(settings.baseToken),

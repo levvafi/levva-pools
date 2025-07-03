@@ -12,10 +12,10 @@ export interface IUniswapV3TickOraclePairSettings {
 
 export interface IUniswapV3TickOracleDeployConfig {
   factoryAddress: string;
-  settings: IUniswapV3TickOraclePairSettings[];
+  settings?: IUniswapV3TickOraclePairSettings[];
 }
 
-export class UniswapV3TickDoubleOracleDeployConfig implements IUniswapV3TickOracleDeployConfig {
+export class UniswapV3TickOracleDeployConfig implements IUniswapV3TickOracleDeployConfig {
   public readonly factoryAddress: string;
   public readonly settings: IUniswapV3TickOraclePairSettings[];
 
@@ -24,7 +24,7 @@ export class UniswapV3TickDoubleOracleDeployConfig implements IUniswapV3TickOrac
   constructor(jsonParsed: IUniswapV3TickOracleDeployConfig) {
     this.factoryAddress = jsonParsed.factoryAddress;
     this.settings = [];
-    jsonParsed.settings.forEach((settings) => {
+    (jsonParsed.settings ?? []).forEach((settings) => {
       this.settings.push({
         quoteToken: new Erc20Config(settings.quoteToken),
         baseToken: new Erc20Config(settings.baseToken),
