@@ -1,6 +1,6 @@
 import { ContractTransactionReceipt, EventLog, Signer } from 'ethers';
 import { MarginlyFactory__factory } from '../../contracts/typechain-types';
-import { ILevvaPoolConfig } from './configs/levva-pool';
+import { ILevvaPoolConfig } from './configs/levva-pool-config';
 import { ContractState, StorageFile } from './base/deployment-states';
 
 export async function deployPools(signer: Signer, config: ILevvaPoolConfig[], storage: StorageFile<ContractState>) {
