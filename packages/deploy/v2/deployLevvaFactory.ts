@@ -4,7 +4,7 @@ import {
   LevvaTradingPool__factory,
   MarginlyFactory__factory,
 } from '../../contracts/typechain-types';
-import { MarginlyRouter__factory } from '../../router/typechain-types';
+import { MarginlyRouter__factory } from '../../contracts/typechain-types';
 import { ContractState, StorageFile } from './base/deployment-states';
 import { Deployer } from './base/deployers/deployer';
 import { ILevvaFactoryConfig, PoolType } from './configs/levva-factory-config';
