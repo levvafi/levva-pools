@@ -2,7 +2,7 @@ import { Signer } from 'ethers';
 import { MarginlyFactory__factory } from '../../../contracts/typechain-types';
 import { ContractState, StorageFile } from '../base/deployment-states';
 import { Deployer } from '../base/deployers/deployer';
-import { ILevvaFactoryConfig } from '../configs/levva-factory-config';
+import { ILevvaFactoryConfig, PoolType } from '../configs/levva-factory-config';
 
 export class LevvaFactoryDeployer extends Deployer<MarginlyFactory__factory> {
   constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
@@ -15,17 +15,30 @@ export class LevvaFactoryDeployer extends Deployer<MarginlyFactory__factory> {
   }
 
   public async performDeployment(config: ILevvaFactoryConfig): Promise<string> {
-    if (config.marginlyPoolImplementationAddress === undefined) {
-      throw new Error('Failed to obtain poolImplementation address');
+    let implementationAddress = config.marginlyPoolImplementationAddress;
+    if (implementationAddress === undefined) {
+      const type = config.poolType;
+      const id = `Levva${typeof type === 'string' ? type : PoolType[config.poolType as PoolType]}PoolImplementation`;
+      console.log(id);
+      const inStorage = this.storage.getById(id);
+      if (inStorage === undefined) {
+        throw new Error('Failed to obtain poolImplementation address');
+      }
+      implementationAddress = inStorage.address;
     }
 
-    if (config.swapRouterAddress === undefined) {
-      throw new Error('Failed to obtain swapRouterAddress address');
+    let routerAddress = config.swapRouterAddress;
+    if (routerAddress === undefined) {
+      const inStorage = this.storage.getById(`MarginlyRouter`);
+      if (inStorage === undefined) {
+        throw new Error('Failed to obtain router address');
+      }
+      routerAddress = inStorage.address;
     }
 
     return super.performDeploymentRaw([
-      config.marginlyPoolImplementationAddress,
-      config.swapRouterAddress,
+      implementationAddress,
+      routerAddress,
       config.feeHolderAddress,
       config.WETH9,
       config.techPositionOwnerAddress,
