@@ -25,9 +25,9 @@ export class OracleConfigFactory {
       throw new Error(`Failed to get oracle configs: ${ORACLES_CONFIGS_PATH} doesn't exist`);
     }
 
-    const oraclesFactoriesModule = await import(path.resolve(ORACLES_CONFIGS_PATH, 'index'));
+    const oraclesModule = await import(path.resolve(ORACLES_CONFIGS_PATH, 'index'));
     const oracles = new Map<string, any>();
-    for (const [exportName, object] of Object.entries(oraclesFactoriesModule)) {
+    for (const [exportName, object] of Object.entries(oraclesModule)) {
       oracles.set(exportName.replace('DeployConfig', ''), object);
     }
 
