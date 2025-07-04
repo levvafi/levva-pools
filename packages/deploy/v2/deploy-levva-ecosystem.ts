@@ -1,4 +1,5 @@
-import { ethers, Wallet } from 'ethers';
+import { ethers } from 'hardhat';
+import { Wallet } from 'ethers';
 import { getConfigParsed } from './base/base-config';
 import { ILevvaEcosystemConfig, LevvaEcosystemConfig } from './levva-ecosystem-config';
 import { LevvaPoolImplementationDeployer } from './deployers/levva-pool-implementation-deployer';
@@ -6,6 +7,7 @@ import { LevvaRouterDeployer } from './deployers/levva-router-deployer';
 import { ContractState, StorageFile } from './base/deployment-states';
 import { LevvaFactoryDeployer } from './deployers/levva-factory-deployer';
 import { OracleDeployerFactory } from './deployers/oracle-deployer-factory';
+import { AdapterDeployerFactory } from './deployers/adapter-deployer-factory';
 
 export async function runLevvaDeployment() {
   const jsonParsed = getConfigParsed<ILevvaEcosystemConfig>('./v2', 'test-config');
@@ -29,6 +31,13 @@ export async function runLevvaDeployment() {
   for (const [oracleName, oracleConfig] of config.oracles) {
     const deployer = oracleDeployerFactory.getDeployer(oracleName, signer, storage);
     await deployer.performDeployment(oracleConfig);
-    await deployer.setup(oracleConfig);
+    // await deployer.setup(oracleConfig);
+  }
+
+  const adapterDeployerFactory = new AdapterDeployerFactory();
+  for (const [adapterName, adapterConfig] of config.adapters) {
+    const deployer = await adapterDeployerFactory.getDeployer(adapterName, signer, storage);
+    await deployer.performDeployment(adapterConfig);
+    // await deployer.setup(oracleConfig);
   }
 }

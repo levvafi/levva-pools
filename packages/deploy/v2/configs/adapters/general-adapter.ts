@@ -4,8 +4,8 @@ import { Erc20Config, IErc20Config } from '../erc20-config';
 import { validateAddress } from '../../base/utils';
 
 export interface IGeneralAdapterPairSettings {
-  tokenA: IErc20Config;
-  tokenB: IErc20Config;
+  token0: IErc20Config;
+  token1: IErc20Config;
   poolAddress: string;
 }
 
@@ -23,8 +23,8 @@ export class GeneralAdapterDeployConfig implements IGeneralAdapterDeployConfig {
     this.settings = [];
     (jsonParsed.settings ?? []).forEach((settings) => {
       this.settings.push({
-        tokenA: new Erc20Config(settings.tokenA),
-        tokenB: new Erc20Config(settings.tokenB),
+        token0: new Erc20Config(settings.token0),
+        token1: new Erc20Config(settings.token1),
         poolAddress: settings.poolAddress,
       });
     });
@@ -37,7 +37,7 @@ export class GeneralAdapterDeployConfig implements IGeneralAdapterDeployConfig {
 
     for (const [_, settings] of this.settings.entries()) {
       validateAddress(settings.poolAddress);
-      await Promise.all([settings.tokenA.validate(provider), settings.tokenB.validate(provider)]);
+      await Promise.all([settings.token0.validate(provider), settings.token1.validate(provider)]);
     }
   }
 }

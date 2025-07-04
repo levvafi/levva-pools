@@ -4,8 +4,8 @@ import { validateAddress } from '../../base/utils';
 import { Erc20Config, IErc20Config } from '../erc20-config';
 
 export interface IPendleMarketAdapterPairSettings {
-  tokenA: IErc20Config;
-  tokenB: IErc20Config;
+  ptToken: IErc20Config;
+  ibToken: IErc20Config;
   market: string;
   slippage: number;
 }
@@ -24,8 +24,8 @@ export class PendleMarketAdapterDeployConfig implements IPendleMarketAdapterDepl
     this.settings = [];
     (jsonParsed.settings ?? []).forEach((settings) => {
       this.settings.push({
-        tokenA: new Erc20Config(settings.tokenA),
-        tokenB: new Erc20Config(settings.tokenB),
+        ptToken: new Erc20Config(settings.ptToken),
+        ibToken: new Erc20Config(settings.ibToken),
         market: settings.market,
         slippage: settings.slippage,
       });
@@ -40,7 +40,7 @@ export class PendleMarketAdapterDeployConfig implements IPendleMarketAdapterDepl
     for (const [_, settings] of this.settings.entries()) {
       // TODO: validate slippage
       validateAddress(settings.market);
-      await Promise.all([settings.tokenA.validate(provider), settings.tokenB.validate(provider)]);
+      await Promise.all([settings.ptToken.validate(provider), settings.ibToken.validate(provider)]);
     }
   }
 }

@@ -17,15 +17,18 @@ export interface IPendleCurveRouterAdapterPairSettings {
 
 export interface IPendleCurveRouterAdapterDeployConfig extends IConfigBase {
   dexId: number;
+  router: string;
   settings?: IPendleCurveRouterAdapterPairSettings[];
 }
 
 export class PendleCurveRouterAdapterDeployConfig implements IPendleCurveRouterAdapterDeployConfig {
   public readonly dexId: number;
+  public readonly router: string;
   public readonly settings: IPendleCurveRouterAdapterPairSettings[];
 
   constructor(jsonParsed: IPendleCurveRouterAdapterDeployConfig) {
     this.dexId = jsonParsed.dexId;
+    this.router = jsonParsed.router;
     this.settings = [];
     (jsonParsed.settings ?? []).forEach((settings) => {
       this.settings.push({
@@ -46,6 +49,8 @@ export class PendleCurveRouterAdapterDeployConfig implements IPendleCurveRouterA
     if (this.dexId === undefined) {
       throw new Error('Undefined dexId');
     }
+
+    validateAddress(this.router);
 
     for (const [_, settings] of this.settings.entries()) {
       // TODO: validate the rest of parameters

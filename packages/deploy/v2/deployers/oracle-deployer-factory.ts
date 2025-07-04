@@ -10,7 +10,7 @@ export class OracleDeployerFactory {
 
   constructor() {
     if (!fs.existsSync(ORACLES_DEPLOYERS_PATH)) {
-      throw new Error(`Failed to get oracle configs: ${ORACLES_DEPLOYERS_PATH} doesn't exist`);
+      throw new Error(`Failed to get oracle deployers: ${ORACLES_DEPLOYERS_PATH} doesn't exist`);
     }
 
     const oraclesModule = require(path.resolve(ORACLES_DEPLOYERS_PATH, 'index'));
