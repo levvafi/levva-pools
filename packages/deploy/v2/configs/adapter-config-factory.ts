@@ -5,29 +5,25 @@ const ADAPTERS_CONFIGS_PATH = path.join(__dirname, './adapters');
 const DEFAULT_CONFIG = 'GeneralAdapter';
 
 export class AdapterConfigFactory {
-  public async getConfig(json: JSON) {
-    const jsonKeys = Object.keys(json);
-    if (jsonKeys.length != 1) {
-      throw new Error(`Not an adapter config: ${json}`);
-    }
+  private readonly validAdapters = new Map<string, any>();
 
-    const validAdapters = await this.getAdapterConfigMap();
-    const object = validAdapters.get(jsonKeys[0]) ?? validAdapters.get(DEFAULT_CONFIG);
-
-    return new object(json);
-  }
-
-  private async getAdapterConfigMap(): Promise<Map<string, any>> {
+  constructor() {
     if (!fs.existsSync(ADAPTERS_CONFIGS_PATH)) {
       throw new Error(`Failed to get adapter configs: ${ADAPTERS_CONFIGS_PATH} doesn't exist`);
     }
 
-    const adapterModule = await import(path.resolve(ADAPTERS_CONFIGS_PATH, 'index'));
-    const adapters = new Map<string, any>();
+    const adapterModule = require(path.resolve(ADAPTERS_CONFIGS_PATH, 'index'));
     for (const [exportName, object] of Object.entries(adapterModule)) {
-      adapters.set(exportName.replace('DeployConfig', ''), object);
+      this.validAdapters.set(exportName.replace('DeployConfig', ''), object);
+    }
+  }
+
+  public getConfig(key: string, json: JSON): any {
+    const object = this.validAdapters.get(key) ?? this.validAdapters.get(DEFAULT_CONFIG);
+    if (object === undefined) {
+      throw new Error('Failed to obtain default adapter config class');
     }
 
-    return adapters;
+    return new object(json);
   }
 }
