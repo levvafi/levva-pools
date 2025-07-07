@@ -1,8 +1,12 @@
 import { config as dotEnvConfig } from 'dotenv';
+import fs from 'fs';
 import '@nomicfoundation/hardhat-toolbox';
 import 'hardhat-contract-sizer';
 import 'solidity-docgen';
-import './scripts';
+
+if (fs.existsSync('./typechain-types')) {
+  require('./tasks/deploy');
+}
 
 dotEnvConfig();
 
