@@ -16,7 +16,8 @@ export interface LevvaParams {
 export interface ILevvaPoolConfig extends IConfigBase {
   quoteToken: IErc20Config;
   baseToken: IErc20Config;
-  priceOracle: string;
+  priceOracleAddress?: string;
+  priceOracleId?: string;
   defaultSwapCallData: number;
   params: LevvaParams;
 }
@@ -24,20 +25,27 @@ export interface ILevvaPoolConfig extends IConfigBase {
 export class LevvaPoolConfig implements ILevvaPoolConfig {
   public readonly quoteToken: IErc20Config;
   public readonly baseToken: IErc20Config;
-  public readonly priceOracle: string;
+  public readonly priceOracleAddress?: string;
+  public readonly priceOracleId?: string;
   public readonly defaultSwapCallData: number;
   public readonly params: LevvaParams;
 
   constructor(jsonParsed: ILevvaPoolConfig) {
     this.quoteToken = new Erc20Config(jsonParsed.quoteToken);
     this.baseToken = new Erc20Config(jsonParsed.baseToken);
-    this.priceOracle = jsonParsed.priceOracle;
+    this.priceOracleAddress = jsonParsed.priceOracleAddress;
+    this.priceOracleId = jsonParsed.priceOracleId;
     this.defaultSwapCallData = jsonParsed.defaultSwapCallData;
     this.params = jsonParsed.params;
   }
 
   async validate(provider: Provider): Promise<void> {
-    validateAddress(this.priceOracle);
+    if (this.priceOracleAddress !== undefined) {
+      validateAddress(this.priceOracleAddress);
+    } else if (this.priceOracleId === undefined) {
+      throw new Error(`Either priceOracleAddress, or priceOracleId must be defined in pool config`);
+    }
+    // TODO: verify this.priceOracleId is valid?
 
     // TODO: decode to validate?
     if (this.defaultSwapCallData >= 2 ** 32) {

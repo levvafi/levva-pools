@@ -21,11 +21,12 @@ export class LevvaPoolDeployer extends FactoryDeployer {
   }
 
   public async performDeployment(config: ILevvaPoolConfig): Promise<string> {
+    const priceOracleAddress = config.priceOracleAddress ?? this.getDeployedAddressSafe(config.priceOracleId!);
     return super.performDeploymentRaw(
       [
         config.quoteToken.address,
         config.baseToken.address,
-        config.priceOracle,
+        priceOracleAddress,
         config.defaultSwapCallData,
         config.params,
       ],

@@ -11,7 +11,7 @@
   },
   "pools": [
     {
-      "priceOracle": "0xd5Ea994A033737f0D568A2A307c65f8048b10698",
+      "priceOracleId": "UniswapV3TickOracle",
       "baseToken": {
         "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         "decimals": 18,
