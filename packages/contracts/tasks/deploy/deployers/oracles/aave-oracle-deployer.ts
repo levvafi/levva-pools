@@ -30,6 +30,15 @@ export class AavePriceOracleDeployer extends Deployer<AavePriceOracle__factory> 
     const oracle = AavePriceOracle__factory.connect(address ?? this.getDeployedAddressSafe(), this.factory.runner);
 
     for (const oracleSettings of config.settings) {
+      const currentOptions = await oracle.getParams(oracleSettings.quoteToken.address, oracleSettings.aToken.address);
+
+      if (currentOptions.initialized) {
+        console.log(
+          `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.aToken.address} pair is set. Skipping`
+        );
+        continue;
+      }
+
       const tx = await oracle.setPair(oracleSettings.quoteToken.address, oracleSettings.aToken.address);
       await tx.wait(this.blocksToConfirm);
       console.log(`Updated ${this.name} oracle settings. Tx hash: ${tx.hash}`);

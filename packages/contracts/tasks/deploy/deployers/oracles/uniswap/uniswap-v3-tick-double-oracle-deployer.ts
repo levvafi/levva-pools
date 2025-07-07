@@ -1,4 +1,4 @@
-import { Signer } from 'ethers';
+import { Signer, ZeroAddress } from 'ethers';
 import { UniswapV3TickOracleDouble__factory } from '../../../../../typechain-types';
 import { ContractState, StorageFile } from '../../../base/deployment-states';
 import { Deployer } from '../../../base/deployers/deployer';
@@ -33,6 +33,29 @@ export class UniswapV3TickDoubleOracleDeployer extends Deployer<UniswapV3TickOra
     );
 
     for (const oracleSettings of config.settings) {
+      const currentOptions = await oracle.getParams(
+        oracleSettings.quoteToken.address,
+        oracleSettings.baseToken.address
+      );
+
+      const isSet =
+        currentOptions.secondsAgo == BigInt(oracleSettings.secondsAgo) &&
+        currentOptions.secondsAgoLiquidation == BigInt(oracleSettings.secondsAgoLiquidation);
+
+      if (
+        currentOptions.intermediateToken != ZeroAddress &&
+        currentOptions.intermediateToken != oracleSettings.intermediateToken.address
+      ) {
+        throw new Error(`Can't change underlying pool for ${this.name} oracle`);
+      }
+
+      if (isSet) {
+        console.log(
+          `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
+        );
+        continue;
+      }
+
       const tx = await oracle.setOptions(
         oracleSettings.quoteToken.address,
         oracleSettings.baseToken.address,

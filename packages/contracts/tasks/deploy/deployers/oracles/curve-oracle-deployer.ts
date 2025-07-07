@@ -1,4 +1,4 @@
-import { Signer } from 'ethers';
+import { Signer, ZeroAddress } from 'ethers';
 import { CurveOracle__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
 import { Deployer } from '../../base/deployers/deployer';
@@ -30,6 +30,18 @@ export class CurveOracleDeployer extends Deployer<CurveOracle__factory> {
     const oracle = CurveOracle__factory.connect(address ?? this.getDeployedAddressSafe(), this.factory.runner);
 
     for (const oracleSettings of config.settings) {
+      const currentOptions = await oracle.getParams(
+        oracleSettings.quoteToken.address,
+        oracleSettings.baseToken.address
+      );
+
+      if (currentOptions.pool != ZeroAddress) {
+        console.log(
+          `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
+        );
+        continue;
+      }
+
       const tx = await oracle.addPool(
         oracleSettings.poolAddress,
         oracleSettings.quoteToken.address,

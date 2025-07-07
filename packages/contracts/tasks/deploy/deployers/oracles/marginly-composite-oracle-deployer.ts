@@ -1,4 +1,4 @@
-import { Signer } from 'ethers';
+import { Signer, ZeroAddress } from 'ethers';
 import { MarginlyCompositeOracle__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
 import { Deployer } from '../../base/deployers/deployer';
@@ -33,6 +33,18 @@ export class MarginlyCompositeOracleDeployer extends Deployer<MarginlyCompositeO
     );
 
     for (const oracleSettings of config.settings) {
+      const currentOptions = await oracle.getParams(
+        oracleSettings.quoteToken.address,
+        oracleSettings.baseToken.address
+      );
+
+      if (currentOptions.intermediateToken != ZeroAddress) {
+        console.log(
+          `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
+        );
+        continue;
+      }
+
       const tx = await oracle.setPair(
         oracleSettings.quoteToken.address,
         oracleSettings.intermediateToken.address,

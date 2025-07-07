@@ -30,6 +30,18 @@ export class EulerOracleDeployer extends Deployer<EulerPriceOracle__factory> {
     const oracle = EulerPriceOracle__factory.connect(address ?? this.getDeployedAddressSafe(), this.factory.runner);
 
     for (const oracleSettings of config.settings) {
+      const currentOptions = await oracle.getParams(
+        oracleSettings.quoteToken.address,
+        oracleSettings.baseToken.address
+      );
+
+      if (currentOptions === oracleSettings.eulerOracleAddress) {
+        console.log(
+          `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
+        );
+        continue;
+      }
+
       const tx = await oracle.addPair(
         oracleSettings.quoteToken.address,
         oracleSettings.baseToken.address,

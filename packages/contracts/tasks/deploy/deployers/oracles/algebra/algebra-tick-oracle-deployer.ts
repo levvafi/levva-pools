@@ -2,7 +2,7 @@ import { Signer } from 'ethers';
 import { AlgebraTickOracle__factory } from '../../../../../typechain-types';
 import { ContractState, StorageFile } from '../../../base/deployment-states';
 import { Deployer } from '../../../base/deployers/deployer';
-import { IAlgebraTickOracleDeployConfig } from '../../../configs/oracles';
+import { IAlgebraTickOracleDeployConfig, IAlgebraTickOraclePairSettings } from '../../../configs/oracles';
 
 export class AlgebraTickOracleDeployer extends Deployer<AlgebraTickOracle__factory> {
   constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
@@ -30,6 +30,22 @@ export class AlgebraTickOracleDeployer extends Deployer<AlgebraTickOracle__facto
     const oracle = AlgebraTickOracle__factory.connect(address ?? this.getDeployedAddressSafe(), this.factory.runner);
 
     for (const oracleSettings of config.settings) {
+      const currentOptions = await oracle.getParams(
+        oracleSettings.quoteToken.address,
+        oracleSettings.baseToken.address
+      );
+
+      const isSet =
+        currentOptions.secondsAgo == BigInt(oracleSettings.secondsAgo) &&
+        currentOptions.secondsAgoLiquidation == BigInt(oracleSettings.secondsAgoLiquidation);
+
+      if (isSet) {
+        console.log(
+          `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
+        );
+        continue;
+      }
+
       const tx = await oracle.setOptions(
         oracleSettings.quoteToken.address,
         oracleSettings.baseToken.address,

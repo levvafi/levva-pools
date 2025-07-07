@@ -30,6 +30,26 @@ export class UniswapV3TickOracleDeployer extends Deployer<UniswapV3TickOracle__f
     const oracle = UniswapV3TickOracle__factory.connect(address ?? this.getDeployedAddressSafe(), this.factory.runner);
 
     for (const oracleSettings of config.settings) {
+      const currentOptions = await oracle.getParams(
+        oracleSettings.quoteToken.address,
+        oracleSettings.baseToken.address
+      );
+
+      const isSet =
+        currentOptions.secondsAgo == BigInt(oracleSettings.secondsAgo) &&
+        currentOptions.secondsAgoLiquidation == BigInt(oracleSettings.secondsAgoLiquidation);
+
+      if (currentOptions.uniswapFee != 0n && currentOptions.uniswapFee != BigInt(oracleSettings.uniswapFee)) {
+        throw new Error(`Can't change underlying pool for ${this.name} oracle`);
+      }
+
+      if (isSet) {
+        console.log(
+          `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
+        );
+        continue;
+      }
+
       const tx = await oracle.setOptions(
         oracleSettings.quoteToken.address,
         oracleSettings.baseToken.address,

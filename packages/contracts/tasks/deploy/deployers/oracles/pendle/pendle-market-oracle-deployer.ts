@@ -1,4 +1,4 @@
-import { Signer } from 'ethers';
+import { Signer, ZeroAddress } from 'ethers';
 import { PendleMarketOracle__factory } from '../../../../../typechain-types';
 import { ContractState, StorageFile } from '../../../base/deployment-states';
 import { Deployer } from '../../../base/deployers/deployer';
@@ -30,6 +30,18 @@ export class PendleMarketOracleDeployer extends Deployer<PendleMarketOracle__fac
     const oracle = PendleMarketOracle__factory.connect(address ?? this.getDeployedAddressSafe(), this.factory.runner);
 
     for (const oracleSettings of config.settings) {
+      const currentOptions = await oracle.getParams(
+        oracleSettings.quoteToken.address,
+        oracleSettings.baseToken.address
+      );
+
+      if (currentOptions.pendleMarket != ZeroAddress) {
+        console.log(
+          `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
+        );
+        continue;
+      }
+
       const tx = await oracle.setPair(
         oracleSettings.quoteToken.address,
         oracleSettings.baseToken.address,

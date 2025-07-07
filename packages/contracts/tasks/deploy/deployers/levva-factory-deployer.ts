@@ -19,7 +19,6 @@ export class LevvaFactoryDeployer extends Deployer<MarginlyFactory__factory> {
     if (implementationAddress === undefined) {
       const type = config.poolType;
       const id = `Levva${typeof type === 'string' ? type : PoolType[config.poolType as PoolType]}PoolImplementation`;
-      console.log(id);
       const inStorage = this.storage.getById(id);
       if (inStorage === undefined) {
         throw new Error('Failed to obtain poolImplementation address');

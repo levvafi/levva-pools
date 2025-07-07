@@ -30,6 +30,23 @@ export class ProxyPriceOracleDeployer extends Deployer<PriceOracleProxy__factory
     const oracle = PriceOracleProxy__factory.connect(address ?? this.getDeployedAddressSafe(), this.factory.runner);
 
     for (const oracleSettings of config.settings) {
+      const currentOptions = await oracle.getParams(
+        oracleSettings.quoteToken.address,
+        oracleSettings.baseToken.address
+      );
+
+      const isSet =
+        currentOptions.quoteToken === oracleSettings.quoteToken.address &&
+        currentOptions.baseToken === oracleSettings.baseToken.address &&
+        currentOptions.priceOracle === oracleSettings.priceOracleAddress;
+
+      if (isSet) {
+        console.log(
+          `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
+        );
+        continue;
+      }
+
       const tx = await oracle.setPair(
         oracleSettings.quoteToken.address,
         oracleSettings.baseToken.address,

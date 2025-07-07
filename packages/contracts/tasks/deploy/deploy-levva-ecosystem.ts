@@ -25,26 +25,29 @@ export async function runLevvaDeployment(
 
   const storage = new StorageFile<ContractState>(network, saveFlag, tag);
 
-  const levvaPoolImplementationDeployer = new LevvaPoolImplementationDeployer(signer, storage, config.factory.poolType);
-  await levvaPoolImplementationDeployer.performDeployment();
-
-  const levvaRouterDeployer = new LevvaRouterDeployer(signer, storage, config.factory.poolType);
-  await levvaRouterDeployer.performDeployment();
-
-  const levvaFactoryDeployer = new LevvaFactoryDeployer(signer, storage);
-  await levvaFactoryDeployer.performDeployment(config.factory);
-
   const oracleDeployerFactory = new OracleDeployerFactory();
   for (const [oracleName, oracleConfig] of config.oracles) {
     const deployer = oracleDeployerFactory.getDeployer(oracleName, signer, storage);
     await deployer.performDeployment(oracleConfig);
+    await deployer.setup(oracleConfig);
   }
 
+  const adapters = [];
   const adapterDeployerFactory = new AdapterDeployerFactory();
   for (const [adapterName, adapterConfig] of config.adapters) {
     const deployer = await adapterDeployerFactory.getDeployer(hre, adapterName, signer, storage);
-    await deployer.performDeployment(adapterConfig);
+    const adapter = await deployer.performDeployment(adapterConfig);
+    adapters.push({ dexIndex: adapterConfig.dexId, adapter });
   }
+
+  const levvaRouterDeployer = new LevvaRouterDeployer(signer, storage, config.factory.poolType);
+  await levvaRouterDeployer.performDeployment(adapters);
+
+  const levvaPoolImplementationDeployer = new LevvaPoolImplementationDeployer(signer, storage, config.factory.poolType);
+  await levvaPoolImplementationDeployer.performDeployment();
+
+  const levvaFactoryDeployer = new LevvaFactoryDeployer(signer, storage);
+  await levvaFactoryDeployer.performDeployment(config.factory);
 
   const poolDeployer = new LevvaPoolDeployer(signer, storage);
   for (const poolConfig of config.pools) {
