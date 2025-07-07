@@ -3,6 +3,7 @@ import { MarginlyCompositeOracle__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
 import { Deployer } from '../../base/deployers/deployer';
 import { IMarginlyCompositeOracleDeployConfig } from '../../configs/oracles';
+import { isSameAddress } from '../../base/utils';
 
 export class MarginlyCompositeOracleDeployer extends Deployer<MarginlyCompositeOracle__factory> {
   constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
@@ -38,7 +39,7 @@ export class MarginlyCompositeOracleDeployer extends Deployer<MarginlyCompositeO
         oracleSettings.baseToken.address
       );
 
-      if (currentOptions.intermediateToken != ZeroAddress) {
+      if (!isSameAddress(currentOptions.intermediateToken, ZeroAddress)) {
         console.log(
           `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
         );

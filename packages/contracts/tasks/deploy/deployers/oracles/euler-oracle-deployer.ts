@@ -3,6 +3,7 @@ import { EulerPriceOracle__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
 import { Deployer } from '../../base/deployers/deployer';
 import { IEulerOracleDeployConfig } from '../../configs/oracles';
+import { isSameAddress } from '../../base/utils';
 
 export class EulerOracleDeployer extends Deployer<EulerPriceOracle__factory> {
   constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
@@ -35,7 +36,7 @@ export class EulerOracleDeployer extends Deployer<EulerPriceOracle__factory> {
         oracleSettings.baseToken.address
       );
 
-      if (currentOptions === oracleSettings.eulerOracleAddress) {
+      if (isSameAddress(currentOptions, oracleSettings.eulerOracleAddress)) {
         console.log(
           `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
         );

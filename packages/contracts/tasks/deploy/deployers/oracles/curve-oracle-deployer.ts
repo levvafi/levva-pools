@@ -3,6 +3,7 @@ import { CurveOracle__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
 import { Deployer } from '../../base/deployers/deployer';
 import { ICurveOracleDeployConfig } from '../../configs/oracles';
+import { isSameAddress } from '../../base/utils';
 
 export class CurveOracleDeployer extends Deployer<CurveOracle__factory> {
   constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
@@ -35,7 +36,7 @@ export class CurveOracleDeployer extends Deployer<CurveOracle__factory> {
         oracleSettings.baseToken.address
       );
 
-      if (currentOptions.pool != ZeroAddress) {
+      if (!isSameAddress(currentOptions.pool, ZeroAddress)) {
         console.log(
           `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
         );

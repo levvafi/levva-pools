@@ -3,6 +3,7 @@ import { PriceOracleProxy__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
 import { Deployer } from '../../base/deployers/deployer';
 import { IProxyPriceOracleDeployConfig } from '../../configs/oracles';
+import { isSameAddress } from '../../base/utils';
 
 export class ProxyPriceOracleDeployer extends Deployer<PriceOracleProxy__factory> {
   constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
@@ -36,9 +37,9 @@ export class ProxyPriceOracleDeployer extends Deployer<PriceOracleProxy__factory
       );
 
       const isSet =
-        currentOptions.quoteToken === oracleSettings.quoteToken.address &&
-        currentOptions.baseToken === oracleSettings.baseToken.address &&
-        currentOptions.priceOracle === oracleSettings.priceOracleAddress;
+        isSameAddress(currentOptions.quoteToken, oracleSettings.quoteToken.address) &&
+        isSameAddress(currentOptions.baseToken, oracleSettings.baseToken.address) &&
+        isSameAddress(currentOptions.priceOracle, oracleSettings.priceOracleAddress);
 
       if (isSet) {
         console.log(

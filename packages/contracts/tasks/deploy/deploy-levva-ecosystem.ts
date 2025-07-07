@@ -29,7 +29,6 @@ export async function runLevvaDeployment(
   for (const [oracleName, oracleConfig] of config.oracles) {
     const deployer = oracleDeployerFactory.getDeployer(oracleName, signer, storage);
     await deployer.performDeployment(oracleConfig);
-    await deployer.setup(oracleConfig);
   }
 
   const adapters = [];

@@ -1,26 +1,26 @@
 {
   "UniswapV3TickOracle": {
     "address": "0x43E9AC257b061919b001eb5eB90212F28F4A8901",
-    "txHash": "0xfc2c6646198d90588a2c6c16eca6f1182a9d2ba626180798b9cc7133e8640099"
+    "txHash": "0x78e245abfa93639a4f94deeece87e0db6e40606bf11aeda2868fd336e8b97725"
   },
   "UniswapV3Adapter": {
     "address": "0xa4761E911dDC47f290928c0d3F7a908132289Ce7",
-    "txHash": "0xef857e7243e00daa6565769cfbd8fd92c3173ae6e7882344996c11b3bd373422"
+    "txHash": "0x2e0bbe31198252a40a810c5c5717fef0d1abfb5131eb086d530285883abfbea7"
   },
   "MarginlyRouter": {
     "address": "0xd5Ea994A033737f0D568A2A307c65f8048b10698",
-    "txHash": "0x71d76869d9c0413f06ce850e6bfbe27addb545107c6d9602ec925b15e5ab1fb1"
+    "txHash": "0xcb96fd556907cd4f72d5c5a4bb6a5808814e8e38db79137d71455a20d0fbea8d"
   },
   "LevvaTradingPoolImplementation": {
     "address": "0x0Ee29547347E41fD7Bf14a0d064421275C2ae0bA",
-    "txHash": "0xf3762cd539c8aea74cb644e4376d1984ecb630a472229c42953bf5b84bb68fa0"
+    "txHash": "0xd95ab53f9ee08ba88386bbcafd5838c54e5443f343d999cdd4ec16f1405e7bfb"
   },
   "MarginlyFactory": {
     "address": "0xCC4699e54c5D98b82702305e63835B50e6B5Bfb5",
-    "txHash": "0xf537771d610947f5b1bcbd0bc0fdab3b154bbed418c65b66d141f4fbcc4a2bc3"
+    "txHash": "0xd7a39756123a73ee85107331b00a9a2027d185516a154b0180017e9b45e5a110"
   },
   "LevvaPool#WETH-USDC": {
     "address": "0x87706966924D433d16CAeb60084FAB0D3c1E4f07",
-    "txHash": "0xef335446b0aebd0f851c82953087675e45b452997773a3134f9abf2637082b97"
+    "txHash": "0x3e5a51d3783189a2167a76f7fdb841e5e82f6830e4029d2a1d5f73e0a6225359"
   }
 }

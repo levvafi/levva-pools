@@ -3,6 +3,7 @@ import { PendleOracle__factory } from '../../../../../typechain-types';
 import { ContractState, StorageFile } from '../../../base/deployment-states';
 import { Deployer } from '../../../base/deployers/deployer';
 import { IPendleOracleDeployConfig } from '../../../configs/oracles';
+import { isSameAddress } from '../../../base/utils';
 
 export class PendleOracleDeployer extends Deployer<PendleOracle__factory> {
   constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
@@ -35,7 +36,7 @@ export class PendleOracleDeployer extends Deployer<PendleOracle__factory> {
         oracleSettings.baseToken.address
       );
 
-      if (currentOptions.pendleMarket != ZeroAddress) {
+      if (!isSameAddress(currentOptions.pendleMarket, ZeroAddress)) {
         console.log(
           `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
         );

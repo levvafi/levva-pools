@@ -4,6 +4,7 @@ import { AdapterInputStruct } from '../../../typechain-types/contracts/MarginlyR
 import { ContractState, StorageFile } from '../base/deployment-states';
 import { Deployer } from '../base/deployers/deployer';
 import { PoolType } from '../configs/levva-factory-config';
+import { isSameAddress } from '../base/utils';
 
 export class LevvaRouterDeployer extends Deployer<MarginlyRouter__factory> {
   constructor(signer: Signer, storage: StorageFile<ContractState>, type: PoolType, blockToConfirm: number = 1) {
@@ -30,7 +31,7 @@ export class LevvaRouterDeployer extends Deployer<MarginlyRouter__factory> {
     const notSet = await Promise.all(
       input.map(async (adapterData) => {
         const currentAddress = await router.adapters(adapterData.dexIndex);
-        return currentAddress != adapterData.adapter;
+        return !isSameAddress(currentAddress, adapterData.adapter.toString());
       })
     );
     const filteredInput = input.filter((_, index) => notSet[index]);

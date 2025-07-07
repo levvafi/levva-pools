@@ -5,3 +5,7 @@ export function validateAddress(address: string) {
     throw new Error(`Wrong ${address} evm address`);
   }
 }
+
+export function isSameAddress(addressA: string, addressB: string): boolean {
+  return ethers.getAddress(addressA) === ethers.getAddress(addressB);
+}

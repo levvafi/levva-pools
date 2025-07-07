@@ -3,6 +3,7 @@ import { AlgebraTickOracleDouble__factory } from '../../../../../typechain-types
 import { ContractState, StorageFile } from '../../../base/deployment-states';
 import { Deployer } from '../../../base/deployers/deployer';
 import { IAlgebraTickDoubleOracleDeployConfig } from '../../../configs/oracles';
+import { isSameAddress } from '../../../base/utils';
 
 export class AlgebraTickDoubleOracleDeployer extends Deployer<AlgebraTickOracleDouble__factory> {
   constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
@@ -43,8 +44,8 @@ export class AlgebraTickDoubleOracleDeployer extends Deployer<AlgebraTickOracleD
         currentOptions.secondsAgoLiquidation == BigInt(oracleSettings.secondsAgoLiquidation);
 
       if (
-        currentOptions.intermediateToken != ZeroAddress &&
-        currentOptions.intermediateToken != oracleSettings.intermediateToken.address
+        !isSameAddress(currentOptions.intermediateToken, ZeroAddress) &&
+        !isSameAddress(currentOptions.intermediateToken, oracleSettings.intermediateToken.address)
       ) {
         throw new Error(`Can't change underlying pool for ${this.name} oracle`);
       }
