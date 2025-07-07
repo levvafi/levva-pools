@@ -9,6 +9,31 @@
       "symbol": "WETH"
     }
   },
+  "pools": [
+    {
+      "priceOracle": "0xd5Ea994A033737f0D568A2A307c65f8048b10698",
+      "baseToken": {
+        "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        "decimals": 18,
+        "symbol": "WETH"
+      },
+      "quoteToken": {
+        "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        "decimals": 6,
+        "symbol": "USDC"
+      },
+      "defaultSwapCallData": 0,
+      "params": {
+        "maxLeverage": 20,
+        "interestRate": 50000,
+        "fee": 20000,
+        "swapFee": 500,
+        "mcSlippage": 50000,
+        "positionMinAmount": 1e17,
+        "quoteLimit": 100000e6
+      }
+    }
+  ],
   "oracles": {
     "UniswapV3TickOracle": {
       "factoryAddress": "0x1F98431c8aD98523631AE4a59f267346ea31F984",

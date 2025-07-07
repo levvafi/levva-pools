@@ -41,7 +41,7 @@ export class StorageFile<T> implements Storage<T> {
     if (!this.saveFlag) {
       return;
     }
-    const s = JSON.stringify(Object.fromEntries(this.deployments), null, 4);
+    const s = JSON.stringify(Object.fromEntries(this.deployments), null, 2) + '\n';
     fs.writeFileSync(this.fileName, s, { encoding: 'utf8', flag: 'w' });
   }
 

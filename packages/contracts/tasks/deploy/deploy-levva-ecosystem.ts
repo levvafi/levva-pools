@@ -9,6 +9,7 @@ import { LevvaFactoryDeployer } from './deployers/levva-factory-deployer';
 import { OracleDeployerFactory } from './deployers/oracle-deployer-factory';
 import { AdapterDeployerFactory } from './deployers/adapter-deployer-factory';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { LevvaPoolDeployer } from './deployers/levva-pool-deployer';
 
 const DATA_PATH = path.join(__dirname, './data');
 
@@ -43,5 +44,10 @@ export async function runLevvaDeployment(
   for (const [adapterName, adapterConfig] of config.adapters) {
     const deployer = await adapterDeployerFactory.getDeployer(hre, adapterName, signer, storage);
     await deployer.performDeployment(adapterConfig);
+  }
+
+  const poolDeployer = new LevvaPoolDeployer(signer, storage);
+  for (const poolConfig of config.pools) {
+    await poolDeployer.performDeployment(poolConfig);
   }
 }
