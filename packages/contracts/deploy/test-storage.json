@@ -1,0 +1,22 @@
+{
+  "LevvaTradingPoolImplementation": {
+    "address": "LevvaTradingPoolImplementation-address-placeholder",
+    "txHash": "LevvaTradingPoolImplementation-tx-hash-placeholder"
+  },
+  "MarginlyRouter": {
+    "address": "MarginlyRouter-address-placeholder",
+    "txHash": "MarginlyRouter-tx-hash-placeholder"
+  },
+  "MarginlyFactory": {
+    "address": "MarginlyFactory-address-placeholder",
+    "txHash": "MarginlyFactory-tx-hash-placeholder"
+  },
+  "UniswapV3TickOracle": {
+    "address": "UniswapV3TickOracle-address-placeholder",
+    "txHash": "UniswapV3TickOracle-tx-hash-placeholder"
+  },
+  "UniswapV3Adapter": {
+    "address": "UniswapV3Adapter-address-placeholder",
+    "txHash": "UniswapV3Adapter-tx-hash-placeholder"
+  }
+}

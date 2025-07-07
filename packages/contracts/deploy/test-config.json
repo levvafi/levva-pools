@@ -1,0 +1,54 @@
+{
+  "factory": {
+    "poolType": "Trading",
+    "feeHolderAddress": "0xd6DE5D2D8Ab2E4a92c2B923a88f7D366ddb3C760",
+    "techPositionOwnerAddress": "0xd6DE5D2D8Ab2E4a92c2B923a88f7D366ddb3C760",
+    "WETH9": {
+      "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "decimals": 18,
+      "symbol": "WETH"
+    }
+  },
+  "oracles": {
+    "UniswapV3TickOracle": {
+      "factoryAddress": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+      "settings": [
+        {
+          "quoteToken": {
+            "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "decimals": 6,
+            "symbol": "USDC"
+          },
+          "baseToken": {
+            "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+            "decimals": 18,
+            "symbol": "WETH"
+          },
+          "uniswapFee": 500,
+          "secondsAgo": 1800,
+          "secondsAgoLiquidation": 5
+        }
+      ]
+    }
+  },
+  "adapters": {
+    "UniswapV3Adapter": {
+      "dexId": 0,
+      "settings": [
+        {
+          "token0": {
+            "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+            "decimals": 18,
+            "symbol": "WETH"
+          },
+          "token1": {
+            "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            "decimals": 6,
+            "symbol": "USDC"
+          },
+          "poolAddress": "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640"
+        }
+      ]
+    }
+  }
+}

@@ -20,7 +20,7 @@
     "test:int-arb": "MODE=INT-TEST-ARB hardhat test ./int-test/*/*.arb.spec.ts",
     "test:int-sonic": "MODE=INT-TEST-SONIC hardhat test ./int-test/*/*.sonic.spec.ts",
 
-    "lint:write": "prettier --write ./contracts ./test ./int-test",
+    "lint:write": "prettier --write ./contracts ./test ./int-test ./deploy",
     "docgen": "hardhat docgen"
   },
   "devDependencies": {
