@@ -34,13 +34,25 @@ contract LevvaPendleBundler {
     pendleRouter = _pendleRouter;
   }
 
+  /**
+   * @notice Method for Levva pendle farming position creation from any token supported by Pendle
+   * @param levvaPool Address of Levva farming pool in which position will be created
+   * @param market Address of PT token market
+   * @param minPt Minimal amount of PT token to receive from swap of 'tokenInput' token, that will be deposited to levva pool
+   * @param longAmount See {IMarginlyPool-execute}
+   * @param longAmountInQuote See {IMarginlyPool-execute}
+   * @param limitPriceX96 See {IMarginlyPool-execute}
+   * @param approxParams See {@pendle/core-v2/contracts/interfaces/IPAllActionTypeV3.sol}
+   * @param tokenInput Token to swap to PT one
+   * @param limitOrderData See {@pendle/core-v2/contracts/interfaces/IPAllActionTypeV3.sol}
+   */
   function enter(
     address levvaPool,
     address market,
     uint256 minPt,
     int256 longAmount,
     bool longAmountInQuote,
-    uint256 limitPrice,
+    uint256 limitPriceX96,
     ApproxParams calldata approxParams,
     TokenInput calldata tokenInput,
     LimitOrderData calldata limitOrderData
@@ -57,7 +69,7 @@ contract LevvaPendleBundler {
       CallType.DepositBase,
       ptAmount,
       longAmount,
-      limitPrice,
+      limitPriceX96,
       longAmountInQuote,
       msg.sender,
       swapCalldata

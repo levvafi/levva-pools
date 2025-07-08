@@ -46,7 +46,7 @@ describe('LevvaPendleBundler', () => {
 
     await wstEth.connect(user).approve(bundler, wstEthAmountIn);
     const price = (await pool.getBasePrice()).inner;
-    const longAmount =  10n * wstEthAmountIn;
+    const longAmount = 10n * wstEthAmountIn;
     await bundler
       .connect(user)
       .enter(
@@ -64,7 +64,7 @@ describe('LevvaPendleBundler', () => {
     const position = await pool.positions(user);
     expect(position._type).to.be.eq(3);
     expect(position.discountedBaseAmount).to.gt(longAmount);
-    expect(position.discountedQuoteAmount).to.gt(longAmount * price / 2n ** 96n);
+    expect(position.discountedQuoteAmount).to.gt((longAmount * price) / 2n ** 96n);
   });
 
   it('long PT token, quote amount', async () => {
@@ -122,7 +122,7 @@ describe('LevvaPendleBundler', () => {
 
     const position = await pool.positions(user);
     expect(position._type).to.be.eq(3);
-    expect(position.discountedBaseAmount).to.gt(wethDebt * 2n ** 96n / price);
+    expect(position.discountedBaseAmount).to.gt((wethDebt * 2n ** 96n) / price);
     expect(position.discountedQuoteAmount).to.be.eq(wethDebt);
   });
 });
