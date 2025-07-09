@@ -30,11 +30,6 @@ export enum EthereumMainnetERC20BalanceOfSlot {
   DOLA = '0000000000000000000000000000000000000000000000000000000000000006',
 }
 
-export enum SonicERC20BalanceOfSlot {
-  PTASONUSDC = '0000000000000000000000000000000000000000000000000000000000000000',
-  USDC = '0000000000000000000000000000000000000000000000000000000000000009',
-}
-
 function getAccountBalanceStorageSlot(account: string, tokenMappingSlot: string): string {
   return keccak256('0x' + account.slice(2).padStart(64, '0') + tokenMappingSlot);
 }
@@ -50,23 +45,6 @@ export async function setTokenBalance(
   await ethers.provider.send('hardhat_setStorageAt', [
     tokenAddress.toString(),
     balanceOfStorageSlot,
-    toBeHex(newBalance, 32),
-  ]);
-}
-
-export async function setTokenBalanceSonic(
-  tokenAddress: string | Addressable,
-  i: number,
-  account: string,
-  newBalance: bigint
-) {
-  const userBalanceSlot = toBeHex(
-    BigInt(keccak256(AbiCoder.defaultAbiCoder().encode(['address', 'uint'], [account, i]))),
-    32
-  );
-  await ethers.provider.send('hardhat_setStorageAt', [
-    tokenAddress.toString(),
-    userBalanceSlot,
     toBeHex(newBalance, 32),
   ]);
 }

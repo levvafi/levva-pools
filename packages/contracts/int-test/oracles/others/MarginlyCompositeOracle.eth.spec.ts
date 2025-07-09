@@ -79,6 +79,7 @@ describe('Composite oracle Spectra PT-wstUSR/USR, Pyth wstUSR/USR', () => {
   let compositeOracle: MarginlyCompositeOracle;
 
   before(async () => {
+    await resetFork(21814800);
     pythOracle = await (await ethers.getContractFactory('PythOracle')).deploy(pythContractAddress);
     await pythOracle.setPair(usrAddress, wstUsrAddress, priceFeedId, pythMaxPriceAge);
 
