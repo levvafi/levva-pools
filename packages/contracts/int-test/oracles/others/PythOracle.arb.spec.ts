@@ -1,10 +1,12 @@
 import { ethers } from 'hardhat';
 import { PythOracle } from '../../../typechain-types/contracts/oracles';
 import { getDecimalsDiff, printPrices } from '../shared/common';
+import { resetFork } from '../../router/shared/utils';
 
 describe('PythOracle', () => {
   let oracle: PythOracle;
   before(async () => {
+    await resetFork(221775851);
     const pythArbitrum = '0xff1a0f4744e8582df1ae09d5611b887b6a12925c';
     const factory = await ethers.getContractFactory('PythOracle');
     oracle = await factory.deploy(pythArbitrum);
