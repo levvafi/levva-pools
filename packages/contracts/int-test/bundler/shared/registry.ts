@@ -1,0 +1,9 @@
+export const WETH9 = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+export const WSTETH = '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0';
+export const USDC = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48';
+
+export const PENDLE_ROUTER = '0x888888888889758F76e7103c6CbF23ABbF58F946';
+export const PENDLE_ORACLE = '0x9a9fa8338dd5e5b2188006f1cd2ef26d921650c2';
+
+export const PENDLE_PT_WSTETH_30_12_27 = '0xb253eff1104802b97ac7e3ac9fdd73aece295a2c';
+export const PENDLE_MARKET_WSTETH_30_12_27 = '0x34280882267ffa6383b363e278b027be083bbe3b';
