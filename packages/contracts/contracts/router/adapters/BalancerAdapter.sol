@@ -104,9 +104,7 @@ interface IVault {
   ) external payable returns (uint256);
 }
 
-interface IAsset {
-  // solhint-disable-previous-line no-empty-blocks
-}
+interface IAsset {}
 
 interface IBasePool {
   function getPoolId() external view returns (bytes32);
