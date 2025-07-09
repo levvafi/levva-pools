@@ -43,6 +43,8 @@ const config = {
       accounts: {
         count: 40,
       },
+      gasPrice: 1_000_000,
+      initialBaseFeePerGas: 1_000_000,
     },
     mainnet: {
       url: process.env.ETH_NODE_URL,

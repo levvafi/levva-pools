@@ -22,17 +22,17 @@ async function initializeRouter(): Promise<{
   user: SignerWithAddress;
 }> {
   const [owner, user] = await ethers.getSigners();
-  const ptToken = await ethers.getContractAt('ERC20', '0x23e60d1488525bf4685f53b3aa8e676c30321066');
+  const ptToken = await ethers.getContractAt('ERC20', '0x5a5b93f762739fa94f3ecc0b34af2e56702e7f70');
   const usdcToken = await ethers.getContractAt('ERC20', '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48');
   const usrToken = await ethers.getContractAt('ERC20', '0x66a1E37c9b0eAddca17d3662D6c05F4DECf3e110');
-  const pendleMarket = '0x09fa04aac9c6d1c6131352ee950cd67ecc6d4fb9';
+  const pendleMarket = '0x33bda865c6815c906e63878357335b28f063936c';
 
   // Route to make swap PT-wstUSR -> USR -> USDC
   const routeInput: PendleCurveNgAdapter.RouteInputStruct = {
     pendleMarket: pendleMarket,
     slippage: 20, // 20/100  = 20%
-    curveSlippage: 100, // 10/1000000 = 0.001%
-    curvePool: '0x3eE841F47947FEFbE510366E4bbb49e145484195', //USR/USDC pool
+    curveSlippage: 10, // 10/1000000 = 0.001%
+    curvePool: '0x3eE841F47947FEFbE510366E4bbb49e145484195', // USR/USDC pool
     ibToken: usrToken,
     quoteToken: usdcToken,
   };
@@ -45,7 +45,12 @@ async function initializeRouter(): Promise<{
   const router = await new MarginlyRouter__factory().connect(owner).deploy([routerInput]);
 
   await setTokenBalance(usdcToken.target, EthereumMainnetERC20BalanceOfSlot.USDC, user.address, parseUnits('5000', 6));
-  await setTokenBalance(ptToken, EthereumMainnetERC20BalanceOfSlot.PTSUSDE, user.address, parseUnits('5000', 18));
+  await setTokenBalance(
+    ptToken.target,
+    EthereumMainnetERC20BalanceOfSlot.PTSUSDE,
+    user.address,
+    parseUnits('5000', 18)
+  );
 
   return {
     ptToken,
@@ -61,7 +66,7 @@ async function initializeRouter(): Promise<{
 // Tests for running in ethereum mainnet fork
 describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
   before(async () => {
-    await resetFork(22366500);
+    await resetFork(22500000);
   });
 
   describe('Pendle swap pre maturity', () => {
@@ -91,7 +96,7 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
       const USDCSwapAmount = parseUnits('2000', 6);
       await usdc.connect(user).approve(router, USDCSwapAmount);
 
-      const minPtAmountOut = parseUnits('2000', 18);
+      const minPtAmountOut = parseUnits('1900', 18);
 
       const tx = await router.connect(user).swapExactInput(swapCalldata, usdc, ptToken, USDCSwapAmount, minPtAmountOut);
       await showGasUsage(tx);
@@ -127,8 +132,8 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
       );
       const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
 
-      const exactPtOut = parseUnits('1', 8);
-      const USDCMaxIn = parseUnits('2.5', 8);
+      const exactPtOut = parseUnits('100', 18);
+      const USDCMaxIn = parseUnits('250', 6);
       await usdc.connect(user).approve(router, USDCMaxIn);
       const tx = await router.connect(user).swapExactOutput(swapCalldata, usdc, ptToken, USDCMaxIn, exactPtOut);
       await showGasUsage(tx);
@@ -152,8 +157,8 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
         tx
       );
 
-      const ebtcOnAdapter = await usr.balanceOf(pendleCurveAdapter);
-      console.log(`ebtc stays on adapter: ${formatUnits(ebtcOnAdapter, await usr.decimals())} ${await usr.symbol()}`);
+      const usrOnAdapter = await usr.balanceOf(pendleCurveAdapter);
+      console.log(`usr stays on adapter: ${formatUnits(usrOnAdapter, await usr.decimals())} ${await usr.symbol()}`);
     });
 
     it('USDC to PT-wstUSR exact output, small amount', async () => {
@@ -167,8 +172,8 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
       );
       const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
 
-      const exactPtOut = parseUnits('0.0006', 8);
-      const USDCMaxIn = parseUnits('0.0012', 8);
+      const exactPtOut = parseUnits('0.12', 18);
+      const USDCMaxIn = parseUnits('0.12', 6);
       await usdc.connect(user).approve(router, USDCMaxIn);
       const tx = await router.connect(user).swapExactOutput(swapCalldata, usdc, ptToken, USDCMaxIn, exactPtOut);
       await showGasUsage(tx);
@@ -192,8 +197,8 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
         tx
       );
 
-      const ebtcOnAdapter = await usr.balanceOf(pendleCurveAdapter);
-      console.log(`ebtc stays on adapter: ${formatUnits(ebtcOnAdapter, await usr.decimals())} ${await usr.symbol()}`);
+      const usrOnAdapter = await usr.balanceOf(pendleCurveAdapter);
+      console.log(`usr stays on adapter: ${formatUnits(usrOnAdapter, await usr.decimals())} ${await usr.symbol()}`);
     });
 
     it('PT-wstUSR to USDC exact input', async () => {
@@ -204,7 +209,7 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
       const USDCBalanceBefore = await usdc.balanceOf(user);
       console.log(`USDCBalanceBefore: ${formatUnits(USDCBalanceBefore, await usdc.decimals())} ${await usdc.symbol()}`);
       const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
-      const ptIn = parseUnits('0.1', 8);
+      const ptIn = parseUnits('100', 18);
       await ptToken.connect(user).approve(router, ptIn);
       const tx = await router.connect(user).swapExactInput(swapCalldata, ptToken, usdc, ptIn, 0);
       await showGasUsage(tx);
@@ -237,8 +242,8 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
       const USDCBalanceBefore = await usdc.balanceOf(user);
       console.log(`USDCBalanceBefore: ${formatUnits(USDCBalanceBefore, await usdc.decimals())} ${await usdc.symbol()}`);
       const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
-      const USDCOut = parseUnits('1', 8);
-      const maxPtIn = parseUnits('1.2', 8);
+      const USDCOut = parseUnits('100', 6);
+      const maxPtIn = parseUnits('120', 18);
       await ptToken.connect(user).approve(router, maxPtIn);
       const tx = await router.connect(user).swapExactOutput(swapCalldata, ptToken, usdc, maxPtIn, USDCOut);
       await showGasUsage(tx);
@@ -389,9 +394,9 @@ describe('PendleCurveAdapter PT-wstUSR - USDC', () => {
       console.log(`USDCBalanceBefore: ${formatUnits(USDCBalanceBefore, await USDC.decimals())} ${await USDC.symbol()}`);
 
       const swapCalldata = constructSwap([Dex.PendleCurve], [BigInt(SWAP_ONE)]);
-      const USDCOut = parseUnits('0.9', 8);
+      const USDCOut = parseUnits('100', 6);
       await ptToken.connect(user).approve(router, ptBalanceBefore);
-      const maxPtIn = parseUnits('1.3', 8);
+      const maxPtIn = parseUnits('130', 18);
       const tx = await router.connect(user).swapExactOutput(swapCalldata, ptToken, USDC, maxPtIn, USDCOut);
       await showGasUsage(tx);
 

@@ -32,7 +32,8 @@ async function initializeRouter(): Promise<{
   const routeInput: PendleCurveRouterNgAdapter.RouteInputStruct = {
     pendleMarket: pendleMarket,
     slippage: 35, // 20/100  = 20%
-    curveSlippage: 202_300, // 202_300/1000000 = 0.2023
+    curveDxAdjustPtToToken: 0,
+    curveDxAdjustTokenToPt: 202_300,
     curveRoute: [
       '0xd11c452fc99cf405034ee446803b6f6c1f6d5ed8',
       '0x394a1e1b934cb4F4a0dC17BDD592ec078741542F',
@@ -72,7 +73,7 @@ async function initializeRouter(): Promise<{
   const router = await new MarginlyRouter__factory().connect(owner).deploy([routerInput]);
 
   await setTokenBalance(wethToken.target, EthereumMainnetERC20BalanceOfSlot.WETH, user.address, parseUnits('100', 18));
-  await setTokenBalance(ptToken, EthereumMainnetERC20BalanceOfSlot.PTSUSDE, user.address, parseUnits('100', 18));
+  await setTokenBalance(ptToken.target, EthereumMainnetERC20BalanceOfSlot.PTSUSDE, user.address, parseUnits('100', 18));
 
   return {
     ptToken,

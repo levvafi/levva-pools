@@ -32,7 +32,8 @@ async function initializeRouter(): Promise<{
   const routeInput: PendleCurveRouterNgAdapter.RouteInputStruct = {
     pendleMarket: pendleMarket,
     slippage: 20, // 20/100  = 20%
-    curveSlippage: 100, // 10/1000000 = 0.001%
+    curveDxAdjustPtToToken: 100, // 10/1000000 = 0.001%
+    curveDxAdjustTokenToPt: 100,
     curveRoute: [
       '0x4c9edd5852cd905f086c759e8383e09bff1e68b3',
       '0x02950460e2b9529d0e00284a5fa2d7bdf3fa4d72',

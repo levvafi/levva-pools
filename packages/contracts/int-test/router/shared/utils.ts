@@ -4,7 +4,7 @@ import { formatUnits } from 'ethers';
 import { reset } from '@nomicfoundation/hardhat-network-helpers';
 import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { expect } from 'chai';
-const hre = require('hardhat');
+import hre, { network } from 'hardhat';
 
 export const SWAP_ONE = 1 << 15;
 
@@ -102,7 +102,7 @@ export async function assertSwapEvent(
 
 async function getSwapEvent(router: MarginlyRouter, tx: any): Promise<any> {
   const eventFilter = router.filters['Swap(bool,uint256,address,address,address,uint256,uint256)'];
-  const events = await router.queryFilter(eventFilter, tx.blockHash);
+  const events = await router.queryFilter(eventFilter, tx.blockNumber);
   expect(events.length).to.be.eq(1);
   const swapEvent = events[0];
 

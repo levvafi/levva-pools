@@ -132,7 +132,7 @@ describe('Pendle PT-USDS - sUSDe', () => {
       } = await initializeRouter());
     });
 
-    it.skip('Curve check route', async () => {
+    it('Curve check route', async () => {
       const curveRouter = ICurveRouterNg__factory.connect('0x45312ea0eFf7E09C83CBE249fa1d7598c4C8cd4e', user);
       const invertedRoute: (string | Addressable)[] = [];
       for (let i = 0; i < 11; i++) {

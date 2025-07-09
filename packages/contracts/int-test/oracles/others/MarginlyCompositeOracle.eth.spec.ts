@@ -2,6 +2,7 @@ import { ethers } from 'hardhat';
 import { MarginlyCompositeOracle, PendleMarketOracle, PythOracle } from '../../../typechain-types/contracts/oracles';
 import { getDecimalsDiff, printPrices } from '../shared/common';
 import { CurveOracle } from '../../../typechain-types';
+import { resetFork } from '../../router/shared/utils';
 
 describe('Composite oracle PT-wstUSR/USR with Pendle for PT-wstUSR/wstUSR, Pyth wstUSR/USR', () => {
   //https://docs.pyth.network/home/pyth-token/pyth-token-addresses
@@ -21,6 +22,7 @@ describe('Composite oracle PT-wstUSR/USR with Pendle for PT-wstUSR/wstUSR, Pyth 
   let compositeOracle: MarginlyCompositeOracle;
 
   before(async () => {
+    await resetFork(21814800);
     pythOracle = await (await ethers.getContractFactory('PythOracle')).deploy(pythContractAddress);
     await pythOracle.setPair(usrAddress, wstUsrAddress, priceFeedId, pythMaxPriceAge);
 
@@ -38,13 +40,13 @@ describe('Composite oracle PT-wstUSR/USR with Pendle for PT-wstUSR/wstUSR, Pyth 
   });
 
   it('pt-wstUSR-27Mar2025/USR price', async () => {
-    const ptWsturWstUsrBalancePrice = await pendleMarketOracle.getBalancePrice(wstUsrAddress, ptWstUsr27Mar2025);
-    const ptWsturWstUsrMCPrice = await pendleMarketOracle.getMargincallPrice(wstUsrAddress, ptWstUsr27Mar2025);
+    const ptWstUsrWstUsrBalancePrice = await pendleMarketOracle.getBalancePrice(wstUsrAddress, ptWstUsr27Mar2025);
+    const ptWstUsrWstUsrMCPrice = await pendleMarketOracle.getMargincallPrice(wstUsrAddress, ptWstUsr27Mar2025);
 
     console.log('pt-wstUSR-27Mar2025/wstUSR');
     printPrices(
-      ptWsturWstUsrBalancePrice,
-      ptWsturWstUsrMCPrice,
+      ptWstUsrWstUsrBalancePrice,
+      ptWstUsrWstUsrMCPrice,
       await getDecimalsDiff(wstUsrAddress, ptWstUsr27Mar2025)
     );
 
@@ -89,13 +91,13 @@ describe('Composite oracle Spectra PT-wstUSR/USR, Pyth wstUSR/USR', () => {
   });
 
   it('pt-wstUSR-27Mar2025/USR price', async () => {
-    const ptWsturWstUsrBalancePrice = await curveOracle.getBalancePrice(wstUsrAddress, ptWstUsr26Jun2025);
-    const ptWsturWstUsrMCPrice = await curveOracle.getMargincallPrice(wstUsrAddress, ptWstUsr26Jun2025);
+    const ptWstUsrWstUsrBalancePrice = await curveOracle.getBalancePrice(wstUsrAddress, ptWstUsr26Jun2025);
+    const ptWstUsrWstUsrMCPrice = await curveOracle.getMargincallPrice(wstUsrAddress, ptWstUsr26Jun2025);
 
     console.log('pt-wstUSR-27Mar2025/wstUSR');
     printPrices(
-      ptWsturWstUsrBalancePrice,
-      ptWsturWstUsrMCPrice,
+      ptWstUsrWstUsrBalancePrice,
+      ptWstUsrWstUsrMCPrice,
       await getDecimalsDiff(wstUsrAddress, ptWstUsr26Jun2025)
     );
 
