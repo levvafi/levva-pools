@@ -18,7 +18,6 @@
     "test:int-eth": "MODE=INT-TEST-ETH hardhat test ./int-test/*/*.eth.spec.ts",
     "test:int-arb": "MODE=INT-TEST-ARB hardhat test ./int-test/*/*.arb.spec.ts",
     "test:int-sonic": "MODE=INT-TEST-SONIC hardhat test ./int-test/*/*.sonic.spec.ts",
-
     "lint:write": "prettier --write ./contracts ./test ./int-test ./tasks",
     "docgen": "hardhat docgen"
   },

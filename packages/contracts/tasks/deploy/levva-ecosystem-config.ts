@@ -4,13 +4,15 @@ import { ILevvaFactoryConfig, LevvaFactoryConfig } from './configs/levva-factory
 import { ILevvaPoolConfig, LevvaPoolConfig } from './configs/levva-pool-config';
 import { OracleConfigFactory } from './configs/oracle-config-factory';
 import { AdapterConfigFactory } from './configs/adapter-config-factory';
+import { BundlerConfigFactory } from './configs/bundler-config-factory';
 
 export interface ILevvaEcosystemConfig extends IConfigBase {
   factory: ILevvaFactoryConfig;
   pools: ILevvaPoolConfig[];
   oracles: Map<string, any>;
   adapters: Map<string, any>;
-  // TODO: add keepers, bundler and timelock
+  bundlers: Map<string, any>;
+  // TODO: add keepers and timelock
 }
 
 export class LevvaEcosystemConfig implements ILevvaEcosystemConfig {
@@ -18,9 +20,11 @@ export class LevvaEcosystemConfig implements ILevvaEcosystemConfig {
   public readonly pools: LevvaPoolConfig[] = [];
   public readonly oracles = new Map<string, any>();
   public readonly adapters = new Map<string, any>();
+  public readonly bundlers = new Map<string, any>();
 
   private readonly oracleConfigFactory = new OracleConfigFactory();
   private readonly adapterConfigFactory = new AdapterConfigFactory();
+  private readonly bundlerConfigFactory = new BundlerConfigFactory();
 
   constructor(jsonParsed: ILevvaEcosystemConfig) {
     this.factory = new LevvaFactoryConfig(jsonParsed.factory);
@@ -50,5 +54,6 @@ export class LevvaEcosystemConfig implements ILevvaEcosystemConfig {
     await Promise.all(this.pools.map(async (pool) => await pool.validate(provider)));
     await Promise.all(Array.from(this.oracles.values()).map(async (oracle) => await oracle.validate(provider)));
     await Promise.all(Array.from(this.adapters.values()).map(async (adapter) => await adapter.validate(provider)));
+    await Promise.all(Array.from(this.bundlers.values()).map(async (bundler) => await bundler.validate(provider)));
   }
 }
