@@ -16,18 +16,23 @@ export class GeneralAdapterDeployer extends Deployer<ContractFactory> {
   }
 
   public async performDeployment(config: IGeneralAdapterDeployConfig): Promise<string> {
-    return super.performDeploymentRaw([this.getPoolInput(config.settings)]);
+    const address = await super.performDeploymentRaw([this.getPoolInput(config.settings)]);
+    if (config.settings !== undefined) {
+      await this.setup(config, address);
+    }
+    return address;
   }
 
-  public async setup(config: IGeneralAdapterDeployConfig): Promise<void> {
+  public async setup(config: IGeneralAdapterDeployConfig, address?: string): Promise<void> {
     if (config.settings === undefined) {
       throw new Error('Adapter setup settings are not provided');
     }
 
-    const address = this.getDeployedAddressSafe();
-    const adapter = BalancerAdapter__factory.connect(address, this.factory.runner);
+    const adapter = BalancerAdapter__factory.connect(address ?? this.getDeployedAddressSafe(), this.factory.runner);
+    const tx = await adapter.addPools(this.getPoolInput(config.settings));
+    await tx.wait(this.blocksToConfirm);
 
-    await adapter.addPools(this.getPoolInput(config.settings));
+    console.log(`Updated ${this.name} oracle settings. Tx hash: ${tx.hash}`);
   }
 
   private getPoolInput(settings?: IGeneralAdapterPairSettings[]) {

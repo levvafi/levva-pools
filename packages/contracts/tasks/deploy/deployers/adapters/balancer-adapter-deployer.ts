@@ -15,18 +15,23 @@ export class BalancerAdapterDeployer extends Deployer<BalancerAdapter__factory> 
   }
 
   public async performDeployment(config: IBalancerAdapterDeployConfig): Promise<string> {
-    return super.performDeploymentRaw([this.getPoolInput(config.settings), config.vault]);
+    const address = await super.performDeploymentRaw([this.getPoolInput(config.settings), config.vault]);
+    if (config.settings !== undefined) {
+      await this.setup(config, address);
+    }
+    return address;
   }
 
-  public async setup(config: IBalancerAdapterDeployConfig): Promise<void> {
+  public async setup(config: IBalancerAdapterDeployConfig, address?: string): Promise<void> {
     if (config.settings === undefined) {
       throw new Error('Adapter setup settings are not provided');
     }
 
-    const address = this.getDeployedAddressSafe();
-    const adapter = BalancerAdapter__factory.connect(address, this.factory.runner);
+    const adapter = BalancerAdapter__factory.connect(address ?? this.getDeployedAddressSafe(), this.factory.runner);
+    const tx = await adapter.addPools(this.getPoolInput(config.settings));
+    await tx.wait(this.blocksToConfirm);
 
-    await adapter.addPools(this.getPoolInput(config.settings));
+    console.log(`Updated ${this.name} oracle settings. Tx hash: ${tx.hash}`);
   }
 
   private getPoolInput(settings?: IGeneralAdapterPairSettings[]) {

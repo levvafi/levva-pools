@@ -15,19 +15,28 @@ export class PendleCurveAdapterDeployer extends Deployer<PendleCurveRouterNgAdap
   }
 
   public async performDeployment(config: IPendleCurveRouterAdapterDeployConfig): Promise<string> {
-    return super.performDeploymentRaw([config.router, this.getRouteInput(config.settings)]);
+    const address = await super.performDeploymentRaw([config.router, this.getRouteInput(config.settings)]);
+    if (config.settings !== undefined) {
+      await this.setup(config, address);
+    }
+    return address;
   }
 
-  public async setup(config: IPendleCurveRouterAdapterDeployConfig): Promise<void> {
+  public async setup(config: IPendleCurveRouterAdapterDeployConfig, address?: string): Promise<void> {
     if (config.settings === undefined) {
       throw new Error('Adapter setup settings are not provided');
     }
 
-    const address = this.getDeployedAddressSafe();
-    const adapter = PendleCurveRouterNgAdapter__factory.connect(address, this.factory.runner);
+    const adapter = PendleCurveRouterNgAdapter__factory.connect(
+      address ?? this.getDeployedAddressSafe(),
+      this.factory.runner
+    );
 
     // TODO: fix
-    // await adapter.addPairs(this.getRouteInput(config.settings));
+    // const tx = await adapter.addPairs(this.getRouteInput(config.settings));
+    // await tx.wait(this.blocksToConfirm);
+
+    // console.log(`Updated ${this.name} oracle settings. Tx hash: ${tx.hash}`);
   }
 
   private getRouteInput(settings?: IPendleCurveRouterAdapterPairSettings[]) {
