@@ -38,10 +38,7 @@ const config = {
   },
   networks: {
     hardhat: {
-      forking: {
-        enabled: true,
-        url: process.env.ARB_NODE_URL,
-      },
+      forking: HARDHAT_NETWORK_FORKING_CONFIGS.get(process.env.MODE ?? 'UNIT-TEST'),
       accounts: {
         count: 40,
       },
