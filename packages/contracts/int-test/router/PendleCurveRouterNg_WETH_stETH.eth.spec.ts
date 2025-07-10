@@ -76,7 +76,7 @@ async function initializeRouter(): Promise<{
   };
   const router = await new MarginlyRouter__factory().connect(owner).deploy([routerInput]);
 
-  await setTokenBalance(WETH, EthereumMainnetERC20BalanceOfSlot.WETH, user.address, parseUnits('10000', 18));
+  await setTokenBalance(WETH.target, EthereumMainnetERC20BalanceOfSlot.WETH, user.address, parseUnits('10000', 18));
   expect(await WETH.balanceOf(user)).to.be.eq(parseUnits('10000', 18));
   await setTokenBalance(
     ptToken.target,
@@ -129,7 +129,7 @@ describe('Pendle PT-STETH - wETH', () => {
       } = await initializeRouter());
     });
 
-    it.skip('Curve check route', async () => {
+    it('Curve check route', async () => {
       const curveRouter = ICurveRouterNg__factory.connect(curveRouterAddress, user);
       const invertedRoute: (string | Addressable)[] = [];
       for (let i = 0; i < 11; i++) {

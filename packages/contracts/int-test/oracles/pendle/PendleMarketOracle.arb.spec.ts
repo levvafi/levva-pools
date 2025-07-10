@@ -1,6 +1,7 @@
 import { TokenInfo } from '../shared/fixtures';
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { ethers } from 'hardhat';
+import { IPPYLpOracle__factory } from '../../../typechain-types';
 
 describe('Pendle PT-ezETH-27JUN2024 / ezETH oracle before maturity (PendleOracle)', () => {
   async function initializeOraclePtezETH() {
@@ -31,7 +32,7 @@ describe('Pendle PT-ezETH-27JUN2024 / ezETH oracle before maturity (PendleOracle
       secondsAgo,
       secondsAgoLiquidation,
       pendleMarket: await ethers.getContractAt('PendleMarketV3', pendleMarket),
-      pendlePtLpOracle: await ethers.getContractAt('PendlePtLpOracle', pendlePtLpOracle),
+      pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle, ethers.provider),
     };
   }
 

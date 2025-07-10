@@ -7,7 +7,7 @@ import {
   PendleAdapter,
   PendleAdapter__factory,
 } from '../../typechain-types';
-import { constructSwap, Dex, SWAP_ONE } from './shared/utils';
+import { constructSwap, Dex, resetFork, SWAP_ONE } from './shared/utils';
 import { formatUnits, parseUnits } from 'ethers';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { ArbMainnetERC20BalanceOfSlot, setTokenBalance } from './shared/tokens';
@@ -261,6 +261,9 @@ describe('Pendle weeth - weth', () => {
 });
 
 describe('Pendle usde - usdc', () => {
+  before(async () => {
+    await resetFork(221775851);
+  });
   const usdcAddress = '0xaf88d065e77c8cc2239327c5edb3a432268e5831';
   const ptTokenAddress = '0xad853EB4fB3Fe4a66CdFCD7b75922a0494955292';
   const ibTokenAddress = '0x5d3a1Ff2b6BAb83b63cd9AD0787074081a52ef34'; //USDe

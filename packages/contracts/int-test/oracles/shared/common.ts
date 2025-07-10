@@ -18,8 +18,7 @@ export async function getDecimalsDiff(quoteToken: string, baseToken: string): Pr
 }
 
 function toHumanPrice(priceX96: bigint, decimalsDiff: bigint): string {
-  const multiplier = 10n ** decimalsDiff;
-  priceX96 = decimalsDiff > 0 ? priceX96 * multiplier : priceX96 / multiplier;
+  priceX96 = decimalsDiff > 0 ? priceX96 * 10n ** decimalsDiff : priceX96 / 10n ** -decimalsDiff;
 
   const priceIntermediate = Number(priceX96 / 2n ** 48n);
   return (priceIntermediate / 2 ** 48).toString();

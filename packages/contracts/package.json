@@ -15,9 +15,8 @@
     "test:benchFP": "REPORT_GAS=true hardhat test ./test/benchmarks/FixedPoint.bench.ts",
     "test:int-pool": "MODE=INT-TEST-ETH hardhat test ./int-test/pool/suites/*.ts",
     "test:int-pool-parallel": "MODE=INT-TEST-ETH hardhat test --parallel ./int-test/pool/suites/*.ts",
-    "test:int-eth": "MODE=INT-TEST-ETH hardhat test ./int-test/*/*.eth.spec.ts",
-    "test:int-arb": "MODE=INT-TEST-ARB hardhat test ./int-test/*/*.arb.spec.ts",
-    "test:int-sonic": "MODE=INT-TEST-SONIC hardhat test ./int-test/*/*.sonic.spec.ts",
+    "test:int-eth": "MODE=INT-TEST-ETH hardhat test $(find int-test -type f -name '*.eth.spec.ts')",
+    "test:int-arb": "MODE=INT-TEST-ARB hardhat test $(find int-test -type f -name '*.arb.spec.ts')",
     "lint:write": "prettier --write ./contracts ./test ./int-test ./tasks",
     "docgen": "hardhat docgen"
   },
