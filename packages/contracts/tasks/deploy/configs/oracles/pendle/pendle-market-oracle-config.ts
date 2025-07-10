@@ -34,6 +34,7 @@ export class PendleMarketOracleDeployConfig implements IPendleMarketOracleDeploy
   }
 
   async validate(provider: Provider): Promise<void> {
+    validateAddress(this.pendlePtLpOracleAddress);
     for (const [index, settings] of this.settings.entries()) {
       validateAddress(settings.pendleMarketAddress);
 
