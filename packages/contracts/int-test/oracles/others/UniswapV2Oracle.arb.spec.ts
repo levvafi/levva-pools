@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
-import { time, setBalance } from '@nomicfoundation/hardhat-network-helpers';
+import { time } from '@nomicfoundation/hardhat-network-helpers';
 import { UniswapV2Oracle } from '../../../typechain-types/contracts/oracles';
-import { parseEther, parseUnits } from 'ethers';
+import { parseEther } from 'ethers';
 import { SignerWithAddress } from '@nomicfoundation/hardhat-ethers/signers';
 import { printPrices } from '../shared/common';
 
@@ -22,7 +22,7 @@ async function initSystem(
     signer,
   };
 }
-// To use these tests set up appropriate node url in hardhat-fork.config
+
 describe('Arbitrum: UniswapV2Oracle', () => {
   const uniswapV2Factory = '0xf1D7CC64Fb4452F05c498126312eBE29f30Fbcf9';
 

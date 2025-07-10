@@ -11,20 +11,7 @@ import { PendleMarketOracle__factory } from '../../../typechain-types';
 import { PENDLE_ROUTER, WETH9, PENDLE_ORACLE, WSTETH } from './registry';
 import { PENDLE_PT_WSTETH_30_12_27, PENDLE_MARKET_WSTETH_30_12_27 } from './registry';
 import { EthereumMainnetERC20BalanceOfSlot, setTokenBalance } from './tokens';
-
-const CallType = {
-  DepositBase: 0,
-  DepositQuote: 1,
-  WithdrawBase: 2,
-  WithdrawQuote: 3,
-  Short: 4,
-  Long: 5,
-  ClosePosition: 6,
-  Reinit: 7,
-  ReceivePosition: 8,
-  EmergencyWithdraw: 9,
-  SellCollateral: 10,
-};
+import { CallType } from '../../pool/utils/chain-ops';
 
 export async function deployPendleBundlerWithPool(): Promise<{ bundler: LevvaPendleBundler; pool: LevvaFarmingPool }> {
   const [signer] = await ethers.getSigners();
