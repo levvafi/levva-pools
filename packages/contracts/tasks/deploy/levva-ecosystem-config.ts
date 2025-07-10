@@ -42,10 +42,18 @@ export class LevvaEcosystemConfig implements ILevvaEcosystemConfig {
 
     (Object.entries(jsonParsed.adapters) ?? []).forEach(([adapterKey, adapterJsonConfig]) => {
       const adapterConfig = this.adapterConfigFactory.getConfig(adapterKey, adapterJsonConfig);
-      if (this.oracles.has(adapterKey)) {
+      if (this.adapters.has(adapterKey)) {
         throw new Error(`Duplicate ${adapterKey} adapter key`);
       }
       this.adapters.set(adapterKey, adapterConfig);
+    });
+
+    (Object.entries(jsonParsed.bundlers) ?? []).forEach(([bundlerKey, bundlerJsonConfig]) => {
+      const bundlerConfig = this.bundlerConfigFactory.getConfig(bundlerKey, bundlerJsonConfig);
+      if (this.bundlers.has(bundlerKey)) {
+        throw new Error(`Duplicate ${bundlerKey} bundler key`);
+      }
+      this.bundlers.set(bundlerKey, bundlerConfig);
     });
   }
 
