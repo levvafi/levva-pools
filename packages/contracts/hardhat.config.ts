@@ -49,11 +49,11 @@ const config = {
       initialBaseFeePerGas: 1_000_000,
     },
     mainnet: {
-      accounts: [process.env.PRIVATE_KEY!],
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       url: process.env.ETH_NODE_URL,
     },
     arbitrum: {
-      accounts: [process.env.PRIVATE_KEY!],
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       url: process.env.ARB_NODE_URL,
     },
   },
