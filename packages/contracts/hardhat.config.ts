@@ -38,7 +38,10 @@ const config = {
   },
   networks: {
     hardhat: {
-      forking: HARDHAT_NETWORK_FORKING_CONFIGS.get(process.env.MODE ?? 'UNIT-TEST'),
+      forking: {
+        enabled: true,
+        url: process.env.ARB_NODE_URL,
+      },
       accounts: {
         count: 40,
       },
@@ -46,17 +49,19 @@ const config = {
       initialBaseFeePerGas: 1_000_000,
     },
     mainnet: {
+      accounts: [process.env.PRIVATE_KEY!],
       url: process.env.ETH_NODE_URL,
     },
-    arbitrumOne: {
+    arbitrum: {
+      accounts: [process.env.PRIVATE_KEY!],
       url: process.env.ARB_NODE_URL,
     },
   },
   etherscan: {
-    apiKey: {
-      mainnet: process.env.ETH_API_KEY,
-      arbitrumOne: process.env.ARB_API_KEY,
-    },
+    apiKey: process.env.ETH_API_KEY,
+  },
+  sourcify: {
+    enabled: true,
   },
   mocha: {
     timeout: 600_000,
