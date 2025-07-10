@@ -14,7 +14,7 @@ const HARDHAT_NETWORK_FORKING_CONFIGS = new Map<string, any>([
   ['INT-TEST-ETH', {
     enabled: true,
     url: process.env.ETH_NODE_URL,
-    blockNumber: 22730520,
+    blockNumber: 22810000,
   }],
   ['INT-TEST-ARB', {
     enabled: true,
