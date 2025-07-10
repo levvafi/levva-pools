@@ -677,7 +677,7 @@ export async function createPendleCaseEzETH27Jun2024(): Promise<PendleOracleCase
     sy,
     yqt,
     pendleMarket: await ethers.getContractAt('PendleMarketV3', pendleMarket),
-    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle),
+    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle, ethers.provider),
   };
 }
 
@@ -737,7 +737,7 @@ export async function createPendleCaseWeETH27Jun2024(): Promise<PendleOracleCase
     sy,
     yqt,
     pendleMarket: await ethers.getContractAt('PendleMarketV3', pendleMarket),
-    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle),
+    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle, ethers.provider),
   };
 }
 
@@ -796,7 +796,7 @@ export async function createPendleCaseUSDe29Aug2024(): Promise<PendleOracleCaseP
     sy,
     yqt,
     pendleMarket: await ethers.getContractAt('PendleMarketV3', pendleMarket),
-    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle),
+    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle, ethers.provider),
   };
 }
 
@@ -855,7 +855,7 @@ export async function createPendleCaseRsETH27Jun2024(): Promise<PendleOracleCase
     sy,
     yqt,
     pendleMarket: await ethers.getContractAt('PendleMarketV3', pendleMarket),
-    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle),
+    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle, ethers.provider),
   };
 }
 
@@ -915,7 +915,7 @@ export async function createPendleCaseWstEth28Mar2024(): Promise<PendleOracleCas
     sy,
     yqt,
     pendleMarket: await ethers.getContractAt('PendleMarketV3', pendleMarket),
-    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle),
+    pendlePtLpOracle: IPPYLpOracle__factory.connect(pendlePtLpOracle, ethers.provider),
   };
 }
 

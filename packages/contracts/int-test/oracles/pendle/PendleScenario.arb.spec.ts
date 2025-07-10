@@ -5,9 +5,10 @@ import { ethers } from 'hardhat';
 import { MarginlyRouter__factory } from '../../../typechain-types';
 import { PendleAdapter__factory } from '../../../typechain-types';
 import { Addressable, formatUnits, keccak256, parseUnits, toBeHex } from 'ethers';
-import { MarginlyFactory__factory, LevvaTradingPool__factory } from '../../../typechain-types';
+import { MarginlyFactory__factory, LevvaFarmingPool__factory } from '../../../typechain-types';
 import { MarginlyParamsStruct } from '../../../typechain-types/contracts/pool/interfaces/IMarginlyPool';
 import { ZeroAddress } from 'ethers';
+import { resetFork } from '../../router/shared/utils';
 
 export const CallType = {
   DepositBase: 0,
@@ -58,6 +59,7 @@ export enum ArbMainnetERC20BalanceOfSlot {
 
 describe('Pendle farming marginly pool', () => {
   it('PT-weETH-27JUN2024 / WETH', async () => {
+    await resetFork(200000000);
     console.log('Setting up pool');
     const { oracle } = await loadFixture(createPendleCaseWeETH27Jun2024);
 
@@ -82,7 +84,7 @@ describe('Pendle farming marginly pool', () => {
       adapter: pendleAdapter,
     };
     const router = await new MarginlyRouter__factory().connect(owner).deploy([routerInput]);
-    const marginlyPoolImpl = await new LevvaTradingPool__factory().connect(owner).deploy();
+    const marginlyPoolImpl = await new LevvaFarmingPool__factory().connect(owner).deploy();
     const marginlyFactory = await new MarginlyFactory__factory()
       .connect(owner)
       .deploy(marginlyPoolImpl, router, owner.address, weth, owner.address);
@@ -98,12 +100,12 @@ describe('Pendle farming marginly pool', () => {
 
     const poolAddress = await marginlyFactory.createPool.staticCall(weth, ptToken, oracle, 0, params);
     await (await marginlyFactory.connect(owner).createPool(weth, ptToken, oracle, 0, params)).wait();
-    const marginly = LevvaTradingPool__factory.connect(poolAddress);
+    const marginly = LevvaFarmingPool__factory.connect(poolAddress);
     console.log('Setup finished');
 
     console.log('Lender deposits weth');
     const lenderDepositAmount = parseUnits('30', 18);
-    await setTokenBalance(weth, ArbMainnetERC20BalanceOfSlot.WETH, lender.address, lenderDepositAmount);
+    await setTokenBalance(weth.target, ArbMainnetERC20BalanceOfSlot.WETH, lender.address, lenderDepositAmount);
     await weth.connect(lender).approve(marginly, lenderDepositAmount);
     await marginly.connect(lender).execute(CallType.DepositQuote, lenderDepositAmount, 0, 0, false, ZeroAddress, 0);
 
@@ -138,7 +140,7 @@ describe('Pendle farming marginly pool', () => {
       marginly
         .connect(shorter)
         .execute(CallType.DepositQuote, longerDepositAmount, longAmount, price * 2n, false, ZeroAddress, 0)
-    ).to.be.revertedWithCustomError(marginly, 'Forbidden');
+    ).to.be.revertedWithCustomError(marginly, 'ShortUnavailable');
 
     console.log('Time shift');
     await ethers.provider.send('evm_increaseTime', [90 * 24 * 60 * 60]);
@@ -170,6 +172,7 @@ describe('Pendle farming marginly pool', () => {
   });
 
   it('PT-USDe-29AUG2024 / USDC', async () => {
+    await resetFork(210000000);
     console.log('Setting up pool');
     const { oracle } = await loadFixture(createPendleCaseUSDe29Aug2024);
 
@@ -194,7 +197,7 @@ describe('Pendle farming marginly pool', () => {
       adapter: pendleAdapter,
     };
     const router = await new MarginlyRouter__factory().connect(owner).deploy([routerInput]);
-    const marginlyPoolImpl = await new LevvaTradingPool__factory().connect(owner).deploy();
+    const marginlyPoolImpl = await new LevvaFarmingPool__factory().connect(owner).deploy();
     const marginlyFactory = await new MarginlyFactory__factory()
       .connect(owner)
       .deploy(marginlyPoolImpl, router, owner.address, usdc, owner.address);
@@ -210,7 +213,7 @@ describe('Pendle farming marginly pool', () => {
 
     const poolAddress = await marginlyFactory.createPool.staticCall(usdc, ptToken, oracle, 0, params);
     await (await marginlyFactory.connect(owner).createPool(usdc, ptToken, oracle, 0, params)).wait();
-    const marginly = LevvaTradingPool__factory.connect(poolAddress);
+    const marginly = LevvaFarmingPool__factory.connect(poolAddress);
     console.log('Setup finished');
 
     console.log('Lender deposits usdc');
@@ -255,13 +258,13 @@ describe('Pendle farming marginly pool', () => {
 
     console.log('Shorter fails');
     const shortDepositAmount = parseUnits('100', 6);
-    await setTokenBalance(usdc, ArbMainnetERC20BalanceOfSlot.USDC, shorter.address, shortDepositAmount);
+    await setTokenBalance(usdc.target, ArbMainnetERC20BalanceOfSlot.USDC, shorter.address, shortDepositAmount);
     await usdc.connect(shorter).approve(marginly, shortDepositAmount);
     await expect(
       marginly
         .connect(shorter)
         .execute(CallType.DepositQuote, shortDepositAmount, longAmount, price * 2n, false, ZeroAddress, 0)
-    ).to.be.revertedWithCustomError(marginly, 'Forbidden');
+    ).to.be.revertedWithCustomError(marginly, 'ShortUnavailable');
 
     console.log('Time shift');
     await ethers.provider.send('evm_increaseTime', [90 * 24 * 60 * 60]);

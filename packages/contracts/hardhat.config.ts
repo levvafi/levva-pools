@@ -17,11 +17,6 @@ const HARDHAT_NETWORK_FORKING_CONFIGS = new Map<string, any>([
     url: process.env.ARB_NODE_URL,
     blockNumber: 350678000,
   }],
-  ['INT-TEST-SONIC', {
-    enabled: true,
-    url: process.env.SONIC_NODE_URL,
-    blockNumber: 35673000,
-  }],
   ['UNIT-TEST', undefined]
 ]);
 
@@ -43,6 +38,8 @@ const config = {
       accounts: {
         count: 40,
       },
+      gasPrice: 1_000_000,
+      initialBaseFeePerGas: 1_000_000,
     },
     mainnet: {
       url: process.env.ETH_NODE_URL,

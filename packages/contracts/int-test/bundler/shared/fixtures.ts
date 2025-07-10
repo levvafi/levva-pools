@@ -11,7 +11,7 @@ import { PendleMarketOracle__factory } from '../../../typechain-types';
 import { PENDLE_ROUTER, WETH9, PENDLE_ORACLE, WSTETH } from './registry';
 import { PENDLE_PT_WSTETH_30_12_27, PENDLE_MARKET_WSTETH_30_12_27 } from './registry';
 import { EthereumMainnetERC20BalanceOfSlot, setTokenBalance } from './tokens';
-import { CallType } from '../../oracles/pendle/PendleScenario.arb.spec';
+import { CallType } from '../../pool/utils/chain-ops';
 
 export async function deployPendleBundlerWithPool(): Promise<{ bundler: LevvaPendleBundler; pool: LevvaFarmingPool }> {
   const [signer] = await ethers.getSigners();
