@@ -1,0 +1,101 @@
+{
+  "factory": {
+    "poolType": "Farming",
+    "feeHolderAddress": "0xd6DE5D2D8Ab2E4a92c2B923a88f7D366ddb3C760",
+    "techPositionOwnerAddress": "0xd6DE5D2D8Ab2E4a92c2B923a88f7D366ddb3C760",
+    "WETH9": {
+      "address": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "decimals": 18,
+      "symbol": "WETH"
+    }
+  },
+  "pools": [
+    {
+      "priceOracleId": "PendleMarketOracle",
+      "baseToken": {
+        "address": "0xaB7F3837E6e721abBc826927B655180Af6A04388",
+        "decimals": 18,
+        "symbol": "PT-weETH-25JUN2026"
+      },
+      "quoteToken": {
+        "address": "0x35751007a407ca6feffe80b3cb397736d2cf4dbe",
+        "decimals": 18,
+        "symbol": "weETH"
+      },
+      "defaultSwapCallData": 0,
+      "params": {
+        "maxLeverage": 20,
+        "interestRate": 2000,
+        "fee": 0,
+        "swapFee": 0,
+        "mcSlippage": 1000,
+        "positionMinAmount": 1e15,
+        "quoteLimit": 40e18
+      }
+    }
+  ],
+  "oracles": {
+    "PendleMarketOracle": {
+      "pendlePtLpOracleAddress": "0x9a9fa8338dd5e5b2188006f1cd2ef26d921650c2",
+      "settings": [
+        {
+          "quoteToken": {
+            "address": "0x35751007a407ca6feffe80b3cb397736d2cf4dbe",
+            "decimals": 18,
+            "symbol": "weETH"
+          },
+          "baseToken": {
+            "address": "0xaB7F3837E6e721abBc826927B655180Af6A04388",
+            "decimals": 18,
+            "symbol": "PT-weETH-25JUN2026"
+          },
+          "pendleMarketAddress": "0x46d62a8dede1bf2d0de04f2ed863245cbba5e538",
+          "secondsAgo": 900,
+          "secondsAgoLiquidation": 5
+        }
+      ]
+    },
+    "UniswapV3TickOracle": {
+      "factoryAddress": "0x1F98431c8aD98523631AE4a59f267346ea31F984",
+      "settings": [
+        {
+          "quoteToken": {
+            "address": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+            "decimals": 6,
+            "symbol": "USDC"
+          },
+          "baseToken": {
+            "address": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "decimals": 18,
+            "symbol": "WETH"
+          },
+          "uniswapFee": 500,
+          "secondsAgo": 1800,
+          "secondsAgoLiquidation": 5
+        }
+      ]
+    }
+  },
+  "adapters": {
+    "PendleMarketAdapter": {
+      "dexId": 0,
+      "ptToken": {
+        "address": "0xaB7F3837E6e721abBc826927B655180Af6A04388",
+        "decimals": 18,
+        "symbol": "PT-weETH-25JUN2026"
+      },
+      "ibToken": {
+        "address": "0x35751007a407ca6feffe80b3cb397736d2cf4dbe",
+        "decimals": 18,
+        "symbol": "weETH"
+      },
+      "market": "0x46d62a8dede1bf2d0de04f2ed863245cbba5e538",
+      "slippage": 1000
+    }
+  },
+  "bundlers": {
+    "LevvaPendleBundler": {
+      "pendleRouterAddress": "0x888888888889758F76e7103c6CbF23ABbF58F946"
+    }
+  }
+}

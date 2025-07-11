@@ -1,0 +1,77 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { Signer, ZeroAddress } from 'ethers';
+import { UniswapV3TickOracleDouble__factory } from '../../../../../typechain-types';
+import { ContractState, StorageFile } from '../../../base/deployment-states';
+import { Deployer } from '../../../base/deployers/deployer';
+import { IUniswapV3TickDoubleOracleDeployConfig } from '../../../configs/oracles';
+import { isSameAddress } from '../../../base/utils';
+
+export class UniswapV3TickDoubleOracleDeployer extends Deployer<UniswapV3TickOracleDouble__factory> {
+  constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
+    super(
+      UniswapV3TickOracleDouble__factory.name.replace('__factory', ''),
+      new UniswapV3TickOracleDouble__factory().connect(signer),
+      storage,
+      blockToConfirm
+    );
+  }
+
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: IUniswapV3TickDoubleOracleDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [config.factoryAddress]);
+    if (config.settings !== undefined) {
+      await this.setup(config, address);
+    }
+    return address;
+  }
+
+  public async setup(config: IUniswapV3TickDoubleOracleDeployConfig, address?: string): Promise<void> {
+    if (config.settings === undefined) {
+      throw new Error('Oracle setup settings are not provided');
+    }
+
+    const oracle = UniswapV3TickOracleDouble__factory.connect(
+      address ?? this.getDeployedAddressSafe(),
+      this.factory.runner
+    );
+
+    for (const oracleSettings of config.settings) {
+      const currentOptions = await oracle.getParams(
+        oracleSettings.quoteToken.address,
+        oracleSettings.baseToken.address
+      );
+
+      const isSet =
+        currentOptions.secondsAgo == BigInt(oracleSettings.secondsAgo) &&
+        currentOptions.secondsAgoLiquidation == BigInt(oracleSettings.secondsAgoLiquidation);
+
+      if (
+        !isSameAddress(currentOptions.intermediateToken, ZeroAddress) &&
+        !isSameAddress(currentOptions.intermediateToken, oracleSettings.intermediateToken.address)
+      ) {
+        throw new Error(`Can't change underlying pool for ${this.name} oracle`);
+      }
+
+      if (isSet) {
+        console.log(
+          `${this.name} oracle ${oracleSettings.quoteToken.address}/${oracleSettings.baseToken.address} pair is set. Skipping`
+        );
+        continue;
+      }
+
+      const tx = await oracle.setOptions(
+        oracleSettings.quoteToken.address,
+        oracleSettings.baseToken.address,
+        oracleSettings.secondsAgo,
+        oracleSettings.secondsAgoLiquidation,
+        oracleSettings.baseTokenPairFee,
+        oracleSettings.quoteTokenPairFee,
+        oracleSettings.intermediateToken.address
+      );
+      await tx.wait(this.blocksToConfirm);
+      console.log(`Updated ${this.name} oracle settings. Tx hash: ${tx.hash}`);
+    }
+  }
+}

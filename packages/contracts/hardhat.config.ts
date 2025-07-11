@@ -1,8 +1,12 @@
 import { config as dotEnvConfig } from 'dotenv';
+import fs from 'fs';
 import '@nomicfoundation/hardhat-toolbox';
 import 'hardhat-contract-sizer';
 import 'solidity-docgen';
-import './scripts';
+
+if (fs.existsSync('./typechain-types')) {
+  require('./tasks/deploy');
+}
 
 dotEnvConfig();
 
@@ -42,17 +46,19 @@ const config = {
       initialBaseFeePerGas: 1_000_000,
     },
     mainnet: {
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       url: process.env.ETH_NODE_URL,
     },
-    arbitrumOne: {
+    arbitrum: {
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       url: process.env.ARB_NODE_URL,
     },
   },
   etherscan: {
-    apiKey: {
-      mainnet: process.env.ETH_API_KEY,
-      arbitrumOne: process.env.ARB_API_KEY,
-    },
+    apiKey: process.env.ETH_API_KEY,
+  },
+  sourcify: {
+    enabled: true,
   },
   mocha: {
     timeout: 600_000,

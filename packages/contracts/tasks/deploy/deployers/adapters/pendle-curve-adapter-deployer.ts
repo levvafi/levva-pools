@@ -1,0 +1,56 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
+import { Signer } from 'ethers';
+import { PendleCurveNgAdapter__factory } from '../../../../typechain-types';
+import { ContractState, StorageFile } from '../../base/deployment-states';
+import { Deployer } from '../../base/deployers/deployer';
+import { IPendleCurveAdapterDeployConfig, IPendleCurveAdapterPairSettings } from '../../configs/adapters';
+
+export class PendleCurveRouterAdapterDeployer extends Deployer<PendleCurveNgAdapter__factory> {
+  constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
+    super(
+      PendleCurveNgAdapter__factory.name.replace('__factory', ''),
+      new PendleCurveNgAdapter__factory().connect(signer),
+      storage,
+      blockToConfirm
+    );
+  }
+
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: IPendleCurveAdapterDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [this.getRouteInput(config.settings)]);
+    if (config.settings !== undefined) {
+      await this.setup(config, address);
+    }
+    return address;
+  }
+
+  public async setup(config: IPendleCurveAdapterDeployConfig, address?: string): Promise<void> {
+    if (config.settings === undefined) {
+      throw new Error('Adapter setup settings are not provided');
+    }
+
+    const adapter = PendleCurveNgAdapter__factory.connect(
+      address ?? this.getDeployedAddressSafe(),
+      this.factory.runner
+    );
+    const tx = await adapter.addPairs(this.getRouteInput(config.settings));
+    await tx.wait(this.blocksToConfirm);
+
+    console.log(`Updated ${this.name} adapter settings. Tx hash: ${tx.hash}`);
+  }
+
+  private getRouteInput(settings?: IPendleCurveAdapterPairSettings[]) {
+    return (settings ?? []).map((x) => {
+      return {
+        pendleMarket: x.pendleMarket,
+        slippage: x.slippage,
+        curveSlippage: x.curveSlippage,
+        curvePool: x.curvePool,
+        ibToken: x.ibToken.address,
+        quoteToken: x.quoteToken.address,
+      };
+    });
+  }
+}

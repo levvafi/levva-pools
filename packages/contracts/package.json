@@ -17,8 +17,7 @@
     "test:int-pool-parallel": "MODE=INT-TEST-ETH hardhat test --parallel ./int-test/pool/suites/*.ts",
     "test:int-eth": "MODE=INT-TEST-ETH hardhat test $(find int-test -type f -name '*.eth.spec.ts')",
     "test:int-arb": "MODE=INT-TEST-ARB hardhat test $(find int-test -type f -name '*.arb.spec.ts')",
-
-    "lint:write": "prettier --write ./contracts ./test ./int-test",
+    "lint:write": "prettier --write ./contracts ./test ./int-test ./tasks",
     "docgen": "hardhat docgen"
   },
   "devDependencies": {

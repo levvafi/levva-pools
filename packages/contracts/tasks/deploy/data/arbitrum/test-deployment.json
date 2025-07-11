@@ -1,0 +1,34 @@
+{
+  "PendleMarketOracle": {
+    "address": "0xb74594246D4114e04853dbcC50c8aF6FEE274EfE",
+    "txHash": "0xca338e1d86d88bb34409813422bc58c074ddf2f4c4a751f84af65120d014ba36"
+  },
+  "PendleMarketAdapter": {
+    "address": "0x03fA449776FBE2a38771BD638be94E32592372f6",
+    "txHash": "0x3fd21349401a41c6a064aef559a460b325704a4f14525d02286065a421554715"
+  },
+  "MarginlyRouter": {
+    "address": "0x61ee9e32518A2D2679C890E34081837824d48F70",
+    "txHash": "0xfa9d2ca2db8a19d49862ce42e3a407b2f781ddb0d0c97e68bc98a32ebbd36fe7"
+  },
+  "LevvaFarmingPoolImplementation": {
+    "address": "0x12A45De76D496A8D53F649C3530bA85A447D4449",
+    "txHash": "0x78abee118e99e0bf26f7f702dfda81b4ec134bd926dbf2260226201f01720b14"
+  },
+  "MarginlyFactory": {
+    "address": "0x48a85910a7A45d047203bF27e7bc5D2bf417F030",
+    "txHash": "0xbeb44dddb4f7c9a703e9f68612a2409bb3bda721204cffe7aac3f4688f3fc31d"
+  },
+  "LevvaPool#PT-weETH-25JUN2026-weETH": {
+    "address": "0x4F890EE86aabc87F915282341552aB6F781E5B3a",
+    "txHash": "0x639842ec6bffc14fa27d19307471ab82137f1fc0aef6d7226cb06fbde920b1a2"
+  },
+  "LevvaPendleBundler": {
+    "address": "0x11AD57D588011ddc1165A91352103294B70d9cf6",
+    "txHash": "0x10b44a35131dceedb44e555f99ca688da8ec0e22521e1261a8e57a766f16d229"
+  },
+  "UniswapV3TickOracle": {
+    "address": "0xc9B549329d6a12c2903924FD0D12090cD880E2B6",
+    "txHash": "0x3719e605f0efcf789f2dbfd71609c47ca37de773077a6718a3810ff303f67f38"
+  }
+}
