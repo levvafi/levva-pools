@@ -26,5 +26,9 @@
   "LevvaPendleBundler": {
     "address": "0x11AD57D588011ddc1165A91352103294B70d9cf6",
     "txHash": "0x10b44a35131dceedb44e555f99ca688da8ec0e22521e1261a8e57a766f16d229"
+  },
+  "UniswapV3TickOracle": {
+    "address": "0xc9B549329d6a12c2903924FD0D12090cD880E2B6",
+    "txHash": "0x3719e605f0efcf789f2dbfd71609c47ca37de773077a6718a3810ff303f67f38"
   }
 }
