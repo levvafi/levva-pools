@@ -11,6 +11,7 @@ export class Deployer<TFactory extends ContractFactory> {
 
   private static readonly VERIFICATION_MAX_TRIES = 10;
   private static readonly VERIFICATION_RETRY_PAUSE_MS = 10_000;
+  private static readonly VERIFICATION_RESPONSE_AWAIT_TIME_MS = 30_000;
 
   constructor(name: string, factory: TFactory, storage: Storage<ContractState>, blocksToConfirm: number = 1) {
     this.name = name;
@@ -62,7 +63,11 @@ export class Deployer<TFactory extends ContractFactory> {
     return this.factory.deploy(...args);
   }
 
-  private async verifyContract(hre: HardhatRuntimeEnvironment, address: string, constructorArguments: any[]): Promise<void> {
+  private async verifyContract(
+    hre: HardhatRuntimeEnvironment,
+    address: string,
+    constructorArguments: any[]
+  ): Promise<void> {
     if (isDryRun(hre)) {
       console.log('Dry run. Skipping contract verification');
       return;
@@ -72,10 +77,13 @@ export class Deployer<TFactory extends ContractFactory> {
 
     for (let i = 0; i < Deployer.VERIFICATION_MAX_TRIES; ++i) {
       try {
-        await hre.run('verify:verify', {
-          address,
-          constructorArguments,
-        });
+        await Promise.race([
+          hre.run('verify:verify', {
+            address,
+            constructorArguments,
+          }),
+          this.delay(Deployer.VERIFICATION_RESPONSE_AWAIT_TIME_MS),
+        ]);
         break;
       } catch (e) {
         console.log(`Contract verification ${address} failed (attempt ${i + 1}): ${e}`);
@@ -85,8 +93,12 @@ export class Deployer<TFactory extends ContractFactory> {
         }
 
         console.log(`Waiting for ${Deployer.VERIFICATION_RETRY_PAUSE_MS} ms before retrying`);
-        await new Promise((resolve) => setTimeout(resolve, Deployer.VERIFICATION_RETRY_PAUSE_MS));
+        await this.delay(Deployer.VERIFICATION_RETRY_PAUSE_MS);
       }
     }
+  }
+
+  private async delay(ms: number): Promise<void> {
+    new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
