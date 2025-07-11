@@ -1,5 +1,5 @@
 import { task } from 'hardhat/config';
-import { HardhatNetworkConfig, HardhatRuntimeEnvironment } from 'hardhat/types';
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { runLevvaDeployment } from './deploy/deploy-levva-ecosystem';
 import { isDryRun } from './deploy/base/utils';
 
@@ -15,10 +15,6 @@ task('task:deploy', 'Full system deployment')
     const network = hre.network.name.toLowerCase();
     const dryRun = isDryRun(hre); // hre.config.networks.hardhat.forking?.enabled ?? false;
 
-    const networkConfig = hre.config.networks[network] as HardhatNetworkConfig | undefined;
-    if (networkConfig === undefined) {
-      throw new Error(`Failed to find config for a network with a name ${network}`);
-    }
     const [signer] = await hre.ethers.getSigners();
 
     const balanceBefore = await signer.provider!.getBalance(signer.address);

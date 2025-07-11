@@ -35,7 +35,7 @@ export class BalancerAdapterDeployer extends Deployer<BalancerAdapter__factory> 
     const tx = await adapter.addPools(this.getPoolInput(config.settings));
     await tx.wait(this.blocksToConfirm);
 
-    console.log(`Updated ${this.name} oracle settings. Tx hash: ${tx.hash}`);
+    console.log(`Updated ${this.name} adapter settings. Tx hash: ${tx.hash}`);
   }
 
   private getPoolInput(settings?: IGeneralAdapterPairSettings[]) {

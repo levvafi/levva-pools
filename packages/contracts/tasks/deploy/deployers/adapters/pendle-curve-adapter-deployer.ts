@@ -38,7 +38,7 @@ export class PendleCurveRouterAdapterDeployer extends Deployer<PendleCurveNgAdap
     const tx = await adapter.addPairs(this.getRouteInput(config.settings));
     await tx.wait(this.blocksToConfirm);
 
-    console.log(`Updated ${this.name} oracle settings. Tx hash: ${tx.hash}`);
+    console.log(`Updated ${this.name} adapter settings. Tx hash: ${tx.hash}`);
   }
 
   private getRouteInput(settings?: IPendleCurveAdapterPairSettings[]) {

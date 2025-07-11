@@ -45,7 +45,7 @@ export class Deployer<TFactory extends ContractFactory> {
     this.storage.setById(name, contractState);
     this.storage.save();
 
-    this.verifyContract(hre, address, args);
+    await this.verifyContract(hre, address, args);
 
     return address;
   }
@@ -62,19 +62,19 @@ export class Deployer<TFactory extends ContractFactory> {
     return this.factory.deploy(...args);
   }
 
-  private async verifyContract(hre: HardhatRuntimeEnvironment, address: string, constructorArgs: any[]): Promise<void> {
+  private async verifyContract(hre: HardhatRuntimeEnvironment, address: string, constructorArguments: any[]): Promise<void> {
     if (isDryRun(hre)) {
       console.log('Dry run. Skipping contract verification');
       return;
     }
 
-    console.log(`Verifying contract ${address} with constructor arguments: ${constructorArgs}`);
+    console.log(`Verifying contract ${address} with constructor arguments: ${constructorArguments}`);
 
     for (let i = 0; i < Deployer.VERIFICATION_MAX_TRIES; ++i) {
       try {
         await hre.run('verify:verify', {
           address,
-          constructorArgs,
+          constructorArguments,
         });
         break;
       } catch (e) {

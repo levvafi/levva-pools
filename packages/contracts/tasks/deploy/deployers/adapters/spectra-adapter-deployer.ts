@@ -32,7 +32,7 @@ export class SpectraAdapterDeployer extends Deployer<SpectraAdapter__factory> {
     const tx = await adapter.addPools(this.getRouteInput(config.settings));
     await tx.wait(this.blocksToConfirm);
 
-    console.log(`Updated ${this.name} oracle settings. Tx hash: ${tx.hash}`);
+    console.log(`Updated ${this.name} adapter settings. Tx hash: ${tx.hash}`);
   }
 
   private getRouteInput(settings?: ISpectraAdapterPairSettings[]) {
