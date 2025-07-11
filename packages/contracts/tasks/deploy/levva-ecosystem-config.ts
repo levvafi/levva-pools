@@ -32,7 +32,7 @@ export class LevvaEcosystemConfig implements ILevvaEcosystemConfig {
       this.pools.push(new LevvaPoolConfig(pool));
     });
 
-    (Object.entries(jsonParsed.oracles) ?? []).forEach(([oracleKey, oracleJsonConfig]) => {
+    this.getEntries(jsonParsed.oracles).forEach(([oracleKey, oracleJsonConfig]) => {
       const oracleConfig = this.oracleConfigFactory.getConfig(oracleKey, oracleJsonConfig);
       if (this.oracles.has(oracleKey)) {
         throw new Error(`Duplicate ${oracleKey} oracle key`);
@@ -40,7 +40,7 @@ export class LevvaEcosystemConfig implements ILevvaEcosystemConfig {
       this.oracles.set(oracleKey, oracleConfig);
     });
 
-    (Object.entries(jsonParsed.adapters) ?? []).forEach(([adapterKey, adapterJsonConfig]) => {
+    this.getEntries(jsonParsed.adapters).forEach(([adapterKey, adapterJsonConfig]) => {
       const adapterConfig = this.adapterConfigFactory.getConfig(adapterKey, adapterJsonConfig);
       if (this.adapters.has(adapterKey)) {
         throw new Error(`Duplicate ${adapterKey} adapter key`);
@@ -48,7 +48,7 @@ export class LevvaEcosystemConfig implements ILevvaEcosystemConfig {
       this.adapters.set(adapterKey, adapterConfig);
     });
 
-    (Object.entries(jsonParsed.bundlers) ?? []).forEach(([bundlerKey, bundlerJsonConfig]) => {
+    this.getEntries(jsonParsed.bundlers).forEach(([bundlerKey, bundlerJsonConfig]) => {
       const bundlerConfig = this.bundlerConfigFactory.getConfig(bundlerKey, bundlerJsonConfig);
       if (this.bundlers.has(bundlerKey)) {
         throw new Error(`Duplicate ${bundlerKey} bundler key`);
@@ -63,5 +63,9 @@ export class LevvaEcosystemConfig implements ILevvaEcosystemConfig {
     await Promise.all(Array.from(this.oracles.values()).map(async (oracle) => await oracle.validate(provider)));
     await Promise.all(Array.from(this.adapters.values()).map(async (adapter) => await adapter.validate(provider)));
     await Promise.all(Array.from(this.bundlers.values()).map(async (bundler) => await bundler.validate(provider)));
+  }
+
+  private getEntries(map?: Map<any, any>): any[] {
+    return map ? Object.entries(map) : [];
   }
 }
