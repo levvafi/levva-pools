@@ -1,8 +1,9 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer } from 'ethers';
 import { AlgebraTickOracle__factory } from '../../../../../typechain-types';
 import { ContractState, StorageFile } from '../../../base/deployment-states';
 import { Deployer } from '../../../base/deployers/deployer';
-import { IAlgebraTickOracleDeployConfig, IAlgebraTickOraclePairSettings } from '../../../configs/oracles';
+import { IAlgebraTickOracleDeployConfig } from '../../../configs/oracles';
 
 export class AlgebraTickOracleDeployer extends Deployer<AlgebraTickOracle__factory> {
   constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
@@ -14,8 +15,11 @@ export class AlgebraTickOracleDeployer extends Deployer<AlgebraTickOracle__facto
     );
   }
 
-  public async performDeployment(config: IAlgebraTickOracleDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw([config.factoryAddress]);
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: IAlgebraTickOracleDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [config.factoryAddress]);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

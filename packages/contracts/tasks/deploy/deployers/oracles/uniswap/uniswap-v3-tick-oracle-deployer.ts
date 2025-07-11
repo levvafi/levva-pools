@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer } from 'ethers';
 import { UniswapV3TickOracle__factory } from '../../../../../typechain-types';
 import { ContractState, StorageFile } from '../../../base/deployment-states';
@@ -14,8 +15,11 @@ export class UniswapV3TickOracleDeployer extends Deployer<UniswapV3TickOracle__f
     );
   }
 
-  public async performDeployment(config: IUniswapV3TickOracleDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw([config.factoryAddress]);
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: IUniswapV3TickOracleDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [config.factoryAddress]);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

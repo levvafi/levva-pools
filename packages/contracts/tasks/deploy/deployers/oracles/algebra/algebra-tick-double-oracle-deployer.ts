@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer, ZeroAddress } from 'ethers';
 import { AlgebraTickOracleDouble__factory } from '../../../../../typechain-types';
 import { ContractState, StorageFile } from '../../../base/deployment-states';
@@ -15,8 +16,11 @@ export class AlgebraTickDoubleOracleDeployer extends Deployer<AlgebraTickOracleD
     );
   }
 
-  public async performDeployment(config: IAlgebraTickDoubleOracleDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw([config.factoryAddress]);
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: IAlgebraTickDoubleOracleDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [config.factoryAddress]);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

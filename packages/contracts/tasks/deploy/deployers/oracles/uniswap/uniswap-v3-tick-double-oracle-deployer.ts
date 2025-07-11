@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer, ZeroAddress } from 'ethers';
 import { UniswapV3TickOracleDouble__factory } from '../../../../../typechain-types';
 import { ContractState, StorageFile } from '../../../base/deployment-states';
@@ -15,8 +16,11 @@ export class UniswapV3TickDoubleOracleDeployer extends Deployer<UniswapV3TickOra
     );
   }
 
-  public async performDeployment(config: IUniswapV3TickDoubleOracleDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw([config.factoryAddress]);
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: IUniswapV3TickDoubleOracleDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [config.factoryAddress]);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

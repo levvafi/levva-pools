@@ -1,6 +1,7 @@
 import { task } from 'hardhat/config';
 import { HardhatNetworkConfig, HardhatRuntimeEnvironment } from 'hardhat/types';
 import { runLevvaDeployment } from './deploy/deploy-levva-ecosystem';
+import { isDryRun } from './deploy/base/utils';
 
 interface DeployArgs {
   tag?: string;
@@ -12,7 +13,7 @@ task('task:deploy', 'Full system deployment')
   .addFlag('forceSave', 'Forces storage saves on dry runs')
   .setAction(async (taskArgs: DeployArgs, hre: HardhatRuntimeEnvironment) => {
     const network = hre.network.name.toLowerCase();
-    const dryRun = hre.config.networks.hardhat.forking?.enabled ?? false;
+    const dryRun = isDryRun(hre); // hre.config.networks.hardhat.forking?.enabled ?? false;
 
     const networkConfig = hre.config.networks[network] as HardhatNetworkConfig | undefined;
     if (networkConfig === undefined) {

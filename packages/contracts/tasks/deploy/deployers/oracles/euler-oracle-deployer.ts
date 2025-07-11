@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer } from 'ethers';
 import { EulerPriceOracle__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
@@ -15,8 +16,8 @@ export class EulerOracleDeployer extends Deployer<EulerPriceOracle__factory> {
     );
   }
 
-  public async performDeployment(config: IEulerOracleDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw();
+  public async performDeployment(hre: HardhatRuntimeEnvironment, config: IEulerOracleDeployConfig): Promise<string> {
+    const address = await super.performDeploymentRaw(hre);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

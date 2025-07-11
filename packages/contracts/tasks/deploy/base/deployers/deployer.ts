@@ -1,10 +1,16 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { ContractFactory, BaseContract } from 'ethers';
 import { ContractState, Storage } from '../deployment-states';
+import { isDryRun } from '../utils';
+
 export class Deployer<TFactory extends ContractFactory> {
   protected readonly name: string;
   protected blocksToConfirm: number;
   protected readonly factory: TFactory;
   protected storage: Storage<ContractState>;
+
+  private static readonly VERIFICATION_MAX_TRIES = 10;
+  private static readonly VERIFICATION_RETRY_PAUSE_MS = 10_000;
 
   constructor(name: string, factory: TFactory, storage: Storage<ContractState>, blocksToConfirm: number = 1) {
     this.name = name;
@@ -13,7 +19,11 @@ export class Deployer<TFactory extends ContractFactory> {
     this.blocksToConfirm = blocksToConfirm;
   }
 
-  protected async performDeploymentRaw(args: any[] = [], nameOverload?: string): Promise<string> {
+  protected async performDeploymentRaw(
+    hre: HardhatRuntimeEnvironment,
+    args: any[] = [],
+    nameOverload?: string
+  ): Promise<string> {
     const name = nameOverload ?? this.name;
     const inStorage = this.storage.getById(name);
     if (inStorage !== undefined) {
@@ -35,6 +45,8 @@ export class Deployer<TFactory extends ContractFactory> {
     this.storage.setById(name, contractState);
     this.storage.save();
 
+    this.verifyContract(hre, address, args);
+
     return address;
   }
 
@@ -48,5 +60,33 @@ export class Deployer<TFactory extends ContractFactory> {
 
   private async deploy(args: any[]): Promise<BaseContract> {
     return this.factory.deploy(...args);
+  }
+
+  private async verifyContract(hre: HardhatRuntimeEnvironment, address: string, constructorArgs: any[]): Promise<void> {
+    if (isDryRun(hre)) {
+      console.log('Dry run. Skipping contract verification');
+      return;
+    }
+
+    console.log(`Verifying contract ${address} with constructor arguments: ${constructorArgs}`);
+
+    for (let i = 0; i < Deployer.VERIFICATION_MAX_TRIES; ++i) {
+      try {
+        await hre.run('verify:verify', {
+          address,
+          constructorArgs,
+        });
+        break;
+      } catch (e) {
+        console.log(`Contract verification ${address} failed (attempt ${i + 1}): ${e}`);
+
+        if (i + 1 === Deployer.VERIFICATION_MAX_TRIES) {
+          throw new Error(`${this.name}-deployer failed contract verification`);
+        }
+
+        console.log(`Waiting for ${Deployer.VERIFICATION_RETRY_PAUSE_MS} ms before retrying`);
+        await new Promise((resolve) => setTimeout(resolve, Deployer.VERIFICATION_RETRY_PAUSE_MS));
+      }
+    }
   }
 }

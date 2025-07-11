@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer } from 'ethers';
 import { AavePriceOracle__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
@@ -14,8 +15,11 @@ export class AavePriceOracleDeployer extends Deployer<AavePriceOracle__factory> 
     );
   }
 
-  public async performDeployment(config: IAavePriceOracleDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw([config.aavePoolProviderAddress]);
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: IAavePriceOracleDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [config.aavePoolProviderAddress]);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

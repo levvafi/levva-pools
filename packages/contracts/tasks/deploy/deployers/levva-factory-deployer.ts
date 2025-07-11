@@ -3,6 +3,7 @@ import { MarginlyFactory__factory } from '../../../typechain-types';
 import { ContractState, StorageFile } from '../base/deployment-states';
 import { Deployer } from '../base/deployers/deployer';
 import { ILevvaFactoryConfig, PoolType } from '../configs/levva-factory-config';
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 
 export class LevvaFactoryDeployer extends Deployer<MarginlyFactory__factory> {
   constructor(signer: Signer, storage: StorageFile<ContractState>, blockToConfirm: number = 1) {
@@ -14,7 +15,7 @@ export class LevvaFactoryDeployer extends Deployer<MarginlyFactory__factory> {
     );
   }
 
-  public async performDeployment(config: ILevvaFactoryConfig): Promise<string> {
+  public async performDeployment(hre: HardhatRuntimeEnvironment, config: ILevvaFactoryConfig): Promise<string> {
     let implementationAddress = config.marginlyPoolImplementationAddress;
     if (implementationAddress === undefined) {
       const type = config.poolType;
@@ -35,7 +36,7 @@ export class LevvaFactoryDeployer extends Deployer<MarginlyFactory__factory> {
       routerAddress = inStorage.address;
     }
 
-    return super.performDeploymentRaw([
+    return super.performDeploymentRaw(hre, [
       implementationAddress,
       routerAddress,
       config.feeHolderAddress,

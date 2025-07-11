@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer } from 'ethers';
 import { LevvaTradingPool__factory, LevvaFarmingPool__factory } from '../../../typechain-types';
 import { ContractState, StorageFile } from '../base/deployment-states';
@@ -10,8 +11,8 @@ export class LevvaPoolImplementationDeployer extends Deployer<LevvaTradingPool__
     super(name, factory.connect(signer), storage, blockToConfirm);
   }
 
-  async performDeployment(): Promise<string> {
-    return this.performDeploymentRaw();
+  async performDeployment(hre: HardhatRuntimeEnvironment): Promise<string> {
+    return this.performDeploymentRaw(hre);
   }
 
   private static getNameAndFactoryByType(type: PoolType): { name: string; factory: any } {

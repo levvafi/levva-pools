@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer } from 'ethers';
 import { PendlePtToAssetAdapter__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
@@ -14,8 +15,11 @@ export class PendlePtToAssetAdapterDeployer extends Deployer<PendlePtToAssetAdap
     );
   }
 
-  public async performDeployment(config: IPendlePtToAssetAdapterDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw([this.getRouteInput(config.settings)]);
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: IPendlePtToAssetAdapterDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [this.getRouteInput(config.settings)]);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

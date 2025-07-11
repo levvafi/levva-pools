@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer } from 'ethers';
 import { BalancerAdapter__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
@@ -14,8 +15,11 @@ export class BalancerAdapterDeployer extends Deployer<BalancerAdapter__factory> 
     );
   }
 
-  public async performDeployment(config: IBalancerAdapterDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw([this.getPoolInput(config.settings), config.vault]);
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: IBalancerAdapterDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [this.getPoolInput(config.settings), config.vault]);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

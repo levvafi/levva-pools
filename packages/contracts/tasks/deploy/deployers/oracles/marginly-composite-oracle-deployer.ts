@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer, ZeroAddress } from 'ethers';
 import { MarginlyCompositeOracle__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
@@ -15,8 +16,11 @@ export class MarginlyCompositeOracleDeployer extends Deployer<MarginlyCompositeO
     );
   }
 
-  public async performDeployment(config: IMarginlyCompositeOracleDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw();
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: IMarginlyCompositeOracleDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer } from 'ethers';
 import { LevvaPendleBundler__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
@@ -14,8 +15,11 @@ export class LevvaPendleBundlerDeployer extends Deployer<LevvaPendleBundler__fac
     );
   }
 
-  public async performDeployment(config: ILevvaPendleBundlerDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw([config.pendleRouterAddress]);
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: ILevvaPendleBundlerDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [config.pendleRouterAddress]);
     return address;
   }
 }

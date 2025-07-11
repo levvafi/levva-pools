@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer } from 'ethers';
 import { SpectraAdapter__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
@@ -14,8 +15,8 @@ export class SpectraAdapterDeployer extends Deployer<SpectraAdapter__factory> {
     );
   }
 
-  public async performDeployment(config: ISpectraAdapterDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw([this.getRouteInput(config.settings)]);
+  public async performDeployment(hre: HardhatRuntimeEnvironment, config: ISpectraAdapterDeployConfig): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [this.getRouteInput(config.settings)]);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

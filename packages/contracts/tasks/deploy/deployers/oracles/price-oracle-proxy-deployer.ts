@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer } from 'ethers';
 import { PriceOracleProxy__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
@@ -15,8 +16,11 @@ export class ProxyPriceOracleDeployer extends Deployer<PriceOracleProxy__factory
     );
   }
 
-  public async performDeployment(config: IProxyPriceOracleDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw();
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: IProxyPriceOracleDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

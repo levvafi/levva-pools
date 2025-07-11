@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer } from 'ethers';
 import { PendleCurveNgAdapter__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
@@ -14,8 +15,11 @@ export class PendleCurveRouterAdapterDeployer extends Deployer<PendleCurveNgAdap
     );
   }
 
-  public async performDeployment(config: IPendleCurveAdapterDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw([this.getRouteInput(config.settings)]);
+  public async performDeployment(
+    hre: HardhatRuntimeEnvironment,
+    config: IPendleCurveAdapterDeployConfig
+  ): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [this.getRouteInput(config.settings)]);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

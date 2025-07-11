@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer, ZeroAddress } from 'ethers';
 import { PendleOracle__factory } from '../../../../../typechain-types';
 import { ContractState, StorageFile } from '../../../base/deployment-states';
@@ -15,8 +16,8 @@ export class PendleOracleDeployer extends Deployer<PendleOracle__factory> {
     );
   }
 
-  public async performDeployment(config: IPendleOracleDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw([config.pendlePtLpOracleAddress]);
+  public async performDeployment(hre: HardhatRuntimeEnvironment, config: IPendleOracleDeployConfig): Promise<string> {
+    const address = await super.performDeploymentRaw(hre, [config.pendlePtLpOracleAddress]);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

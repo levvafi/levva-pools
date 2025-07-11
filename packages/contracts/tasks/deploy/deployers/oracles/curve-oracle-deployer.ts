@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer, ZeroAddress } from 'ethers';
 import { CurveOracle__factory } from '../../../../typechain-types';
 import { ContractState, StorageFile } from '../../base/deployment-states';
@@ -15,8 +16,8 @@ export class CurveOracleDeployer extends Deployer<CurveOracle__factory> {
     );
   }
 
-  public async performDeployment(config: ICurveOracleDeployConfig): Promise<string> {
-    const address = await super.performDeploymentRaw();
+  public async performDeployment(hre: HardhatRuntimeEnvironment, config: ICurveOracleDeployConfig): Promise<string> {
+    const address = await super.performDeploymentRaw(hre);
     if (config.settings !== undefined) {
       await this.setup(config, address);
     }

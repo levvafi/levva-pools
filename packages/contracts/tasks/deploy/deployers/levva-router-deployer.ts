@@ -1,3 +1,4 @@
+import { HardhatRuntimeEnvironment } from 'hardhat/types';
 import { Signer } from 'ethers';
 import { MarginlyRouter__factory } from '../../../typechain-types';
 import { AdapterInputStruct } from '../../../typechain-types/contracts/MarginlyRouter';
@@ -16,8 +17,8 @@ export class LevvaRouterDeployer extends Deployer<MarginlyRouter__factory> {
     );
   }
 
-  public async performDeployment(input?: AdapterInputStruct[]): Promise<string> {
-    const address = await this.performDeploymentRaw([[]]);
+  public async performDeployment(hre: HardhatRuntimeEnvironment, input?: AdapterInputStruct[]): Promise<string> {
+    const address = await this.performDeploymentRaw(hre, [[]]);
     if (input !== undefined && input?.length != 0) {
       await this.setup(input, address);
     }
