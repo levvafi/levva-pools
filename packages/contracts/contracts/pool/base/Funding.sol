@@ -90,7 +90,8 @@ abstract contract Funding is LevvaPoolCommon {
     uint256 realAmount,
     bool unwrapWETH,
     FP96.FixedPoint memory basePrice,
-    Position storage position
+    Position storage position,
+    address positionOwner
   ) internal {
     if (realAmount == 0) revert MarginlyErrors.ZeroAmount();
 
@@ -110,7 +111,7 @@ abstract contract Funding is LevvaPoolCommon {
       discountedBaseCollateralDelta = positionBaseAmount;
 
       if (position.discountedQuoteAmount == 0) {
-        delete positions[msg.sender];
+        delete positions[positionOwner];
       }
     } else {
       // partial withdraw
@@ -132,9 +133,9 @@ abstract contract Funding is LevvaPoolCommon {
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    _unwrapAndTransfer(unwrapWETH, baseToken, msg.sender, realAmountToWithdraw);
+    _unwrapAndTransfer(unwrapWETH, baseToken, positionOwner, realAmountToWithdraw);
 
-    emit WithdrawBase(msg.sender, realAmountToWithdraw, discountedBaseCollateralDelta);
+    emit WithdrawBase(positionOwner, realAmountToWithdraw, discountedBaseCollateralDelta);
   }
 
   /// @notice Withdraw quote token
@@ -146,7 +147,8 @@ abstract contract Funding is LevvaPoolCommon {
     uint256 realAmount,
     bool unwrapWETH,
     FP96.FixedPoint memory basePrice,
-    Position storage position
+    Position storage position,
+    address positionOwner
   ) internal {
     if (realAmount == 0) revert MarginlyErrors.ZeroAmount();
 
@@ -166,7 +168,7 @@ abstract contract Funding is LevvaPoolCommon {
       discountedQuoteCollateralDelta = positionQuoteAmount;
 
       if (position.discountedBaseAmount == 0) {
-        delete positions[msg.sender];
+        delete positions[positionOwner];
       }
     } else {
       // partial withdraw
@@ -188,9 +190,9 @@ abstract contract Funding is LevvaPoolCommon {
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    _unwrapAndTransfer(unwrapWETH, quoteToken, msg.sender, realAmountToWithdraw);
+    _unwrapAndTransfer(unwrapWETH, quoteToken, positionOwner, realAmountToWithdraw);
 
-    emit WithdrawQuote(msg.sender, realAmountToWithdraw, discountedQuoteCollateralDelta);
+    emit WithdrawQuote(positionOwner, realAmountToWithdraw, discountedQuoteCollateralDelta);
   }
 
   /// @dev Wraps ETH into WETH if need and makes transfer from `payer`

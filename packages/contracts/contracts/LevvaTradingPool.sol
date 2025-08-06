@@ -75,9 +75,9 @@ contract LevvaTradingPool is LongTrading, ShortTrading, Emergency {
         _long(uint256(-amount2), flag, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       }
     } else if (call == CallType.WithdrawBase) {
-      _withdrawBase(amount1, flag, basePrice, position);
+      _withdrawBase(amount1, flag, basePrice, position, positionOwner);
     } else if (call == CallType.WithdrawQuote) {
-      _withdrawQuote(amount1, flag, basePrice, position);
+      _withdrawQuote(amount1, flag, basePrice, position, positionOwner);
     } else if (call == CallType.Short) {
       _short(amount1, flag, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
     } else if (call == CallType.Long) {
