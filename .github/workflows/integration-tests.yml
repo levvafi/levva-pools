@@ -7,18 +7,18 @@ on:
     tags:
       - 'v*'
     paths:
-      - './contracts/**'
-      - './int-test/**'
+      - 'contracts/**'
+      - 'int-test/**'
   pull_request:
     branches:
       - main
     paths:
-      - './contracts/**'
-      - './int-test/**'
+      - 'contracts/**'
+      - 'int-test/**'
   workflow_dispatch:
     paths:
-      - './contracts/**'
-      - './int-test/**'
+      - 'contracts/**'
+      - 'int-test/**'
 
 jobs:
   integration_tests:
