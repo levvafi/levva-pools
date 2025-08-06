@@ -22,7 +22,8 @@ abstract contract Funding is LevvaPoolCommon {
   /// @notice Deposit base token
   /// @param amount Amount of base token to deposit
   /// @param basePrice current oracle base price, got by getBasePrice() method
-  /// @param position msg.sender position
+  /// @param position position which receives base funds
+  /// @param positionOwner address which owns provided position
   function _depositBase(
     uint256 amount,
     FP96.FixedPoint memory basePrice,
@@ -55,7 +56,8 @@ abstract contract Funding is LevvaPoolCommon {
 
   /// @notice Deposit quote token
   /// @param amount Amount of quote token
-  /// @param position msg.sender position
+  /// @param position position which receives quote funds
+  /// @param positionOwner address which owns provided position
   function _depositQuote(uint256 amount, Position storage position, address positionOwner) internal {
     if (amount == 0) revert MarginlyErrors.ZeroAmount();
 
@@ -85,12 +87,14 @@ abstract contract Funding is LevvaPoolCommon {
   /// @param realAmount Amount of base token
   /// @param unwrapWETH flag to unwrap WETH to ETH
   /// @param basePrice current oracle base price, got by getBasePrice() method
-  /// @param position msg.sender position
+  /// @param position position from which base funds are withdrawn
+  /// @param positionOwner address which owns provided position
   function _withdrawBase(
     uint256 realAmount,
     bool unwrapWETH,
     FP96.FixedPoint memory basePrice,
-    Position storage position
+    Position storage position,
+    address positionOwner
   ) internal {
     if (realAmount == 0) revert MarginlyErrors.ZeroAmount();
 
@@ -110,7 +114,7 @@ abstract contract Funding is LevvaPoolCommon {
       discountedBaseCollateralDelta = positionBaseAmount;
 
       if (position.discountedQuoteAmount == 0) {
-        delete positions[msg.sender];
+        delete positions[positionOwner];
       }
     } else {
       // partial withdraw
@@ -132,21 +136,23 @@ abstract contract Funding is LevvaPoolCommon {
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    _unwrapAndTransfer(unwrapWETH, baseToken, msg.sender, realAmountToWithdraw);
+    _unwrapAndTransfer(unwrapWETH, baseToken, positionOwner, realAmountToWithdraw);
 
-    emit WithdrawBase(msg.sender, realAmountToWithdraw, discountedBaseCollateralDelta);
+    emit WithdrawBase(positionOwner, realAmountToWithdraw, discountedBaseCollateralDelta);
   }
 
   /// @notice Withdraw quote token
   /// @param realAmount Amount of quote token
   /// @param unwrapWETH flag to unwrap WETH to ETH
   /// @param basePrice current oracle base price, got by getBasePrice() method
-  /// @param position msg.sender position
+  /// @param position position from which quote funds are withdrawn
+  /// @param positionOwner address which owns provided position
   function _withdrawQuote(
     uint256 realAmount,
     bool unwrapWETH,
     FP96.FixedPoint memory basePrice,
-    Position storage position
+    Position storage position,
+    address positionOwner
   ) internal {
     if (realAmount == 0) revert MarginlyErrors.ZeroAmount();
 
@@ -166,7 +172,7 @@ abstract contract Funding is LevvaPoolCommon {
       discountedQuoteCollateralDelta = positionQuoteAmount;
 
       if (position.discountedBaseAmount == 0) {
-        delete positions[msg.sender];
+        delete positions[positionOwner];
       }
     } else {
       // partial withdraw
@@ -188,9 +194,9 @@ abstract contract Funding is LevvaPoolCommon {
 
     if (_positionHasBadLeverage(position, basePrice)) revert MarginlyErrors.BadLeverage();
 
-    _unwrapAndTransfer(unwrapWETH, quoteToken, msg.sender, realAmountToWithdraw);
+    _unwrapAndTransfer(unwrapWETH, quoteToken, positionOwner, realAmountToWithdraw);
 
-    emit WithdrawQuote(msg.sender, realAmountToWithdraw, discountedQuoteCollateralDelta);
+    emit WithdrawQuote(positionOwner, realAmountToWithdraw, discountedQuoteCollateralDelta);
   }
 
   /// @dev Wraps ETH into WETH if need and makes transfer from `payer`

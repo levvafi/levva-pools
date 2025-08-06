@@ -31,7 +31,8 @@ abstract contract ShortTrading is Liquidations {
 
   /// @notice Short with leverage
   /// @param basePrice current oracle base price, got by getBasePrice() method
-  /// @param position msg.sender position
+  /// @param position position which performs short operation
+  /// @param positionOwner address which owns provided position
   function _short(
     uint256 amount,
     bool amountInQuote,
