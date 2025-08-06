@@ -74,9 +74,9 @@ contract LevvaFarmingPool is LongTrading, ShortFarming, Emergency {
         _long(uint256(-amount2), flag, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
       }
     } else if (call == CallType.WithdrawBase) {
-      _withdrawBase(amount1, flag, basePrice, position);
+      _withdrawBase(amount1, flag, basePrice, position, positionOwner);
     } else if (call == CallType.WithdrawQuote) {
-      _withdrawQuote(amount1, flag, basePrice, position);
+      _withdrawQuote(amount1, flag, basePrice, position, positionOwner);
     } else if (call == CallType.Short) {
       _short(amount1, flag, limitPriceX96, basePrice, position, positionOwner, swapCalldata);
     } else if (call == CallType.Long) {
@@ -84,12 +84,12 @@ contract LevvaFarmingPool is LongTrading, ShortFarming, Emergency {
     } else if (call == CallType.ClosePosition) {
       _closePosition(limitPriceX96, position, swapCalldata);
       if (flag) {
-        _withdrawBase(type(uint256).max, false, basePrice, position);
+        _withdrawBase(type(uint256).max, false, basePrice, position, positionOwner);
       }
     } else if (call == CallType.SellCollateral) {
       _sellCollateral(limitPriceX96, position, positionOwner, swapCalldata);
       if (flag) {
-        _withdrawQuote(type(uint256).max, false, basePrice, position);
+        _withdrawQuote(type(uint256).max, false, basePrice, position, positionOwner);
       }
     } else if (call == CallType.Reinit && flag) {
       // reinit itself has already taken place

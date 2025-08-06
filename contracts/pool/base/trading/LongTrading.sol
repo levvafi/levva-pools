@@ -31,7 +31,8 @@ abstract contract LongTrading is Liquidations {
 
   /// @notice Long with leverage
   /// @param basePrice current oracle base price, got by getBasePrice() method
-  /// @param position msg.sender position
+  /// @param position position which performs long operation
+  /// @param positionOwner address which owns provided position
   function _long(
     uint256 amount,
     bool amountInQuote,
