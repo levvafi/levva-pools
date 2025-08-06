@@ -195,12 +195,15 @@ abstract contract Funding is LevvaPoolCommon {
 
   /// @dev Wraps ETH into WETH if need and makes transfer from `payer`
   function _wrapAndTransferFrom(address token, address payer, uint256 value) internal {
-    if (msg.value >= value) {
+    if (msg.value == value) {
       if (token == _getWETH9Address()) {
         IWETH9(token).deposit{value: value}();
         return;
       }
     }
+
+    if (msg.value != 0) revert MarginlyErrors.WrongValue();
+
     SafeERC20.safeTransferFrom(IERC20(token), payer, address(this), value);
   }
 

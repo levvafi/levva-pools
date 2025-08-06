@@ -1,5 +1,5 @@
 import { createMarginlyPool, createMarginlyPoolQuoteTokenIsWETH } from './shared/fixtures';
-import { loadFixture, time } from '@nomicfoundation/hardhat-network-helpers';
+import { loadFixture, setBalance, time } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import {
@@ -87,15 +87,8 @@ describe('MarginlyPool.Base', () => {
       .connect(lender)
       .execute(CallType.DepositQuote, quoteDeposit, 0, price, false, ZeroAddress, uniswapV3Swapdata());
 
-    const baseDeposit = parseUnits('0.0000000001', 18);
-    const valueDeposit = parseUnits('1.2000000001', 18);
-    const rest = valueDeposit - baseDeposit;
-
-    await marginlyPool
-      .connect(signer)
-      .execute(CallType.DepositBase, baseDeposit, 0, price, false, ZeroAddress, uniswapV3Swapdata(), {
-        value: valueDeposit,
-      });
+    const valueDeposit = parseUnits('1.2', 18);
+    await setBalance(await marginlyPool.getAddress(), valueDeposit);
 
     const balanceBefore = await owner.provider.getBalance(owner);
 
@@ -105,7 +98,7 @@ describe('MarginlyPool.Base', () => {
 
     const balanceAfter = await owner.provider.getBalance(owner);
 
-    expect(balanceBefore - txFee + rest).to.be.equal(balanceAfter);
+    expect(balanceBefore - txFee + valueDeposit).to.be.equal(balanceAfter);
   });
 
   it('should set Marginly parameters by factory owner', async () => {
@@ -536,6 +529,23 @@ describe('MarginlyPool.Base', () => {
       expect(position.discountedBaseAmount).to.be.equal(depositAmount);
       expect(position.discountedQuoteAmount).to.be.equal(0);
       expect(position.heapPosition).to.be.equal(0);
+    });
+
+    it('depositBase, wrong eth value', async () => {
+      const { marginlyPool, baseContract } = await loadFixture(createMarginlyPool);
+      const [_, signer] = await ethers.getSigners();
+      const price = (await marginlyPool.getBasePrice()).inner;
+
+      const depositAmount = 1000;
+      const value = depositAmount + 1;
+      await baseContract.connect(signer).approve(marginlyPool, 0);
+      const tx = marginlyPool
+        .connect(signer)
+        .execute(CallType.DepositBase, depositAmount, 0, price, false, ZeroAddress, uniswapV3Swapdata(), {
+          value: value,
+        });
+
+      await expect(tx).to.be.revertedWithCustomError(marginlyPool, 'WrongValue');
     });
   });
 
