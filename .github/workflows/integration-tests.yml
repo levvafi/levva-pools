@@ -7,18 +7,18 @@ on:
     tags:
       - 'v*'
     paths:
-      - 'packages/contracts/**'
-      - 'packages/router/**'
+      - './contracts/**'
+      - './int-test/**'
   pull_request:
     branches:
       - main
     paths:
-      - 'packages/contracts/**'
-      - 'packages/router/**'
+      - './contracts/**'
+      - './int-test/**'
   workflow_dispatch:
     paths:
-      - 'packages/contracts/**'
-      - 'packages/router/**'
+      - './contracts/**'
+      - './int-test/**'
 
 jobs:
   integration_tests:
@@ -31,7 +31,6 @@ jobs:
           node-version: 24.2.0
       - name: Integration testing
         run: |
-          cd ./packages/contracts/
           yarn && yarn compile
           yarn test:int-pool-parallel
         env:
